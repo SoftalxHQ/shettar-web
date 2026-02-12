@@ -2,6 +2,7 @@
 
 import { GlightBox } from '@/app/components';
 import { Button, Card, CardBody, Col, Image, Row } from 'react-bootstrap';
+import Link from 'next/link';
 import { BsArrowRight } from 'react-icons/bs';
 import { FaBed, FaSquare, FaTableCellsLarge } from 'react-icons/fa6';
 import { type HotelRoomType } from '@/app/data/room-details';
@@ -51,9 +52,11 @@ const RoomCard = ({ images, name, price, sqfeet }: HotelRoomType) => {
                 </h6>
                 <span className="fw-light">/per night</span>
               </div>
-              <Button size="sm" variant="dark" href="" className="mb-0">
-                Select room
-              </Button>
+              <Link href="/hotels/booking">
+                <Button size="sm" variant="dark" className="mb-0">
+                  Select room
+                </Button>
+              </Link>
             </div>
           </CardBody>
         </Col>

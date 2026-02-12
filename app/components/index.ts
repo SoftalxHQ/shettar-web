@@ -12,3 +12,9 @@ export { default as HotelLists } from './HotelLists';
 export { default as HotelListCard } from './HotelListCard';
 export { default as Footer } from './Footer';
 export { default as GlightBox } from './GlightBox';
+
+export { default as CheckFormInput } from './form/CheckFormInput';
+export { default as SelectFormInput } from './form/SelectFormInput';
+export { default as TextAreaFormInput } from './form/TextAreaFormInput';
+export { default as TextFormInput } from './form/TextFormInput';
+export { default as Flatpicker } from './form/Flatpicker';

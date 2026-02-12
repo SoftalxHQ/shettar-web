@@ -1,6 +1,7 @@
 'use client';
 
 import { Button, Card, CardBody, CardHeader, Col, Row } from 'react-bootstrap';
+import Link from 'next/link';
 
 const currency = '$';
 const currentYear = new Date().getFullYear();
@@ -46,9 +47,11 @@ const PriceSummary = () => {
             </li>
           </ul>
           <div className="d-grid gap-2">
-            <Button variant="dark" className="mb-0">
-              Continue To Book
-            </Button>
+            <Link href="/hotels/booking">
+              <Button variant="dark" className="mb-0 w-100">
+                Continue To Book
+              </Button>
+            </Link>
           </div>
         </CardBody>
       </Card>
