@@ -1,0 +1,54 @@
+// Bootstrap variables
+@import "https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Poppins:wght@400;500;700&display=swap";
+@import "bootstrap-icons/font/bootstrap-icons.css";
+@import "bootstrap/scss/functions";
+@import "bootstrap/scss/variables";
+@import "bootstrap/scss/variables-dark";
+
+// Theme variables
+@import "variables";
+@import "variables-dark";
+
+// User variables (for customization)
+@import "user-variables";
+
+// Bootstrap core
+@import "bootstrap/scss/bootstrap";
+
+// Extended bootstrap utilities
+@import "custom/utilities";
+@import "bootstrap/scss/utilities/api";
+
+// Extended bootstrap components
+@import "custom/accordion";
+@import "custom/breadcrumb";
+@import "custom/buttons";
+@import "custom/badge";
+@import "custom/card";
+@import "custom/dropdowns";
+@import "custom/list-group";
+@import "custom/nav";
+@import "custom/navbar";
+@import "custom/pagination";
+@import "custom/preloader";
+@import "custom/offcanvas";
+@import "custom/progress";
+@import "custom/reboot";
+@import "custom/tables";
+@import "custom/type";
+@import "custom/forms/form-check";
+@import "custom/forms/form-control";
+
+// Theme components
+@import "components/general";
+@import "components/avatar";
+@import "components/form-guest";
+@import "components/navbar-mobile";
+@import "components/sidebar-admin";
+@import "components/utilities";
+
+// Theme dark mode
+@import "dark-mode";
+
+// Custom user styles
+@import "user";
