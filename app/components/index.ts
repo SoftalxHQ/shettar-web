@@ -11,3 +11,4 @@ export { default as HotelGridCard } from './HotelGridCard';
 export { default as HotelLists } from './HotelLists';
 export { default as HotelListCard } from './HotelListCard';
 export { default as Footer } from './Footer';
+export { default as GlightBox } from './GlightBox';

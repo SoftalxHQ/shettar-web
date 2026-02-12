@@ -70,11 +70,9 @@ export default function FooterWithLinks() {
         <Row className="g-4">
           <Col lg={3}>
             <Link href="/">
-              <Image
+              <img
                 src="/images/logo/logo-light.svg"
                 alt="logo"
-                width={160}
-                height={40}
                 className="h-40px"
               />
             </Link>
