@@ -69,7 +69,7 @@ const RoomCard = ({ features, images, name, price, sale, schemes }: HotelsRoomTy
         <Col md={7}>
           <div className="card-body d-flex flex-column h-100 p-0">
             <h5 className="card-title">
-              <Link href="#">{name}</Link>
+              <Link href="/hotels/room-detail">{name}</Link>
             </h5>
             <ul className="nav nav-divider mb-2">
               {features.map((feature, idx) => (
@@ -99,9 +99,11 @@ const RoomCard = ({ features, images, name, price, sale, schemes }: HotelsRoomTy
                 <span className="text-decoration-line-through mb-0">{currency}1000</span>
               </div>
               <div className="mt-3 mt-sm-0">
-                <Button variant="primary" size="sm" className="mb-0">
-                  Select Room
-                </Button>
+                <Link href="/hotels/room-detail">
+                  <Button variant="primary" size="sm" className="mb-0">
+                    Select Room
+                  </Button>
+                </Link>
               </div>
             </div>
           </div>

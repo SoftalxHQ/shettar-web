@@ -51,9 +51,11 @@ const PriceOverView = () => {
           Free breakfast available
         </p>
         <div className="d-grid">
-          <Button variant="primary-soft" size="lg" className="mb-0">
-            View 10 Rooms Options
-          </Button>
+          <Link href="/hotels/room-detail">
+            <Button variant="primary-soft" size="lg" className="mb-0 w-100">
+              View 10 Rooms Options
+            </Button>
+          </Link>
         </div>
       </Card>
       <div className="mt-4 d-none d-xl-block">
