@@ -31,3 +31,6 @@ export { default as CompletedBooking } from './Profile/Bookings/CompletedBooking
 export { default as WishCard } from './Profile/Wishlist/WishCard';
 export { default as NotificationSettings } from './Profile/Settings/NotificationSettings';
 export { default as SecuritySettings } from './Profile/Settings/SecuritySettings';
+export { default as UserDetails } from './Profile/UserDetails';
+export { default as AccountWallet } from './Profile/AccountWallet';
+export { default as Transactions } from './Profile/Transactions';

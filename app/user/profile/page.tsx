@@ -1,16 +1,15 @@
 'use client';
 
 import UserLayout from '@/app/components/layouts/UserLayout';
-import { PersonalInformation, ProfileProgress, UpdateEmail, UpdatePassword } from '@/app/components';
+import { UserDetails, AccountWallet, ProfileProgress } from '@/app/components';
 
 const ProfilePage = () => {
   return (
     <UserLayout>
       <div className="vstack gap-4">
+        <AccountWallet />
         <ProfileProgress />
-        <PersonalInformation />
-        <UpdateEmail />
-        <UpdatePassword />
+        <UserDetails />
       </div>
     </UserLayout>
   );

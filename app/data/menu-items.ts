@@ -4,8 +4,7 @@ import {
   BsPerson,
   BsTicketPerforated,
   BsTrash,
-  BsWallet,
-  BsPeople,
+  BsListUl,
 } from 'react-icons/bs';
 import { type IconType } from 'react-icons';
 
@@ -36,18 +35,11 @@ export const USER_PROFILE_MENU_ITEMS: MenuItemType[] = [
     icon: BsTicketPerforated,
   },
   {
-    key: 'acc-user-travelers',
-    label: 'Travelers',
-    url: '/user/travelers',
+    key: 'acc-user-transactions',
+    label: 'Transactions',
+    url: '/user/transactions',
     parentKey: 'acc-user',
-    icon: BsPeople,
-  },
-  {
-    key: 'acc-user-payment-details',
-    label: 'Payment Details',
-    url: '/user/payment-details',
-    parentKey: 'acc-user',
-    icon: BsWallet,
+    icon: BsListUl,
   },
   {
     key: 'acc-user-wishlist',

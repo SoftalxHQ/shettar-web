@@ -139,35 +139,47 @@ const TopNavBar = () => {
                 </li>
 
                 <DropdownDivider />
-                <DropdownItem as={Link} href="/user/profile" className="text-dark">
-                  <BsPerson className=" me-2" />
-                  My Profile
-                </DropdownItem>
+                <li>
+                  <Link href="/user/profile" className="dropdown-item text-dark">
+                    <BsPerson className=" me-2" />
+                    My Profile
+                  </Link>
+                </li>
 
-                <DropdownItem className="text-dark">
-                  <BsBookmarkCheck className=" me-2" />
-                  My Bookings
-                </DropdownItem>
+                <li>
+                  <Link href="/user/bookings" className="dropdown-item text-dark">
+                    <BsBookmarkCheck className=" me-2" />
+                    My Bookings
+                  </Link>
+                </li>
 
-                <DropdownItem className="text-dark">
-                  <BsHeart className=" me-2" />
-                  My Wishlist
-                </DropdownItem>
+                <li>
+                  <Link href="/user/wishlist" className="dropdown-item text-dark">
+                    <BsHeart className=" me-2" />
+                    My Wishlist
+                  </Link>
+                </li>
 
-                <DropdownItem className="text-dark">
-                  <BsGear className=" me-2" />
-                  Settings
-                </DropdownItem>
+                <li>
+                  <Link href="/user/settings" className="dropdown-item text-dark">
+                    <BsGear className=" me-2" />
+                    Settings
+                  </Link>
+                </li>
 
-                <DropdownItem className="text-dark">
-                  <BsInfoCircle className=" me-2" />
-                  Help Center
-                </DropdownItem>
+                <li>
+                  <Link href="#" className="dropdown-item text-dark">
+                    <BsInfoCircle className=" me-2" />
+                    Help Center
+                  </Link>
+                </li>
 
-                <DropdownItem className="bg-danger-soft-hover text-danger">
-                  <BsPower className=" me-2" />
-                  Sign Out
-                </DropdownItem>
+                <li>
+                  <Link href="/auth/sign-in" className="dropdown-item bg-danger-soft-hover text-danger">
+                    <BsPower className=" me-2" />
+                    Sign Out
+                  </Link>
+                </li>
 
                 <DropdownDivider />
 

@@ -168,35 +168,47 @@ const TopNavBar4 = () => {
                 </li>
 
                 <DropdownDivider />
-                <DropdownItem as={Link} href="/user/profile">
-                  <BsPerson className="fa-fw me-2" />
-                  My Profile
-                </DropdownItem>
+                <li>
+                  <Link href="/user/profile" className="dropdown-item">
+                    <BsPerson className="fa-fw me-2" />
+                    My Profile
+                  </Link>
+                </li>
 
-                <DropdownItem>
-                  <BsBookmarkCheck className="fa-fw me-2" />
-                  My Bookings
-                </DropdownItem>
+                <li>
+                  <Link href="/user/bookings" className="dropdown-item">
+                    <BsBookmarkCheck className="fa-fw me-2" />
+                    My Bookings
+                  </Link>
+                </li>
 
-                <DropdownItem>
-                  <BsHeart className="fa-fw me-2" />
-                  My Wishlist
-                </DropdownItem>
+                <li>
+                  <Link href="/user/wishlist" className="dropdown-item">
+                    <BsHeart className="fa-fw me-2" />
+                    My Wishlist
+                  </Link>
+                </li>
 
-                <DropdownItem>
-                  <BsGear className="fa-fw me-2" />
-                  Settings
-                </DropdownItem>
+                <li>
+                  <Link href="/user/settings" className="dropdown-item">
+                    <BsGear className="fa-fw me-2" />
+                    Settings
+                  </Link>
+                </li>
 
-                <DropdownItem>
-                  <BsInfoCircle className="fa-fw me-2" />
-                  Help Center
-                </DropdownItem>
+                <li>
+                  <Link href="#" className="dropdown-item">
+                    <BsInfoCircle className="fa-fw me-2" />
+                    Help Center
+                  </Link>
+                </li>
 
-                <DropdownItem className="bg-danger-soft-hover">
-                  <BsPower className="fa-fw me-2" />
-                  Sign Out
-                </DropdownItem>
+                <li>
+                  <Link href="/auth/sign-in" className="dropdown-item bg-danger-soft-hover">
+                    <BsPower className="fa-fw me-2" />
+                    Sign Out
+                  </Link>
+                </li>
 
                 <DropdownDivider />
 
