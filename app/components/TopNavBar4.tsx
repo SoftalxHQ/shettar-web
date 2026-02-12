@@ -85,25 +85,7 @@ const TopNavBar4 = () => {
 
           <AppMenu mobileMenuOpen={isOpen} menuClassName="mx-auto" showExtraPages />
 
-          <ul className="nav flex-row align-items-center list-unstyled ms-xl-auto">
-            <Dropdown className="nav-item nav-search d-none d-sm-block">
-              <DropdownToggle as={Link} href="#" className="arrow-none nav-notification btn btn-light mb-0 p-0">
-                <BsSearch />
-              </DropdownToggle>
-              <DropdownMenu className="dropdown-animation dropdown-menu-end p-2" aria-labelledby="searchDropdown">
-                <div className="nav flex-nowrap align-items-center">
-                  <div className="nav-item w-100">
-                    <form className="input-group">
-                      <input className="form-control border-primary" type="search" placeholder="Search..." aria-label="Search" />
-                      <button className="btn btn-primary m-0" type="submit">
-                        Search
-                      </button>
-                    </form>
-                  </div>
-                </div>
-              </DropdownMenu>
-            </Dropdown>
-
+          <ul className="nav flex-row align-items-center list-unstyled">
             <Dropdown className="nav-item ms-2 me-3 ms-md-3">
               <DropdownToggle className="nav-notification btn btn-light p-0 mb-0 flex-centered arrow-none">
                 <BsBell />

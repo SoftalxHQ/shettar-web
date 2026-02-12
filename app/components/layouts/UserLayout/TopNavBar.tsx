@@ -76,7 +76,7 @@ const TopNavBar = () => {
 
           <AppMenu mobileMenuOpen={isOpen} menuClassName="mx-auto" />
 
-          <ul className="nav flex-row align-items-center list-unstyled ms-xl-auto">
+          <ul className="nav flex-row align-items-center list-unstyled">
             <Dropdown className="nav-item ms-0 ms-md-3">
               <DropdownToggle as={Link} href="#" className="arrow-none nav-link p-0" role="button">
                 <BsBell className=" fs-5" />
