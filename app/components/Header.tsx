@@ -31,9 +31,9 @@ export default function Header() {
             </Nav>
 
             <Nav className="navbar-nav ms-auto">
-              <Nav.Link href="#" className="btn btn-sm btn-primary mb-0">
+              <Link href="/auth/sign-in" className="btn btn-sm btn-primary mb-0 flex-centered">
                 Sign In
-              </Nav.Link>
+              </Link>
             </Nav>
           </Navbar.Collapse>
         </Container>
