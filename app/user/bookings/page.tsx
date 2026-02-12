@@ -3,9 +3,7 @@
 import { Card, CardBody, CardHeader, Nav, NavItem, NavLink, TabContainer, TabContent, TabPane } from 'react-bootstrap';
 import { BsBriefcaseFill, BsPatchCheck, BsXOctagon } from 'react-icons/bs';
 import UserLayout from '@/app/components/layouts/UserLayout';
-import UpcomingBooking from '@/app/components/Profile/Bookings/UpcomingBooking';
-import CancelledBooking from '@/app/components/Profile/Bookings/CancelledBooking';
-import CompletedBooking from '@/app/components/Profile/Bookings/CompletedBooking';
+import { UpcomingBooking, CancelledBooking, CompletedBooking } from '@/app/components';
 
 const BookingsPage = () => {
   return (
