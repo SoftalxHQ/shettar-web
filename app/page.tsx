@@ -1,8 +1,4 @@
-import TopNavBar4 from './components/TopNavBar4';
-import Hero from './components/Hero';
-import HotelListFilter from './components/HotelListFilter';
-import HotelGridLayout from './components/HotelGridLayout';
-import Footer from './components/Footer';
+import { TopNavBar4, Hero, HotelListFilter, HotelGridLayout, Footer } from '@/app/components';
 
 export default function Home() {
   return (

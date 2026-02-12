@@ -1,88 +1,64 @@
 'use client';
 
-import { useState } from 'react';
-import Image from 'next/image';
-import Link from 'next/link';
+import { TinySlider } from '@/app/components';
+import { useToggle } from '@/app/hooks';
+import { currency, useLayoutContext } from '@/app/states';
 import { Card, CardBody, CardFooter } from 'react-bootstrap';
-import { BsBookmark, BsBookmarkFill, BsStarFill, BsArrowRight } from 'react-icons/bs';
-import { Hotel } from '../types/hotel';
+import { renderToString } from 'react-dom/server';
+import { BsArrowLeft, BsArrowRight, BsBookmark, BsBookmarkFill, BsStarFill } from 'react-icons/bs';
+import Link from 'next/link';
+import { type TinySliderSettings } from 'tiny-slider';
 
-interface HotelGridCardProps extends Hotel { }
+import 'tiny-slider/dist/tiny-slider.css';
 
-export default function HotelGridCard({ feature, images, name, price, rating, sale }: HotelGridCardProps) {
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [isBookmarked, setIsBookmarked] = useState(false);
+import { HotelsGridType } from '@/app/types/hotel';
 
-  const nextImage = () => {
-    setCurrentImageIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
-  };
+const HotelGridCard = ({ feature, images, name, price, rating, sale }: HotelsGridType) => {
+  const { isOpen, toggle } = useToggle();
+  const { dir } = useLayoutContext();
 
-  const prevImage = () => {
-    setCurrentImageIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
+  const gridSliderSettings: TinySliderSettings = {
+    nested: 'inner',
+    autoplay: false,
+    controls: true,
+    autoplayButton: false,
+    autoplayButtonOutput: false,
+    controlsText: [renderToString(<BsArrowLeft size={16} />), renderToString(<BsArrowRight size={16} />)],
+    arrowKeys: true,
+    items: 1,
+    autoplayDirection: dir === 'ltr' ? 'forward' : 'backward',
+    nav: false,
   };
 
   return (
-    <Card className="shadow p-2 pb-0 h-100">
+    <Card className="shadow p-2 pb-0 h-100 border-0">
       {sale && (
         <div className="position-absolute top-0 start-0 z-index-1 m-4">
           <div className="badge bg-danger text-white">{sale}</div>
         </div>
       )}
-
-      {/* Image Carousel */}
-      <div className="position-relative rounded-2 overflow-hidden">
-        <div className="position-relative" style={{ aspectRatio: '4/3' }}>
-          <Image
-            src={images[currentImageIndex]}
-            alt={name}
-            fill
-            className="object-cover"
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-          />
-        </div>
-
-        {images.length > 1 && (
-          <>
-            <button
-              onClick={prevImage}
-              className="position-absolute top-50 start-0 translate-middle-y btn btn-white btn-sm rounded-circle ms-2"
-              style={{ width: '32px', height: '32px', padding: '0' }}
-            >
-              <i className="bi bi-chevron-left"></i>
-            </button>
-            <button
-              onClick={nextImage}
-              className="position-absolute top-50 end-0 translate-middle-y btn btn-white btn-sm rounded-circle me-2"
-              style={{ width: '32px', height: '32px', padding: '0' }}
-            >
-              <i className="bi bi-chevron-right"></i>
-            </button>
-          </>
-        )}
+      <div className="tiny-slider arrow-round arrow-xs arrow-dark rounded-2 overflow-hidden">
+        <TinySlider settings={gridSliderSettings}>
+          {images.map((image, idx) => (
+            <div key={idx}>
+              <img src={image} alt="Card image" className="card-img-top" />
+            </div>
+          ))}
+        </TinySlider>
       </div>
-
       <CardBody className="px-3 pb-0">
         <div className="d-flex justify-content-between mb-3 align-items-center">
           <Link href="#" className="badge bg-dark text-white items-center">
-            <BsStarFill size={13} className="fa-fw me-2 text-warning" />
+            <BsStarFill size={13} className=" fa-fw me-2 text-warning" />
             {rating}
           </Link>
-          <Link href="#" className="h6 mb-0 z-index-2" onClick={(e) => {
-            e.preventDefault();
-            setIsBookmarked(!isBookmarked);
-          }}>
-            {!isBookmarked ? (
-              <BsBookmark className="fa-fw" />
-            ) : (
-              <BsBookmarkFill color="red" className="fa-fw" />
-            )}
+          <Link href="#" className="h6 mb-0 z-index-2" onClick={(e) => { e.preventDefault(); toggle(); }}>
+            {!isOpen ? <BsBookmark className=" fa-fw" /> : <BsBookmarkFill color="red" className=" fa-fw" />}{' '}
           </Link>
         </div>
-
         <h5 className="card-title">
-          <Link href={`/hotels/${name.toLowerCase().replace(/\s+/g, '-')}`}>{name}</Link>
+          <Link href="/hotels/detail">{name}</Link>
         </h5>
-
         <ul className="nav nav-divider mb-2 mb-sm-3">
           {feature.map((feat, idx) => (
             <li key={idx} className="nav-item">
@@ -91,27 +67,27 @@ export default function HotelGridCard({ feature, images, name, price, rating, sa
           ))}
         </ul>
       </CardBody>
-
-      <CardFooter className="pt-0">
+      <CardFooter className="pt-0 bg-transparent border-0">
         <div className="d-sm-flex justify-content-sm-between align-items-center">
           <div className="d-flex align-items-center">
             <h5 className="fw-normal text-success mb-0 me-1">
-              ${price}
+              {currency}
+              {price}
             </h5>
             <span className="mb-0 me-2">/day</span>
-            {sale && <span className="text-decoration-line-through">$1000</span>}
+
+            {sale && <span className="text-decoration-line-through">{currency}1000</span>}
           </div>
           <div className="mt-2 mt-sm-0">
-            <Link
-              href={`/hotels/${name.toLowerCase().replace(/\s+/g, '-')}`}
-              className="btn btn-sm btn-primary-soft mb-0 w-100 items-center"
-            >
+            <Link href="/hotels/detail" className="btn btn-sm btn-primary-soft mb-0 w-100 items-center">
               View Detail
-              <BsArrowRight className="ms-2" />
+              <BsArrowRight className=" ms-2" />
             </Link>
           </div>
         </div>
       </CardFooter>
     </Card>
   );
-}
+};
+
+export default HotelGridCard;

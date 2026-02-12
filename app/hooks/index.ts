@@ -1,2 +1,2 @@
 export { useScrollEvent } from './useScrollEvent';
-export { useToggle } from './useToggle';
+export { default as useToggle } from './useToggle';

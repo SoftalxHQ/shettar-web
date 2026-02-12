@@ -7,3 +7,11 @@ export interface Hotel {
   feature: string[];
   price: number;
 }
+
+export type HotelsGridType = Hotel;
+
+export type NotificationType = {
+  title: string;
+  content?: string;
+  time: string;
+};

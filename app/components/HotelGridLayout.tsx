@@ -1,32 +1,32 @@
 'use client';
 
-import Link from 'next/link';
-import { Container, Row, Col } from 'react-bootstrap';
-import { FaAngleLeft, FaAngleRight } from 'react-icons/fa6';
+import { Col, Container, Row } from 'react-bootstrap';
 import { hotels } from '../data/hotels';
 import HotelGridCard from './HotelGridCard';
+import { FaAngleLeft, FaAngleRight } from 'react-icons/fa6';
+import Link from 'next/link';
 
-export default function HotelGridLayout() {
+const HotelGridLayout = () => {
   return (
     <section className="pt-0">
       <Container>
         <Row className="g-4">
-          {hotels.map((hotel, idx) => (
-            <Col key={idx} md={6} xl={4}>
-              <HotelGridCard
-                id={hotel.id}
-                name={hotel.name}
-                price={hotel.price}
-                feature={hotel.feature}
-                images={hotel.images}
-                rating={hotel.rating}
-                sale={hotel.sale}
-              />
-            </Col>
-          ))}
+          {hotels.map((hotel, idx) => {
+            return (
+              <Col key={idx} md={6} xl={4}>
+                <HotelGridCard
+                  id={hotel.id}
+                  name={hotel.name}
+                  price={hotel.price}
+                  feature={hotel.feature}
+                  images={hotel.images}
+                  rating={hotel.rating}
+                  sale={hotel.sale}
+                />
+              </Col>
+            );
+          })}
         </Row>
-
-        {/* Pagination */}
         <Row>
           <Col xs={12}>
             <nav className="mt-4 d-flex justify-content-center" aria-label="navigation">
@@ -68,4 +68,6 @@ export default function HotelGridLayout() {
       </Container>
     </section>
   );
-}
+};
+
+export default HotelGridLayout;
