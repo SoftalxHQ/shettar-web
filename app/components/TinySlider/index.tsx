@@ -42,38 +42,17 @@ const TinySlider: React.FC<TinySliderProps> = ({
   const dragging = useRef(false);
   const count = useRef(0);
 
-  const build = async (customSettings: CommonOptions = {}) => {
-    const { tns } = await import('tiny-slider');
-
-    if (slider && (slider as any).destroy && (slider as any).rebuild) {
-      (slider as any).destroy();
-      (slider as any).rebuild();
-    } else {
-      if (ref.current == null) return;
-      const mergedSettings = {
-        ...customSettings,
-        container: ref.current,
-        onInit: () => postInit(),
-      };
-
-      const newSlider = tns(mergedSettings as any);
-      setSlider(newSlider);
-
-      if (ref.current) ref.current.className += ' tns-item';
-    }
-  };
-
-  const postInit = (): any => {
-    if (!slider) {
+  const postInit = (newSlider: TinySliderInstance): any => {
+    if (!newSlider) {
       if (count.current >= 4) {
         return onInit?.(false);
       }
       count.current++;
-      return setTimeout(postInit, 100);
+      return setTimeout(() => postInit(newSlider), 100);
     }
     count.current = 0;
 
-    const { events } = slider;
+    const { events } = newSlider;
 
     if (events) {
       events.on('transitionStart', (info) => {
@@ -95,6 +74,24 @@ const TinySlider: React.FC<TinySliderProps> = ({
     onInit?.(true);
   };
 
+  const build = async (customSettings: CommonOptions = {}) => {
+    const { tns } = await import('tiny-slider');
+
+    if (slider && (slider as any).destroy) {
+      (slider as any).destroy();
+    }
+
+    if (ref.current == null) return;
+    const mergedSettings = {
+      ...customSettings,
+      container: ref.current,
+    };
+
+    const newSlider = tns(mergedSettings as any);
+    setSlider(newSlider);
+    postInit(newSlider);
+  };
+
   useEffect(() => {
     build(settings);
   }, [settings]);
@@ -112,7 +109,7 @@ const TinySlider: React.FC<TinySliderProps> = ({
     return () => {
       if (slider && slider.destroy) slider.destroy();
     };
-  }, []);
+  }, [slider]);
 
   const onClickHandler = (event: React.MouseEvent<HTMLDivElement>) => {
     if (dragging.current || !onClick) return;

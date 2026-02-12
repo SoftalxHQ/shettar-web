@@ -19,6 +19,7 @@ export default function LogoBox({ imgClassName, onlyDark }: LogoBoxType) {
         alt="logo"
         width={160}
         height={40}
+        style={{ width: 'auto' }}
       />
       {!onlyDark && (
         <Image
@@ -27,6 +28,7 @@ export default function LogoBox({ imgClassName, onlyDark }: LogoBoxType) {
           alt="logo"
           width={160}
           height={40}
+          style={{ width: 'auto' }}
         />
       )}
     </NavbarBrand>

@@ -22,15 +22,20 @@ const HotelListCard = ({ hotel }: { hotel: Hotel }) => {
 
   const listSliderSettings: TinySliderSettings = {
     nested: 'inner',
+    mouseDrag: true,
+    gutter: 0,
+    items: 1,
     autoplay: false,
     controls: true,
     autoplayButton: false,
     autoplayButtonOutput: false,
     controlsText: [renderToString(<BsArrowLeft size={16} />), renderToString(<BsArrowRight size={16} />)],
     arrowKeys: true,
-    items: 1,
     autoplayDirection: dir === 'ltr' ? 'forward' : 'backward',
     nav: false,
+    slideBy: 'page',
+    autoWidth: false,
+    preventScrollOnTouch: 'auto',
   };
 
   return (
