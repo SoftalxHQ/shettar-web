@@ -7,6 +7,8 @@ export const metadata: Metadata = {
   keywords: ["hotels", "booking", "accommodation", "travel", "vacation"],
 };
 
+import { LayoutProvider } from "./states";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -14,8 +16,28 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" data-scroll-behavior="smooth">
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                const themeKey = 'data-bs-theme';
+                const foundTheme = localStorage.getItem(themeKey);
+                const preferredTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+                if (foundTheme === 'dark' || (foundTheme === 'auto' && preferredTheme === 'dark') || (!foundTheme && preferredTheme === 'dark')) {
+                  document.documentElement.setAttribute(themeKey, 'dark');
+                } else {
+                  document.documentElement.setAttribute(themeKey, 'light');
+                }
+              })()
+            `,
+          }}
+        />
+      </head>
       <body className="antialiased">
-        {children}
+        <LayoutProvider>
+          {children}
+        </LayoutProvider>
       </body>
     </html>
   );

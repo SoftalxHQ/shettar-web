@@ -26,6 +26,8 @@ import AppMenu from './AppMenu';
 import LogoBox from './LogoBox';
 import { useScrollEvent, useToggle } from '../hooks';
 
+import { useLayoutContext } from '@/app/states';
+
 import avatar1 from '@/public/images/avatar/01.jpg';
 
 import { notificationData } from '@/app/data/hotels';
@@ -57,7 +59,7 @@ const themeModes: ThemeModeType[] = [
 const TopNavBar4 = () => {
   const { scrollY } = useScrollEvent();
   const { isOpen, toggle } = useToggle();
-  const [theme, setTheme] = useState<'light' | 'dark' | 'auto'>('auto');
+  const { theme, updateTheme } = useLayoutContext();
 
   return (
     <header className={clsx('navbar-light header-sticky', { 'header-sticky-on': scrollY >= 400 })}>
@@ -202,7 +204,7 @@ const TopNavBar4 = () => {
                       return (
                         <OverlayTrigger key={mode.theme + idx} overlay={<Tooltip>{mode.label}</Tooltip>}>
                           <button
-                            onClick={() => setTheme(mode.theme)}
+                            onClick={() => updateTheme(mode.theme)}
                             type="button"
                             className={clsx('btn btn-link nav-link text-primary-hover mb-0 p-0', { active: theme === mode.theme })}
                             data-bs-toggle="tooltip"
