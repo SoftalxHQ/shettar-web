@@ -1,10 +1,11 @@
 'use client';
 
-import Image from 'next/image';
-import Link from 'next/link';
-import { useState } from 'react';
+import { AppMenu, LogoBox } from '@/app/components';
+import { useScrollEvent, useToggle } from '@/app/hooks';
+import { useLayoutContext } from '@/app/states';
 import clsx from 'clsx';
 import {
+  Button,
   Card,
   CardBody,
   CardFooter,
@@ -15,60 +16,50 @@ import {
   DropdownItem,
   DropdownMenu,
   DropdownToggle,
+  Image,
   ListGroup,
   ListGroupItem,
   Navbar,
   OverlayTrigger,
   Tooltip,
 } from 'react-bootstrap';
-import { BsBell, BsBookmarkCheck, BsCircleHalf, BsGear, BsHeart, BsInfoCircle, BsMoonStars, BsPerson, BsPower, BsSearch, BsSun } from 'react-icons/bs';
-import AppMenu from './AppMenu';
-import LogoBox from './LogoBox';
-import { useScrollEvent, useToggle } from '../hooks';
-
-import { useLayoutContext } from '@/app/states';
+import { BsBell, BsBookmarkCheck, BsCircleHalf, BsGear, BsHeart, BsInfoCircle, BsLightningCharge, BsMoonStars, BsPerson, BsPower, BsSun } from 'react-icons/bs';
+import Link from 'next/link';
+import { notificationData } from '@/app/data/hotels';
 
 import avatar1 from '@/public/images/avatar/01.jpg';
 
-import { notificationData } from '@/app/data/hotels';
-
-type ThemeModeType = {
-  theme: 'light' | 'dark' | 'auto';
-  icon: typeof BsSun;
-  label: string;
-};
-
-const themeModes: ThemeModeType[] = [
+const themeModes: any[] = [
   {
     icon: BsSun,
     theme: 'light',
-    label: 'Light',
+    label: 'Light'
   },
   {
     icon: BsMoonStars,
     theme: 'dark',
-    label: 'Dark',
+    label: 'Dark'
   },
   {
     icon: BsCircleHalf,
     theme: 'auto',
-    label: 'Auto',
+    label: 'Auto'
   },
 ];
 
-const TopNavBar4 = () => {
+const TopNavBar = () => {
   const { scrollY } = useScrollEvent();
-  const { isOpen, toggle } = useToggle();
   const { theme, updateTheme } = useLayoutContext();
+  const { isOpen, toggle } = useToggle();
 
   return (
     <header className={clsx('navbar-light header-sticky', { 'header-sticky-on': scrollY >= 400 })}>
-      <Navbar expand="xl">
+      <Navbar expand="lg">
         <Container>
           <LogoBox />
           <button
             onClick={toggle}
-            className="navbar-toggler ms-auto mx-3 p-0 p-sm-2"
+            className="navbar-toggler ms-auto mx-3 me-md-0 p-0 p-sm-2"
             type="button"
             data-bs-toggle="collapse"
             data-bs-target="#navbarCollapse"
@@ -83,37 +74,18 @@ const TopNavBar4 = () => {
             </span>
           </button>
 
-          <AppMenu mobileMenuOpen={isOpen} menuClassName="mx-auto" showExtraPages />
+          <AppMenu mobileMenuOpen={isOpen} />
 
           <ul className="nav flex-row align-items-center list-unstyled ms-xl-auto">
-            <Dropdown className="nav-item nav-search d-none d-sm-block">
-              <DropdownToggle as={Link} href="#" className="arrow-none nav-notification btn btn-light mb-0 p-0">
-                <BsSearch />
+            <Dropdown className="nav-item ms-0 ms-md-3">
+              <DropdownToggle as={Link} href="#" className="arrow-none nav-link p-0" role="button">
+                <BsBell className=" fs-5" />
               </DropdownToggle>
-              <DropdownMenu className="dropdown-animation dropdown-menu-end p-2" aria-labelledby="searchDropdown">
-                <div className="nav flex-nowrap align-items-center">
-                  <div className="nav-item w-100">
-                    <form className="input-group">
-                      <input className="form-control border-primary" type="search" placeholder="Search..." aria-label="Search" />
-                      <button className="btn btn-primary m-0" type="submit">
-                        Search
-                      </button>
-                    </form>
-                  </div>
-                </div>
-              </DropdownMenu>
-            </Dropdown>
-
-            <Dropdown className="nav-item ms-2 me-3 ms-md-3">
-              <DropdownToggle className="nav-notification btn btn-light p-0 mb-0 flex-centered arrow-none">
-                <BsBell />
-              </DropdownToggle>
-
               <span className="notif-badge animation-blink" />
 
               <DropdownMenu align="end" className="dropdown-animation dropdown-menu-size-md shadow-lg p-0" renderOnMount>
                 <Card className="bg-transparent">
-                  <CardHeader className="bg-transparent d-flex justify-content-between align-items-center border-bottom">
+                  <CardHeader className="bg-transparent d-flex justify-content-between align-items-center border-bottom text-dark">
                     <h6 className="m-0">
                       Notifications <span className="badge bg-danger bg-opacity-10 text-danger ms-2">4 new</span>
                     </h6>
@@ -122,14 +94,14 @@ const TopNavBar4 = () => {
                     </Link>
                   </CardHeader>
 
-                  <CardBody className="p-0">
+                  <CardBody className="p-0 text-dark">
                     <ListGroup className="list-group-flush list-unstyled p-2">
                       {(notificationData ?? []).map((notification, idx) => (
                         <li key={idx}>
                           <ListGroupItem className={clsx('list-group-item-action rounded border-0 mb-1 p-3', { 'notif-unread': idx === 0 })}>
-                            <h6 className="mb-2">{notification.title}</h6>
-                            {notification.content && <p className="mb-0 small">{notification.content}</p>}
-                            <span>{notification.time}</span>
+                            <h6 className="mb-2 text-dark">{notification.title}</h6>
+                            {notification.content && <p className="mb-0 small text-dark">{notification.content}</p>}
+                            <span className="text-dark small">{notification.time}</span>
                           </ListGroupItem>
                         </li>
                       ))}
@@ -144,10 +116,9 @@ const TopNavBar4 = () => {
                 </Card>
               </DropdownMenu>
             </Dropdown>
-
-            <Dropdown className="nav-item dropdown" autoClose="outside">
-              <DropdownToggle className="avatar avatar-sm p-0 arrow-none mb-0 border-0" id="profileDropdown" role="button">
-                <Image className="avatar-img rounded-2" src={avatar1} alt="avatar" width={40} height={40} />
+            <Dropdown className="nav-item ms-3 dropdown">
+              <DropdownToggle as={Link} href="#" className="arrow-none avatar avatar-xs p-0" id="profileDropdown" role="button">
+                <Image className="avatar-img rounded-circle" src={avatar1.src} alt="avatar" width={24} height={24} />
               </DropdownToggle>
               <DropdownMenu
                 align={'end'}
@@ -157,44 +128,44 @@ const TopNavBar4 = () => {
               >
                 <li className="px-3 mb-3">
                   <div className="d-flex align-items-center">
-                    <div className="avatar me-3">
-                      <Image className="avatar-img rounded-circle shadow" src={avatar1} alt="avatar" width={50} height={50} />
+                    <div className="avatar me-3 flex-centered">
+                      <Image className="avatar-img rounded-circle shadow" src={avatar1.src} alt="avatar" width={40} height={40} />
                     </div>
                     <div>
-                      <h6 className="h6 mt-2 mt-sm-0">Lori Ferguson</h6>
-                      <p className="small m-0">example@gmail.com</p>
+                      <h6 className="h6 mt-2 mt-sm-0 text-dark">Lori Ferguson</h6>
+                      <p className="small m-0 text-dark">example@gmail.com</p>
                     </div>
                   </div>
                 </li>
 
                 <DropdownDivider />
-                <DropdownItem as={Link} href="/user/profile">
-                  <BsPerson className="fa-fw me-2" />
+                <DropdownItem as={Link} href="/user/profile" className="text-dark">
+                  <BsPerson className=" me-2" />
                   My Profile
                 </DropdownItem>
 
-                <DropdownItem>
-                  <BsBookmarkCheck className="fa-fw me-2" />
+                <DropdownItem className="text-dark">
+                  <BsBookmarkCheck className=" me-2" />
                   My Bookings
                 </DropdownItem>
 
-                <DropdownItem>
-                  <BsHeart className="fa-fw me-2" />
+                <DropdownItem className="text-dark">
+                  <BsHeart className=" me-2" />
                   My Wishlist
                 </DropdownItem>
 
-                <DropdownItem>
-                  <BsGear className="fa-fw me-2" />
+                <DropdownItem className="text-dark">
+                  <BsGear className=" me-2" />
                   Settings
                 </DropdownItem>
 
-                <DropdownItem>
-                  <BsInfoCircle className="fa-fw me-2" />
+                <DropdownItem className="text-dark">
+                  <BsInfoCircle className=" me-2" />
                   Help Center
                 </DropdownItem>
 
-                <DropdownItem className="bg-danger-soft-hover">
-                  <BsPower className="fa-fw me-2" />
+                <DropdownItem className="bg-danger-soft-hover text-danger">
+                  <BsPower className=" me-2" />
                   Sign Out
                 </DropdownItem>
 
@@ -202,9 +173,9 @@ const TopNavBar4 = () => {
 
                 <li>
                   <div className="nav-pills-primary-soft theme-icon-active d-flex justify-content-between align-items-center p-2 pb-0">
-                    <span>Mode:</span>
+                    <span className="text-dark">Mode:</span>
                     {(themeModes ?? []).map((mode, idx) => {
-                      const Icon = mode.icon;
+                      const Icon = mode.icon
                       return (
                         <OverlayTrigger key={mode.theme + idx} overlay={<Tooltip>{mode.label}</Tooltip>}>
                           <button
@@ -218,12 +189,17 @@ const TopNavBar4 = () => {
                             <Icon />
                           </button>
                         </OverlayTrigger>
-                      );
+                      )
                     })}
                   </div>
                 </li>
               </DropdownMenu>
             </Dropdown>
+            <li className="nav-item ms-3 d-none d-sm-block">
+              <Button variant="primary-soft" size="sm" className="mb-0" href="">
+                <BsLightningCharge /> Upgrade now
+              </Button>
+            </li>
           </ul>
         </Container>
       </Navbar>
@@ -231,4 +207,4 @@ const TopNavBar4 = () => {
   );
 };
 
-export default TopNavBar4;
+export default TopNavBar;
