@@ -68,20 +68,20 @@ const WishCard = ({ wishCard }: { wishCard: WishCardType }) => {
                 </Dropdown>
               </ul>
             </div>
-            <h5 className="card-title mb-1 text-dark">
+            <h5 className="card-title mb-1">
               <Link href="/hotels/detail">{name}</Link>
             </h5>
-            <small className="items-center text-dark">
+            <small className="items-center">
               <BsGeoAlt className=" me-2" />
               {address}
             </small>
             <div className="d-sm-flex justify-content-sm-between align-items-center mt-3 mt-md-auto">
               <div className="d-flex align-items-center">
-                <h5 className="fw-bold mb-0 me-1 text-dark">
+                <h5 className="fw-bold mb-0 me-1">
                   {currency}
                   {price}
                 </h5>
-                <span className="mb-0 me-2 text-dark small">/day</span>
+                <span className="mb-0 me-2 small">/day</span>
               </div>
               <div className="mt-3 mt-sm-0">
                 <Link href="/hotels/detail" className="btn btn-sm btn-dark w-100 mb-0">

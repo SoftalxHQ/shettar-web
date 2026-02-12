@@ -21,7 +21,7 @@ import {
   OverlayTrigger,
   Tooltip,
 } from 'react-bootstrap';
-import { BsBell, BsBookmarkCheck, BsCircleHalf, BsGear, BsHeart, BsInfoCircle, BsMoonStars, BsPerson, BsPower, BsSearch, BsSun } from 'react-icons/bs';
+import { BsBell, BsBookmarkCheck, BsCircleHalf, BsGear, BsHeart, BsInfoCircle, BsMoonStars, BsPerson, BsPower, BsSearch, BsStar, BsSun } from 'react-icons/bs';
 import AppMenu from './AppMenu';
 import LogoBox from './LogoBox';
 import { useScrollEvent, useToggle } from '../hooks';
@@ -186,6 +186,13 @@ const TopNavBar4 = () => {
                   <Link href="/user/wishlist" className="dropdown-item">
                     <BsHeart className="fa-fw me-2" />
                     My Wishlist
+                  </Link>
+                </li>
+
+                <li>
+                  <Link href="/user/reviews" className="dropdown-item">
+                    <BsStar className="fa-fw me-2" />
+                    My Reviews
                   </Link>
                 </li>
 

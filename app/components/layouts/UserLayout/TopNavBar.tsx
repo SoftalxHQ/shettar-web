@@ -23,7 +23,7 @@ import {
   OverlayTrigger,
   Tooltip,
 } from 'react-bootstrap';
-import { BsBell, BsBookmarkCheck, BsCircleHalf, BsGear, BsHeart, BsInfoCircle, BsLightningCharge, BsMoonStars, BsPerson, BsPower, BsSun } from 'react-icons/bs';
+import { BsBell, BsBookmarkCheck, BsCircleHalf, BsGear, BsHeart, BsInfoCircle, BsLightningCharge, BsMoonStars, BsPerson, BsPower, BsStar, BsSun } from 'react-icons/bs';
 import Link from 'next/link';
 import { notificationData } from '@/app/data/hotels';
 
@@ -74,7 +74,7 @@ const TopNavBar = () => {
             </span>
           </button>
 
-          <AppMenu mobileMenuOpen={isOpen} />
+          <AppMenu mobileMenuOpen={isOpen} menuClassName="mx-auto" />
 
           <ul className="nav flex-row align-items-center list-unstyled ms-xl-auto">
             <Dropdown className="nav-item ms-0 ms-md-3">
@@ -85,7 +85,7 @@ const TopNavBar = () => {
 
               <DropdownMenu align="end" className="dropdown-animation dropdown-menu-size-md shadow-lg p-0" renderOnMount>
                 <Card className="bg-transparent">
-                  <CardHeader className="bg-transparent d-flex justify-content-between align-items-center border-bottom text-dark">
+                  <CardHeader className="bg-transparent d-flex justify-content-between align-items-center border-bottom">
                     <h6 className="m-0">
                       Notifications <span className="badge bg-danger bg-opacity-10 text-danger ms-2">4 new</span>
                     </h6>
@@ -94,14 +94,14 @@ const TopNavBar = () => {
                     </Link>
                   </CardHeader>
 
-                  <CardBody className="p-0 text-dark">
+                  <CardBody className="p-0">
                     <ListGroup className="list-group-flush list-unstyled p-2">
                       {(notificationData ?? []).map((notification, idx) => (
                         <li key={idx}>
                           <ListGroupItem className={clsx('list-group-item-action rounded border-0 mb-1 p-3', { 'notif-unread': idx === 0 })}>
-                            <h6 className="mb-2 text-dark">{notification.title}</h6>
-                            {notification.content && <p className="mb-0 small text-dark">{notification.content}</p>}
-                            <span className="text-dark small">{notification.time}</span>
+                            <h6 className="mb-2">{notification.title}</h6>
+                            {notification.content && <p className="mb-0 small">{notification.content}</p>}
+                            <span className="small">{notification.time}</span>
                           </ListGroupItem>
                         </li>
                       ))}
@@ -132,43 +132,50 @@ const TopNavBar = () => {
                       <Image className="avatar-img rounded-circle shadow" src={avatar1.src} alt="avatar" width={40} height={40} />
                     </div>
                     <div>
-                      <h6 className="h6 mt-2 mt-sm-0 text-dark">Lori Ferguson</h6>
-                      <p className="small m-0 text-dark">example@gmail.com</p>
+                      <h6 className="h6 mt-2 mt-sm-0">Lori Ferguson</h6>
+                      <p className="small m-0">example@gmail.com</p>
                     </div>
                   </div>
                 </li>
 
                 <DropdownDivider />
                 <li>
-                  <Link href="/user/profile" className="dropdown-item text-dark">
+                  <Link href="/user/profile" className="dropdown-item">
                     <BsPerson className=" me-2" />
                     My Profile
                   </Link>
                 </li>
 
                 <li>
-                  <Link href="/user/bookings" className="dropdown-item text-dark">
+                  <Link href="/user/bookings" className="dropdown-item">
                     <BsBookmarkCheck className=" me-2" />
                     My Bookings
                   </Link>
                 </li>
 
                 <li>
-                  <Link href="/user/wishlist" className="dropdown-item text-dark">
+                  <Link href="/user/wishlist" className="dropdown-item">
                     <BsHeart className=" me-2" />
                     My Wishlist
                   </Link>
                 </li>
 
                 <li>
-                  <Link href="/user/settings" className="dropdown-item text-dark">
+                  <Link href="/user/reviews" className="dropdown-item">
+                    <BsStar className=" me-2" />
+                    My Reviews
+                  </Link>
+                </li>
+
+                <li>
+                  <Link href="/user/settings" className="dropdown-item">
                     <BsGear className=" me-2" />
                     Settings
                   </Link>
                 </li>
 
                 <li>
-                  <Link href="#" className="dropdown-item text-dark">
+                  <Link href="#" className="dropdown-item">
                     <BsInfoCircle className=" me-2" />
                     Help Center
                   </Link>
@@ -185,7 +192,7 @@ const TopNavBar = () => {
 
                 <li>
                   <div className="nav-pills-primary-soft theme-icon-active d-flex justify-content-between align-items-center p-2 pb-0">
-                    <span className="text-dark">Mode:</span>
+                    <span>Mode:</span>
                     {(themeModes ?? []).map((mode, idx) => {
                       const Icon = mode.icon
                       return (
@@ -207,11 +214,6 @@ const TopNavBar = () => {
                 </li>
               </DropdownMenu>
             </Dropdown>
-            <li className="nav-item ms-3 d-none d-sm-block">
-              <Button variant="primary-soft" size="sm" className="mb-0" href="">
-                <BsLightningCharge /> Upgrade now
-              </Button>
-            </li>
           </ul>
         </Container>
       </Navbar>

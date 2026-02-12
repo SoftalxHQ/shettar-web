@@ -19,7 +19,7 @@ const UpdateEmail = () => {
     <Card className="border">
       <CardHeader className="border-bottom">
         <h4 className="card-header-title">Update email</h4>
-        <p className="mb-0 text-dark">
+        <p className="mb-0">
           Your current email address is <span className="text-primary">example@gmail.com</span>
         </p>
       </CardHeader>
@@ -30,7 +30,6 @@ const UpdateEmail = () => {
             name="email"
             label="Enter your new email id*"
             placeholder="Enter your email id"
-            containerClass="text-dark"
             control={control}
           />
           <div className="text-end mt-3">

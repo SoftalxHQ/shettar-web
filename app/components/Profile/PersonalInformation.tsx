@@ -33,7 +33,7 @@ const PersonalInformation = () => {
       <CardBody>
         <form onSubmit={handleSubmit(() => { })} className="row g-3">
           <Col xs={12}>
-            <label className="form-label text-dark">
+            <label className="form-label">
               Upload your profile photo<span className="text-danger">*</span>
             </label>
             <div className="d-flex align-items-center">
@@ -61,7 +61,7 @@ const PersonalInformation = () => {
             name="name"
             label="Full Name*"
             placeholder="Enter your full name"
-            containerClass="col-md-6 text-dark"
+            containerClass="col-md-6"
             control={control}
           />
           <TextFormInput
@@ -69,19 +69,19 @@ const PersonalInformation = () => {
             type="email"
             label="Email address*"
             placeholder="Enter your email id"
-            containerClass="col-md-6 text-dark"
+            containerClass="col-md-6"
             control={control}
           />
           <TextFormInput
             name="mobileNo"
             label="Mobile number*"
             placeholder="Enter your mobile number"
-            containerClass="col-md-6 text-dark"
+            containerClass="col-md-6"
             control={control}
           />
 
           <Col md={6}>
-            <label className="form-label text-dark">
+            <label className="form-label">
               Nationality<span className="text-danger">*</span>
             </label>
             <SelectFormInput className="form-select js-choice">
@@ -94,7 +94,7 @@ const PersonalInformation = () => {
           </Col>
 
           <Col md={6}>
-            <label className="form-label text-dark">
+            <label className="form-label">
               Date of Birth<span className="text-danger">*</span>
             </label>
             <Flatpicker
@@ -104,7 +104,7 @@ const PersonalInformation = () => {
           </Col>
 
           <Col md={6}>
-            <label className="form-label text-dark">
+            <label className="form-label">
               Select Gender<span className="text-danger">*</span>
             </label>
             <div className="d-flex gap-4">
@@ -116,19 +116,19 @@ const PersonalInformation = () => {
                   id="flexRadioDefault1"
                   defaultChecked
                 />
-                <label className="form-check-label text-dark" htmlFor="flexRadioDefault1">
+                <label className="form-check-label" htmlFor="flexRadioDefault1">
                   Male
                 </label>
               </div>
               <div className="form-check radio-bg-light">
                 <input className="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault2" />
-                <label className="form-check-label text-dark" htmlFor="flexRadioDefault2">
+                <label className="form-check-label" htmlFor="flexRadioDefault2">
                   Female
                 </label>
               </div>
               <div className="form-check radio-bg-light">
                 <input className="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault3" />
-                <label className="form-check-label text-dark" htmlFor="flexRadioDefault3">
+                <label className="form-check-label" htmlFor="flexRadioDefault3">
                   Others
                 </label>
               </div>
@@ -140,7 +140,7 @@ const PersonalInformation = () => {
             label="Address"
             spellCheck="false"
             rows={3}
-            containerClass="col-12 text-dark"
+            containerClass="col-12"
             control={control}
           />
 

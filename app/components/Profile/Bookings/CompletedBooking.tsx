@@ -8,8 +8,8 @@ const CompletedBooking = () => {
     <div className="bg-mode shadow p-4 rounded overflow-hidden border">
       <Row className="g-4 align-items-center">
         <Col md={9}>
-          <h6 className="text-dark">Looks like you have never booked with BOOKING</h6>
-          <h4 className="mb-2 text-dark">When you book your trip will be shown here.</h4>
+          <h6>Looks like you have never booked with BOOKING</h6>
+          <h4 className="mb-2">When you book your trip will be shown here.</h4>
           <Link href="/hotels/list" className="btn btn-primary-soft mb-0">
             Start booking now
           </Link>

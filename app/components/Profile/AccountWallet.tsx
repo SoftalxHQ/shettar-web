@@ -18,12 +18,12 @@ const AccountWallet = () => {
               <div className="icon-md bg-primary text-white rounded-circle me-3 flex-centered">
                 <BsWallet2 size={20} />
               </div>
-              <h5 className="mb-0 text-dark">Wallet Balance</h5>
+              <h5 className="mb-0">Wallet Balance</h5>
             </div>
-            <h2 className="mb-2 text-dark">
+            <h2 className="mb-2">
               {currency}12,500.00
             </h2>
-            <p className="text-secondary small mb-4">Last update: June 25, 2026</p>
+            <p className="small mb-4">Last update: June 25, 2026</p>
             <div className="d-flex gap-2">
               <Link href="/user/transactions" className="btn btn-sm btn-primary mb-0 flex-centered">Top Up</Link>
               <Link href="/user/transactions" className="btn btn-sm btn-outline-primary mb-0 flex-centered">Transaction History</Link>
@@ -39,13 +39,13 @@ const AccountWallet = () => {
               <div className="icon-md bg-dark text-white rounded-circle me-3 flex-centered">
                 <BsBank size={20} />
               </div>
-              <h5 className="mb-0 text-dark">Virtual Account</h5>
+              <h5 className="mb-0">Virtual Account</h5>
             </div>
 
-            <div className="bg-white p-3 rounded border mb-3">
-              <p className="text-secondary small mb-1">Account Number</p>
+            <div className="bg-mode p-3 rounded border mb-3">
+              <p className="small mb-1">Account Number</p>
               <div className="d-flex justify-content-between align-items-center">
-                <h5 className="mb-0 text-dark">0012 3456 7890</h5>
+                <h5 className="mb-0">0012 3456 7890</h5>
                 <Button variant="link" className="p-0 text-primary" onClick={() => copyToClipboard('001234567890')}>
                   <BsCopy size={16} />
                 </Button>
@@ -54,12 +54,12 @@ const AccountWallet = () => {
 
             <div className="row g-2">
               <Col xs={6}>
-                <p className="text-secondary small mb-1">Bank Name</p>
-                <h6 className="text-dark">Abri Global Bank</h6>
+                <p className="small mb-1">Bank Name</p>
+                <h6>Abri Global Bank</h6>
               </Col>
               <Col xs={6}>
-                <p className="text-secondary small mb-1">Account Holder</p>
-                <h6 className="text-dark text-truncate">Jacqueline Miller</h6>
+                <p className="small mb-1">Account Holder</p>
+                <h6 className="text-truncate">Jacqueline Miller</h6>
               </Col>
             </div>
           </CardBody>

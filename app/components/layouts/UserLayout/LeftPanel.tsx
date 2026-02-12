@@ -14,13 +14,6 @@ const LeftPanel = () => {
 
   return (
     <Card className="bg-light w-100">
-      <div className="position-absolute top-0 end-0 p-3">
-        <OverlayTrigger overlay={<Tooltip>Edit profile</Tooltip>} placement="top">
-          <span className="text-dark">
-            <BsPencilSquare />
-          </span>
-        </OverlayTrigger>
-      </div>
       <CardBody className="p-3">
         <div className="text-center mb-3">
           <div className="avatar avatar-xl mb-2 flex-centered">
@@ -32,8 +25,8 @@ const LeftPanel = () => {
               height={100}
             />
           </div>
-          <h6 className="mb-0 text-dark">Jacqueline Miller</h6>
-          <Link href="" className="text-reset text-primary-hover small text-dark">
+          <h6 className="mb-0">Jacqueline Miller</h6>
+          <Link href="" className="text-reset text-primary-hover small">
             hello@gmail.com
           </Link>
           <hr />

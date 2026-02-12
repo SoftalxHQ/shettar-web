@@ -5,6 +5,7 @@ import {
   BsTicketPerforated,
   BsTrash,
   BsListUl,
+  BsStar,
 } from 'react-icons/bs';
 import { type IconType } from 'react-icons';
 
@@ -47,6 +48,13 @@ export const USER_PROFILE_MENU_ITEMS: MenuItemType[] = [
     url: '/user/wishlist',
     parentKey: 'acc-user',
     icon: BsHeart,
+  },
+  {
+    key: 'acc-user-reviews',
+    label: 'My Reviews',
+    url: '/user/reviews',
+    parentKey: 'acc-user',
+    icon: BsStar,
   },
   {
     key: 'acc-user-settings',

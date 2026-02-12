@@ -19,7 +19,7 @@ const UserDetails = () => {
   return (
     <Card className="border">
       <CardHeader className="border-bottom d-flex justify-content-between align-items-center">
-        <h4 className="card-header-title text-dark mb-0">Personal Information</h4>
+        <h4 className="card-header-title mb-0">Personal Information</h4>
         <Link href="/user/settings" className="btn btn-sm btn-primary-soft">
           <BsPencilSquare className="me-1" /> Edit
         </Link>
@@ -37,8 +37,8 @@ const UserDetails = () => {
             />
           </div>
           <div>
-            <h5 className="mb-1 text-dark">{user.name}</h5>
-            <p className="mb-0 text-secondary">Verified Member</p>
+            <h5 className="mb-1">{user.name}</h5>
+            <p className="mb-0">Verified Member</p>
           </div>
         </div>
 
@@ -49,8 +49,8 @@ const UserDetails = () => {
                 <BsEnvelope size={14} />
               </div>
               <div>
-                <p className="text-secondary small mb-0">Email address</p>
-                <h6 className="text-dark mb-0">{user.email}</h6>
+                <p className="small mb-0">Email address</p>
+                <h6 className="mb-0">{user.email}</h6>
               </div>
             </div>
           </Col>
@@ -61,8 +61,8 @@ const UserDetails = () => {
                 <BsPhone size={14} />
               </div>
               <div>
-                <p className="text-secondary small mb-0">Mobile number</p>
-                <h6 className="text-dark mb-0">{user.mobileNo}</h6>
+                <p className="small mb-0">Mobile number</p>
+                <h6 className="mb-0">{user.mobileNo}</h6>
               </div>
             </div>
           </Col>
@@ -73,8 +73,8 @@ const UserDetails = () => {
                 <BsGlobe size={14} />
               </div>
               <div>
-                <p className="text-secondary small mb-0">Nationality</p>
-                <h6 className="text-dark mb-0">{user.nationality}</h6>
+                <p className="small mb-0">Nationality</p>
+                <h6 className="mb-0">{user.nationality}</h6>
               </div>
             </div>
           </Col>
@@ -85,8 +85,8 @@ const UserDetails = () => {
                 <BsCalendarDate size={14} />
               </div>
               <div>
-                <p className="text-secondary small mb-0">Date of Birth</p>
-                <h6 className="text-dark mb-0">{user.dob}</h6>
+                <p className="small mb-0">Date of Birth</p>
+                <h6 className="mb-0">{user.dob}</h6>
               </div>
             </div>
           </Col>
@@ -97,8 +97,8 @@ const UserDetails = () => {
                 <BsGenderAmbiguous size={14} />
               </div>
               <div>
-                <p className="text-secondary small mb-0">Gender</p>
-                <h6 className="text-dark mb-0">{user.gender}</h6>
+                <p className="small mb-0">Gender</p>
+                <h6 className="mb-0">{user.gender}</h6>
               </div>
             </div>
           </Col>
@@ -109,8 +109,8 @@ const UserDetails = () => {
                 <BsGeoAlt size={14} />
               </div>
               <div>
-                <p className="text-secondary small mb-0">Address</p>
-                <h6 className="text-dark mb-0">{user.address}</h6>
+                <p className="small mb-0">Address</p>
+                <h6 className="mb-0">{user.address}</h6>
               </div>
             </div>
           </Col>

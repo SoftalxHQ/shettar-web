@@ -8,7 +8,7 @@ const Transactions = () => {
   return (
     <Card className="border">
       <CardHeader className="border-bottom">
-        <h4 className="card-header-title text-dark mb-0">Transactions</h4>
+        <h4 className="card-header-title mb-0">Transactions</h4>
       </CardHeader>
 
       <CardBody className="p-0">
@@ -16,19 +16,19 @@ const Transactions = () => {
           <Table hover className="align-middle mb-0">
             <thead className="table-light">
               <tr>
-                <th className="text-dark py-3">Type</th>
-                <th className="text-dark py-3">Date</th>
-                <th className="text-dark py-3">Amount</th>
-                <th className="text-dark py-3">Status</th>
-                <th className="text-dark py-3">Reference</th>
+                <th className="py-3">Type</th>
+                <th className="py-3">Date</th>
+                <th className="py-3">Amount</th>
+                <th className="py-3">Status</th>
+                <th className="py-3">Reference</th>
               </tr>
             </thead>
             <tbody>
               {transactionData.map((txn, idx) => (
                 <tr key={idx}>
-                  <td className="text-dark">{txn.type}</td>
-                  <td className="text-dark small">{txn.date}</td>
-                  <td className="text-dark fw-bold">
+                  <td>{txn.type}</td>
+                  <td className="small">{txn.date}</td>
+                  <td className="fw-bold">
                     {currency}{txn.amount.toLocaleString()}
                   </td>
                   <td>
@@ -40,7 +40,7 @@ const Transactions = () => {
                       {txn.status}
                     </Badge>
                   </td>
-                  <td className="text-secondary small">{txn.reference}</td>
+                  <td className="small">{txn.reference}</td>
                 </tr>
               ))}
             </tbody>

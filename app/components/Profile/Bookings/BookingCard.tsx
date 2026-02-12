@@ -15,10 +15,10 @@ const BookingCard = ({ booking }: { booking: BookingCardType }) => {
           </div>
 
           <div className="ms-2">
-            <h6 className="card-title mb-0 text-dark">{travelRoute}</h6>
+            <h6 className="card-title mb-0">{travelRoute}</h6>
             <ul className="nav nav-divider small">
-              <li className="nav-item text-dark">Booking ID:{id}</li>
-              <li className="nav-item text-dark">{flightType}</li>
+              <li className="nav-item">Booking ID:{id}</li>
+              <li className="nav-item">{flightType}</li>
             </ul>
           </div>
         </div>
@@ -36,8 +36,8 @@ const BookingCard = ({ booking }: { booking: BookingCardType }) => {
           {timing.map((item, idx) => {
             return (
               <Col sm={6} md={4} key={idx}>
-                <span className="text-dark small">{item.label}</span>
-                <h6 className="mb-0 text-dark">{item.name}</h6>
+                <span className="small">{item.label}</span>
+                <h6 className="mb-0">{item.name}</h6>
               </Col>
             );
           })}

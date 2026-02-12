@@ -11,7 +11,7 @@ const UpdatePassword = () => {
     <Card className="border">
       <CardHeader className="border-bottom">
         <h4 className="card-header-title">Update Password</h4>
-        <p className="mb-0 text-dark">
+        <p className="mb-0">
           Your current email address is <span className="text-primary">example@gmail.com</span>
         </p>
       </CardHeader>
@@ -22,7 +22,7 @@ const UpdatePassword = () => {
             name="currentPassword"
             label="Current password"
             placeholder="Enter current password"
-            containerClass="mb-3 text-dark"
+            containerClass="mb-3"
             control={control}
           />
 
@@ -30,7 +30,7 @@ const UpdatePassword = () => {
             name="newPassword"
             label="Enter new password"
             placeholder="Enter new password"
-            containerClass="mb-3 text-dark"
+            containerClass="mb-3"
             control={control}
           />
 
@@ -38,7 +38,7 @@ const UpdatePassword = () => {
             name="confirmPassword"
             label="Confirm new password"
             placeholder="Confirm new password"
-            containerClass="mb-3 text-dark"
+            containerClass="mb-3"
             control={control}
           />
 
