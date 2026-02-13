@@ -17,6 +17,7 @@ import {
 } from 'react-bootstrap';
 import { BsCreditCard, BsGlobe2, BsPaypal, BsWalletFill } from 'react-icons/bs';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { FaPlus } from 'react-icons/fa6';
 import { useForm } from 'react-hook-form';
 import * as yup from 'yup';
@@ -45,7 +46,12 @@ const PaymentOptions = () => {
     resolver: yupResolver(paymentSchema),
   });
 
+  const router = useRouter();
   const { isOpen, toggle } = useToggle(true);
+
+  const onSubmit = () => {
+    router.push('/booking-confirmed');
+  };
 
   return (
     <Card className="shadow">
@@ -90,7 +96,7 @@ const PaymentOptions = () => {
                   ))}
                 </ul>
               </div>
-              <form onSubmit={handleSubmit(() => { })} className="g-3 row">
+              <form onSubmit={handleSubmit(onSubmit)} className="g-3 row">
                 <Col xs={12}>
                   <FormLabel className="text-dark">Card Number *</FormLabel>
                   <div className="position-relative">
