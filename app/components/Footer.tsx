@@ -8,59 +8,23 @@ import { FaFacebookF, FaInstagram, FaLinkedinIn, FaTwitter } from 'react-icons/f
 
 const footerLinks = [
   {
-    title: 'Page',
+    title: 'Company',
     items: [
-      { name: 'About us', link: '#' },
-      { name: 'Contact us', link: '#' },
-      { name: 'News and Blog', link: '#' },
-      { name: 'Meet a Team', link: '#' },
+      { name: 'About us', link: '/about' },
+      { name: 'Contact us', link: '/contact' },
+      { name: 'FAQ', link: '/faq' },
+      { name: 'Terms & Conditions', link: '/terms' },
     ],
   },
   {
-    title: 'Link',
+    title: 'Explore',
     items: [
-      { name: 'Sign up', link: '#' },
-      { name: 'Sign in', link: '#' },
-      { name: 'Privacy Policy', link: '#' },
-      { name: 'Terms', link: '#' },
-      { name: 'Cookie', link: '#' },
-      { name: 'Support', link: '#' },
+      { name: 'Hotels', link: '/hotels' },
+      { name: 'Near Me', link: '/hotels' },
+      { name: 'Best Deals', link: '/hotels' },
+      { name: 'Luxury Stays', link: '/hotels' },
     ],
   },
-  {
-    title: 'Global Sites',
-    items: [
-      { name: 'India', link: '#' },
-      { name: 'California', link: '#' },
-      { name: 'Indonesia', link: '#' },
-      { name: 'Canada', link: '#' },
-      { name: 'Malaysia', link: '#' },
-    ],
-  },
-  {
-    title: 'Booking',
-    items: [
-      { name: 'Hotel', link: '#' },
-      { name: 'Flight', link: '#' },
-      { name: 'Tour', link: '#' },
-      { name: 'Cabs', link: '#' },
-      { name: 'About', link: '#' },
-    ],
-  },
-];
-
-const topLinks = [
-  { name: 'Hotels in New York', link: '#' },
-  { name: 'Hotels in California', link: '#' },
-  { name: 'Villas in England', link: '#' },
-  { name: 'Apartments in Chicago', link: '#' },
-  { name: 'Hotels in Phoenix', link: '#' },
-  { name: 'Hotels in Bangladesh', link: '#' },
-  { name: 'Hotels in New Jersey', link: '#' },
-  { name: 'Homestay in Canada', link: '#' },
-  { name: 'Villas in Seattle', link: '#' },
-  { name: 'Flats in Kuala Lumpur', link: '#' },
-  { name: 'Homestays in Thailand', link: '#' },
 ];
 
 export default function FooterWithLinks() {
@@ -68,117 +32,102 @@ export default function FooterWithLinks() {
     <footer className="bg-dark pt-5">
       <Container>
         <Row className="g-4">
-          <Col lg={3}>
+          <Col lg={4}>
             <Link href="/">
-              <img
+              <Image
                 src="/images/logo/logo-light.svg"
                 alt="logo"
+                width={160}
+                height={40}
                 className="h-40px"
               />
             </Link>
             <p className="my-3 text-body-secondary">
-              Departure defective arranging rapturous did believe him all had supported.
+              Abri is your ultimate companion for finding the perfect stay. From luxury resorts to cozy local hotels, we make booking your next room effortless and rewarding.
             </p>
-            <p className="mb-2">
-              <Link href="#" className="text-body-secondary text-primary-hover d-flex align-items-center">
+            <div className="vstack gap-2 mt-4">
+              <Link href="#" className="text-body-secondary text-primary-hover d-flex align-items-center mb-0">
                 <BsTelephone className="me-2" />
                 +1234 568 963
               </Link>
-            </p>
-            <p className="mb-0">
-              <Link href="#" className="text-body-secondary text-primary-hover d-flex align-items-center">
+              <Link href="#" className="text-body-secondary text-primary-hover d-flex align-items-center mb-0">
                 <BsEnvelope className="me-2" />
-                example@gmail.com
+                hello@abri.com
               </Link>
-            </p>
+            </div>
           </Col>
 
-          <Col lg={8} className="ms-auto">
-            <Row className="g-4">
-              {footerLinks.map((item, idx) => (
-                <Col xs={6} md={3} key={idx}>
-                  <h5 className="text-white mb-2 mb-md-4">{item.title}</h5>
-                  <Nav className="flex-column text-primary-hover">
-                    {item.items.map((link, i) => (
-                      <NavItem key={i}>
-                        <NavLink className="text-body-secondary" href={link.link}>
-                          {link.name}
-                        </NavLink>
-                      </NavItem>
-                    ))}
-                  </Nav>
-                </Col>
-              ))}
-            </Row>
+          <Col md={6} lg={2} className="ms-lg-auto">
+            <h5 className="text-white mb-3 mb-md-4">Company</h5>
+            <Nav className="flex-column text-primary-hover">
+              <NavItem>
+                <NavLink className="text-body-secondary ps-0" href="/about">About us</NavLink>
+              </NavItem>
+              <NavItem>
+                <NavLink className="text-body-secondary ps-0" href="/contact">Contact us</NavLink>
+              </NavItem>
+              <NavItem>
+                <NavLink className="text-body-secondary ps-0" href="/faq">FAQ</NavLink>
+              </NavItem>
+              <NavItem>
+                <NavLink className="text-body-secondary ps-0" href="/terms">Terms & Conditions</NavLink>
+              </NavItem>
+            </Nav>
           </Col>
-        </Row>
 
-        <Row className="mt-5">
-          <h5 className="mb-2 text-white">Top Links</h5>
-          <ul className="list-inline text-primary-hover lh-lg">
-            {topLinks.map((item, idx) => (
-              <li key={idx} className="list-inline-item me-2">
-                <Link href={item.link ?? ''} className="text-body-secondary">
-                  {item.name}&nbsp;
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </Row>
+          <Col md={6} lg={2}>
+            <h5 className="text-white mb-3 mb-md-4">Explore</h5>
+            <Nav className="flex-column text-primary-hover">
+              <NavItem>
+                <NavLink className="text-body-secondary ps-0" href="/hotels">Hotels</NavLink>
+              </NavItem>
+              <NavItem>
+                <NavLink className="text-body-secondary ps-0" href="/hotels">Near Me</NavLink>
+              </NavItem>
+              <NavItem>
+                <NavLink className="text-body-secondary ps-0" href="/hotels">Best Deals</NavLink>
+              </NavItem>
+              <NavItem>
+                <NavLink className="text-body-secondary ps-0" href="/hotels">Luxury Stays</NavLink>
+              </NavItem>
+            </Nav>
+          </Col>
 
-        <Row className="g-4 justify-content-between mt-0 mt-md-2">
-          <Col sm={7} md={6} lg={4}>
-            <h5 className="text-white mb-2">Payment &amp; Security</h5>
-            <ul className="list-inline mb-0 mt-3">
+          <Col lg={3}>
+            <h5 className="text-white mb-3">Payment & Security</h5>
+            <ul className="list-inline mb-4 mt-3">
               <li className="list-inline-item me-2">
-                <Link href="#">
-                  <Image src="/images/element/paypal.svg" className="h-30px me-1" alt="paypal" width={50} height={30} />
-                </Link>
+                <Image src="/images/element/paypal.svg" className="h-30px" alt="paypal" width={45} height={30} />
               </li>
               <li className="list-inline-item me-2">
-                <Link href="#">
-                  <Image src="/images/element/visa.svg" className="h-30px me-1" alt="visa" width={50} height={30} />
-                </Link>
+                <Image src="/images/element/visa.svg" className="h-30px" alt="visa" width={45} height={30} />
               </li>
               <li className="list-inline-item me-2">
-                <Link href="#">
-                  <Image src="/images/element/mastercard.svg" className="h-30px me-1" alt="mastercard" width={50} height={30} />
-                </Link>
+                <Image src="/images/element/mastercard.svg" className="h-30px" alt="mastercard" width={45} height={30} />
               </li>
-              <li className="list-inline-item me-2">
-                <Link href="#">
-                  <Image src="/images/element/expresscard.svg" className="h-30px me-1" alt="expresscard" width={50} height={30} />
-                </Link>
+              <li className="list-inline-item">
+                <Image src="/images/element/expresscard.svg" className="h-30px" alt="expresscard" width={45} height={30} />
               </li>
             </ul>
-          </Col>
 
-          <Col sm={5} md={6} lg={3} className="text-sm-end">
-            <h5 className="text-white mb-2">Follow us on</h5>
-            <ul className="list-inline mb-0 mt-3 d-flex gap-2 justify-content-end">
-              <li className="list-inline-item">
-                <Button size="sm" className="shadow px-2 bg-facebook mb-0" href="#">
-                  <FaFacebookF size={16} />
-                </Button>
-              </li>
-              <li className="list-inline-item">
-                <Button size="sm" className="shadow px-2 bg-instagram mb-0" href="#">
-                  <FaInstagram size={16} />
-                </Button>
-              </li>
-              <li className="list-inline-item">
-                <Button size="sm" className="shadow px-2 bg-twitter mb-0" href="#">
-                  <FaTwitter size={16} />
-                </Button>
-              </li>
-              <li className="list-inline-item">
-                <Button size="sm" className="shadow px-2 bg-linkedin mb-0" href="#">
-                  <FaLinkedinIn size={16} />
-                </Button>
-              </li>
-            </ul>
+            <h5 className="text-white mb-3">Follow us on</h5>
+            <div className="d-flex gap-2">
+              <Button size="sm" className="px-2 bg-facebook mb-0 shadow-none border-0" href="#">
+                <FaFacebookF size={14} />
+              </Button>
+              <Button size="sm" className="px-2 bg-instagram mb-0 shadow-none border-0" href="#">
+                <FaInstagram size={14} />
+              </Button>
+              <Button size="sm" className="px-2 bg-twitter mb-0 shadow-none border-0" href="#">
+                <FaTwitter size={14} />
+              </Button>
+              <Button size="sm" className="px-2 bg-linkedin mb-0 shadow-none border-0" href="#">
+                <FaLinkedinIn size={14} />
+              </Button>
+            </div>
           </Col>
         </Row>
+
 
         <hr className="mt-4 mb-0" />
 
@@ -186,25 +135,25 @@ export default function FooterWithLinks() {
           <Container>
             <div className="d-lg-flex justify-content-between align-items-center py-3 text-center text-lg-start">
               <div className="text-body-secondary text-primary-hover">
-                Copyrights ©2024 Booking. Build by{' '}
-                <a href="https://www.stackbros.in/" target="_blank" className="text-body-secondary">
-                  StackBros
+                Copyrights ©2024 Abri. Build by{' '}
+                <a href="#" className="text-body-secondary">
+                  Abri Team
                 </a>.
               </div>
               <Nav className="nav mt-2 mt-lg-0">
                 <ul className="list-inline text-primary-hover mx-auto mb-0">
                   <li className="list-inline-item me-0">
-                    <NavLink className="text-body-secondary py-1" href="#">
+                    <NavLink className="text-body-secondary py-1" href="/privacy">
                       Privacy policy
                     </NavLink>
                   </li>
                   <li className="list-inline-item me-0">
-                    <NavLink className="text-body-secondary py-1" href="#">
+                    <NavLink className="text-body-secondary py-1" href="/terms">
                       Terms and conditions
                     </NavLink>
                   </li>
                   <li className="list-inline-item me-0">
-                    <NavLink className="text-body-secondary py-1 pe-0" href="#">
+                    <NavLink className="text-body-secondary py-1 pe-0" href="/refund">
                       Refund policy
                     </NavLink>
                   </li>
