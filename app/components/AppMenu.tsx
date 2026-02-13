@@ -19,7 +19,7 @@ const menuItems = [
 export default function AppMenu({ showExtraPages, mobileMenuOpen, menuClassName }: AppMenuProps) {
   return (
     <Collapse in={mobileMenuOpen} className="navbar-collapse">
-      <div>
+      <div id="navbarCollapse">
         <ul className={clsx('navbar-nav navbar-nav-scroll mx-auto justify-content-center text-center align-items-center', menuClassName)}>
           {menuItems.map((item, idx) => (
             <li key={idx} className="nav-item">

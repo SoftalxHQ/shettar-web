@@ -1,12 +1,13 @@
 'use client';
 
-import { TinySlider } from '@/app/components';
+import { TinySlider, SkeletonImage } from '@/app/components';
 import { useToggle } from '@/app/hooks';
 import { currency, useLayoutContext } from '@/app/states';
 import { Card, CardBody, CardFooter } from 'react-bootstrap';
 import { renderToString } from 'react-dom/server';
 import { BsArrowLeft, BsArrowRight, BsBookmark, BsBookmarkFill, BsStarFill } from 'react-icons/bs';
 import Link from 'next/link';
+import { useMemo } from 'react';
 import { type TinySliderSettings } from 'tiny-slider';
 
 import 'tiny-slider/dist/tiny-slider.css';
@@ -17,8 +18,7 @@ const HotelGridCard = ({ feature, images, name, price, rating, sale }: HotelsGri
   const { isOpen, toggle } = useToggle();
   const { dir } = useLayoutContext();
 
-  const gridSliderSettings: TinySliderSettings = {
-    nested: 'inner',
+  const gridSliderSettings: TinySliderSettings = useMemo(() => ({
     mouseDrag: true,
     gutter: 0,
     items: 1,
@@ -33,20 +33,20 @@ const HotelGridCard = ({ feature, images, name, price, rating, sale }: HotelsGri
     slideBy: 'page',
     autoWidth: false,
     preventScrollOnTouch: 'auto',
-  };
+  }), [dir]);
 
   return (
     <Card className="shadow p-2 pb-0 h-100 border-0">
       {sale && (
-        <div className="position-absolute top-0 start-0 z-index-1 m-4">
+        <div className="position-absolute top-0 start-0 z-index-2 m-4">
           <div className="badge bg-danger text-white">{sale}</div>
         </div>
       )}
-      <div className="tiny-slider arrow-round arrow-xs arrow-dark rounded-2 overflow-hidden">
+      <div className="tiny-slider arrow-round arrow-xs arrow-dark rounded-2 overflow-hidden" style={{ height: '200px' }}>
         <TinySlider settings={gridSliderSettings}>
           {images.map((image, idx) => (
             <div key={idx}>
-              <img src={image} alt="Card image" className="card-img-top w-100" />
+              <SkeletonImage src={image} alt="Card image" className="card-img-top w-100" height="200px" />
             </div>
           ))}
         </TinySlider>

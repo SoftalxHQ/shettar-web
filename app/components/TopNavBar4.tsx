@@ -99,7 +99,7 @@ const TopNavBar4 = () => {
 
             <ul className="nav flex-row align-items-center list-unstyled">
               <Dropdown className="nav-item ms-2 me-3 ms-md-3">
-                <DropdownToggle className="nav-notification btn btn-light p-0 mb-0 flex-centered arrow-none">
+                <DropdownToggle id="notificationDropdown" className="nav-notification btn btn-light p-0 mb-0 flex-centered arrow-none">
                   <BsBell />
                 </DropdownToggle>
 
@@ -219,7 +219,7 @@ const TopNavBar4 = () => {
                       {(themeModes ?? []).map((mode, idx) => {
                         const Icon = mode.icon;
                         return (
-                          <OverlayTrigger key={mode.theme + idx} overlay={<Tooltip>{mode.label}</Tooltip>}>
+                          <OverlayTrigger key={mode.theme + idx} overlay={<Tooltip id={`theme-tooltip-${mode.theme}`}>{mode.label}</Tooltip>}>
                             <button
                               onClick={() => updateTheme(mode.theme)}
                               type="button"

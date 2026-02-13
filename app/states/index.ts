@@ -1,2 +1,2 @@
 export * from './useLayoutContext';
-export const currency = '$';
+export const currency = '₦';

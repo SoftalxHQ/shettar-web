@@ -10,8 +10,12 @@ export { default as HotelGridLayout } from './HotelGridLayout';
 export { default as HotelGridCard } from './HotelGridCard';
 export { default as HotelLists } from './HotelLists';
 export { default as HotelListCard } from './HotelListCard';
+export { default as HotelListSkeleton } from './HotelListSkeleton';
+export { default as HotelGridSkeleton } from './HotelGridSkeleton';
 export { default as Footer } from './Footer';
 export { default as GlightBox } from './GlightBox';
+export { default as Skeleton } from './Skeleton';
+export { default as SkeletonImage } from './SkeletonImage';
 
 export { default as CheckFormInput } from './form/CheckFormInput';
 export { default as SelectFormInput } from './form/SelectFormInput';

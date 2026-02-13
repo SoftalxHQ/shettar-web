@@ -1,8 +1,8 @@
 'use client';
 
-import { TinySlider } from '@/app/components';
+import { TinySlider, SkeletonImage } from '@/app/components';
 import { currency } from '@/app/states';
-import { Fragment } from 'react';
+import { Fragment, useMemo } from 'react';
 import { Button, Card, CardBody, Col, Dropdown, DropdownItem, DropdownMenu, DropdownToggle, Image, Row } from 'react-bootstrap';
 import { renderToString } from 'react-dom/server';
 import { BsArrowLeft, BsArrowRight, BsGeoAlt, BsPatchCheckFill } from 'react-icons/bs';
@@ -20,8 +20,7 @@ const HotelListCard = ({ hotel }: { hotel: Hotel }) => {
   // Assuming LTR as default since context is client-side only and might not be hydrated yet
   const dir = 'ltr';
 
-  const listSliderSettings: TinySliderSettings = {
-    nested: 'inner',
+  const listSliderSettings: TinySliderSettings = useMemo(() => ({
     mouseDrag: true,
     gutter: 0,
     items: 1,
@@ -36,24 +35,23 @@ const HotelListCard = ({ hotel }: { hotel: Hotel }) => {
     slideBy: 'page',
     autoWidth: false,
     preventScrollOnTouch: 'auto',
-  };
+  }), [dir]);
 
   return (
     <Card className="shadow p-2">
       <Row className="g-0">
         <Col md={5} className="position-relative">
           {sale && (
-            <div className="position-absolute top-0 start-0 z-index-1 m-2">
+            <div className="position-absolute top-0 start-0 z-index-2 m-2">
               <div className="badge text-bg-danger">{sale}</div>
             </div>
           )}
 
-          <div className="tiny-slider arrow-round arrow-xs arrow-dark overflow-hidden rounded-2">
+          <div className="tiny-slider arrow-round arrow-xs arrow-dark overflow-hidden rounded-2" style={{ height: '250px' }}>
             <TinySlider settings={listSliderSettings}>
               {images.map((image, idx) => (
                 <div key={idx} className="position-relative">
-                  {/* Using standard img tag temporarily as Next/Image requires width/height or fill+parent sizing */}
-                  <img src={image} alt="Card image" className="card-img-top w-100" />
+                  <SkeletonImage src={image} alt="Card image" className="card-img-top w-100" height="250px" />
                 </div>
               ))}
             </TinySlider>
