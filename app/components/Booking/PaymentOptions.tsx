@@ -17,7 +17,7 @@ import {
 } from 'react-bootstrap';
 import { BsCreditCard, BsGlobe2, BsPaypal, BsWalletFill } from 'react-icons/bs';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { FaPlus } from 'react-icons/fa6';
 import { useForm } from 'react-hook-form';
 import * as yup from 'yup';
@@ -34,6 +34,10 @@ const paymentCards = [
 ];
 
 const PaymentOptions = ({ room, hotel }: { room: any, hotel: any }) => {
+  const params = useParams();
+  const hotelSlug = params.hotelSlug as string;
+  const roomSlug = params.roomSlug as string;
+
   const price = room?.price || 0;
   const nights = 1;
   const total = (price * nights) * 1.05; // Matching PriceSummary taxes
@@ -54,7 +58,7 @@ const PaymentOptions = ({ room, hotel }: { room: any, hotel: any }) => {
   const { isOpen, toggle } = useToggle(true);
 
   const onSubmit = () => {
-    router.push('/booking-confirmed');
+    router.push(`/hotel/${hotelSlug}/roomtype/${roomSlug}/booking-confirmed`);
   };
 
   return (
