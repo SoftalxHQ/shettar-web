@@ -24,7 +24,7 @@ const splitArray = <T,>(array: T[], size: number): T[][] => {
   return result;
 };
 
-const RoomCard = ({ id, features, images, name, price, sale, schemes }: HotelsRoomType) => {
+const RoomCard = ({ id, slug, features, images, name, price, sale, schemes }: HotelsRoomType) => {
   const { isOpen, toggle } = useToggle();
 
   const roomSliderSettings: TinySliderSettings = useMemo(() => ({
@@ -46,111 +46,119 @@ const RoomCard = ({ id, features, images, name, price, sale, schemes }: HotelsRo
   const formattedPrice = typeof price === 'number' ? price : parseFloat(price || '0');
 
   return (
-    <Card className="shadow p-3">
-      <Row className="g-4">
-        <Col md={5} className="position-relative">
-          {sale && (
-            <div className="position-absolute top-0 start-0 z-index-1 mt-3 ms-4">
-              <div className="badge text-bg-danger">{sale}</div>
-            </div>
-          )}
-          <div className="tiny-slider arrow-round arrow-xs arrow-dark overflow-hidden rounded-2" style={{ height: '220px' }}>
-            <TinySlider settings={roomSliderSettings}>
-              {images.map((image, idx) => (
-                <div key={idx}>
-                  <SkeletonImage src={image} alt="Room image" className="w-100" height="220px" />
-                </div>
-              ))}
-            </TinySlider>
-          </div>
-          <Link href="#" className="btn btn-link text-decoration-underline p-0 mb-0 mt-1 items-center" onClick={(e) => { e.preventDefault(); toggle(); }}>
-            <BsEyeFill className=" me-1" />
-            View more details
-          </Link>
-        </Col>
-        <Col md={7}>
-          <div className="card-body d-flex flex-column h-100 p-0">
-            <h5 className="card-title">
-              {name}
-            </h5>
-            <ul className="nav nav-divider mb-2">
-              {features.map((feature, idx) => (
-                <li key={idx} className="nav-item small">
-                  {feature}
-                </li>
-              ))}
-            </ul>
-
-            {schemes ? (
-              schemes.map((scheme, idx) => (
-                <p key={idx} className="text-success mb-1 small">
-                  <FaCheckCircle className="me-2" />
-                  {scheme}
-                </p>
-              ))
-            ) : (
-              <p className="text-danger mb-3">Non Refundable</p>
-            )}
-
-            <div className="d-sm-flex justify-content-sm-between align-items-center mt-auto">
-              <div className="d-flex align-items-center">
-                <h5 className="fw-bold mb-0 me-1">
-                  {currency}
-                  {formattedPrice.toLocaleString()}
-                </h5>
-                <span className="mb-0 me-2 small">/night</span>
+    <>
+      <Card className="card-hover-shadow border-0 overflow-hidden mb-4 shadow-sm">
+        <Row className="g-0">
+          <Col md={4} className="position-relative">
+            {sale && (
+              <div className="position-absolute top-0 start-0 z-index-1 mt-3 ms-3">
+                <div className="badge text-bg-danger">{sale}</div>
               </div>
-              <div className="mt-3 mt-sm-0">
-                <Button variant="primary" size="sm" className="mb-0">
+            )}
+            <div className="tiny-slider arrow-round arrow-xs arrow-dark h-100">
+              <div className="position-absolute top-0 start-0 w-100 h-100 tns-height-fix">
+                <TinySlider settings={roomSliderSettings} className="h-100">
+                  {images.map((image, idx) => (
+                    <div key={idx} className="h-100">
+                      <SkeletonImage src={image} alt="Room image" className="w-100 h-100" height="100%" />
+                    </div>
+                  ))}
+                </TinySlider>
+              </div>
+            </div>
+            <style dangerouslySetInnerHTML={{
+              __html: `
+              .tns-height-fix .tns-outer,
+              .tns-height-fix .tns-inner,
+              .tns-height-fix .tns-ovh,
+              .tns-height-fix .tns-slider {
+                height: 100% !important;
+              }
+            `}} />
+          </Col>
+          <Col md={8}>
+            <div className="card-body p-3 p-md-4">
+              <h5 className="card-title mb-1">
+                {name}
+              </h5>
+              <ul className="nav nav-divider mb-2">
+                {features.map((feature, idx) => (
+                  <li key={idx} className="nav-item small text-muted">
+                    {feature}
+                  </li>
+                ))}
+              </ul>
+
+              <div className="mb-3">
+                {schemes ? (
+                  schemes.map((scheme, idx) => (
+                    <p key={idx} className="text-success mb-1 small fw-medium">
+                      <FaCheckCircle className="me-2" />
+                      {scheme}
+                    </p>
+                  ))
+                ) : (
+                  <p className="text-danger mb-1 small text-uppercase">Non Refundable</p>
+                )}
+              </div>
+
+              <div className="d-flex justify-content-between align-items-center">
+                <div className="d-flex align-items-center">
+                  <h3 className="fw-bold mb-0">
+                    {currency}{formattedPrice.toLocaleString()}
+                  </h3>
+                  <span className="ms-1 small text-muted">/night</span>
+                </div>
+                <Button variant="primary" className="mb-0 px-4">
                   Select Room
                 </Button>
               </div>
             </div>
-          </div>
+          </Col>
+        </Row>
+      </Card>
 
-          <Modal show={isOpen} onHide={toggle}>
-            <ModalHeader closeButton className="p-3">
-              <h5 className="modal-title mb-0">
-                {name}
-              </h5>
-            </ModalHeader>
-            <ModalBody className="p-0">
-              <Card className="bg-transparent p-3 border-0">
-                <div className="tiny-slider arrow-round arrow-dark overflow-hidden rounded-2" style={{ height: '250px' }}>
-                  <TinySlider settings={roomSliderSettings} className="rounded-2 overflow-hidden">
-                    {images.map((image, idx) => (
-                      <div key={idx}>
-                        <SkeletonImage src={image} className="rounded-2 w-100" alt="Room detail" height="250px" />
-                      </div>
-                    ))}
-                  </TinySlider>
-                </div>
-                <CardBody className="px-0">
-                  <p className="small">
-                    High-quality room with modern amenities, comfortable bedding, and a peaceful environment to ensure a pleasant stay.
-                  </p>
-                  <h5 className="mb-3">Room Amenities</h5>
-                  {amenitiesChunks.map((chunk, idx) => (
-                    <Row key={idx}>
-                      {chunk.map((item, idx) => (
-                        <Col key={idx} md={6}>
-                          <ul className="list-group list-group-borderless mb-2">
-                            <li className="list-group-item d-flex mb-0 p-0 align-items-center">
-                              <FaCheckCircle className="text-success me-2" size={14} />
-                              <span className="h6 fw-light mb-0 small">{item}</span>
-                            </li>
-                          </ul>
-                        </Col>
-                      ))}
-                    </Row>
+      <Modal show={isOpen} onHide={toggle}>
+        <ModalHeader closeButton className="p-3">
+          <h5 className="modal-title mb-0">
+            {name}
+          </h5>
+        </ModalHeader>
+        <ModalBody className="p-0">
+          <Card className="bg-transparent p-3 border-0">
+            <div className="tiny-slider arrow-round arrow-dark overflow-hidden rounded-2" style={{ height: '250px' }}>
+              <TinySlider settings={roomSliderSettings} className="rounded-2 overflow-hidden">
+                {images.map((image, idx) => (
+                  <div key={idx}>
+                    <SkeletonImage src={image} className="rounded-2 w-100" alt="Room detail" height="250px" />
+                  </div>
+                ))}
+              </TinySlider>
+            </div>
+            <CardBody className="px-0">
+              <p className="small">
+                High-quality room with modern amenities, comfortable bedding, and a peaceful environment to ensure a pleasant stay.
+              </p>
+              <h5 className="mb-3">Room Amenities</h5>
+              {amenitiesChunks.map((chunk, idx) => (
+                <Row key={idx}>
+                  {chunk.map((item, idx) => (
+                    <Col key={idx} md={6}>
+                      <ul className="list-group list-group-borderless mb-2">
+                        <li className="list-group-item d-flex mb-0 p-0 align-items-center">
+                          <FaCheckCircle className="text-success me-2" size={14} />
+                          <span className="h6 fw-light mb-0 small">{item}</span>
+                        </li>
+                      </ul>
+                    </Col>
                   ))}
-                </CardBody>
-              </Card>
-            </ModalBody>
-          </Modal>
-        </Col>
-      </Row>
-    </Card>
+                </Row>
+              ))}
+            </CardBody>
+          </Card>
+        </ModalBody>
+      </Modal>
+    </>
   );
 };
 

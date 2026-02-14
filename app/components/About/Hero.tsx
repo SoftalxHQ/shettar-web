@@ -31,15 +31,15 @@ const Hero = () => {
         </Row>
         <Row className="g-4 align-items-center">
           <Col md={6}>
-            <Image src="/images/hotels/02.jpg" className="rounded-3 img-fluid" alt="about" />
+            <Image src="/images/hotel/02.jpg" className="rounded-3 img-fluid" alt="about" />
           </Col>
           <Col md={6}>
             <Row className="g-4">
               <Col md={8}>
-                <Image src="/images/hotels/03.jpg" className="rounded-3 img-fluid" alt="about" />
+                <Image src="/images/hotel/03.jpg" className="rounded-3 img-fluid" alt="about" />
               </Col>
               <Col xs={12}>
-                <Image src="/images/hotels/04.jpg" className="rounded-3 img-fluid" alt="about" />
+                <Image src="/images/hotel/04.jpg" className="rounded-3 img-fluid" alt="about" />
               </Col>
             </Row>
           </Col>

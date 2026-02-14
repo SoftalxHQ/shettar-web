@@ -1,4 +1,6 @@
 export type WishCardType = {
+  id: number;
+  slug: string;
   name: string;
   address: string;
   rating: number;
@@ -8,6 +10,8 @@ export type WishCardType = {
 
 export const wishListCards: WishCardType[] = [
   {
+    id: 2,
+    slug: 'pride-moon-village-resort-spa',
     name: 'Pride moon Village Resort & Spa',
     address: '31J W Spark Street, California - 24578',
     rating: 4.5,
@@ -15,6 +19,8 @@ export const wishListCards: WishCardType[] = [
     image: '/images/category/hotel/4by3/10.jpg',
   },
   {
+    id: 3,
+    slug: 'royal-beach-resort',
     name: 'Royal Beach Resort',
     address: 'Manhattan street, London - 24578',
     rating: 4.5,

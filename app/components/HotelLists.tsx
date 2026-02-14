@@ -50,6 +50,7 @@ const HotelLists = () => {
 
           return {
             id: b.id,
+            slug: b.slug,
             name: b.name,
             address: `${b.address}, ${b.city}, ${b.state}`,
             images: b.images_url || [],
@@ -112,12 +113,12 @@ const HotelLists = () => {
               </Button>
               <ul className="nav nav-pills nav-pills-dark" id="tour-pills-tab" role="tablist">
                 <li className="nav-item">
-                  <Link className="nav-link rounded-start rounded-0 mb-0 active " href="/hotels/list">
+                  <Link className="nav-link rounded-start rounded-0 mb-0 active " href="/hotel/list">
                     <BsListUl className=" fa-fw mb-1" />
                   </Link>
                 </li>
                 <li className="nav-item">
-                  <Link className="nav-link rounded-end rounded-0 mb-0 " href="/hotels/grid">
+                  <Link className="nav-link rounded-end rounded-0 mb-0 " href="/hotel/grid">
                     <BsGridFill className=" fa-fw mb-1" />
                   </Link>
                 </li>

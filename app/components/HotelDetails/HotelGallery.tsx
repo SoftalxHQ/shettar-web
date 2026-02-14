@@ -7,7 +7,7 @@ import { FaFacebookSquare, FaShareAlt, FaTwitterSquare } from 'react-icons/fa';
 import { FaCopy, FaHeart, FaLinkedin } from 'react-icons/fa6';
 import Link from 'next/link';
 import GlightBox from '../GlightBox';
-import { Skeleton } from '../';
+import { Skeleton, SkeletonImage } from '../';
 import { useState } from 'react';
 
 const HotelGallery = ({ hotel }: { hotel: any }) => {
@@ -110,9 +110,11 @@ const HotelGallery = ({ hotel }: { hotel: any }) => {
           <Row className="g-2">
             <Col md={6}>
               <GlightBox image={mainImage} data-glightbox="" data-gallery="hotel-gallery">
-                <Card
-                  className="card-grid-lg card-element-hover card-overlay-hover overflow-hidden"
-                  style={{ backgroundImage: `url(${mainImage})`, backgroundPosition: 'center', backgroundSize: 'cover' }}
+                <SkeletonImage
+                  src={mainImage}
+                  alt={hotel.name}
+                  height="400px"
+                  className="card-grid-lg card-element-hover card-overlay-hover overflow-hidden shadow-sm rounded-3"
                 >
                   <div className="hover-element position-absolute w-100 h-100">
                     <BsFullscreen
@@ -120,16 +122,18 @@ const HotelGallery = ({ hotel }: { hotel: any }) => {
                       className=" fs-6 text-white position-absolute top-50 start-50 translate-middle bg-dark rounded-1 p-2 lh-1"
                     />
                   </div>
-                </Card>
+                </SkeletonImage>
               </GlightBox>
             </Col>
             <Col md={6}>
               <Row className="g-2">
                 <Col xs={12}>
                   <GlightBox image={subImages[0] || mainImage} data-glightbox="" data-gallery="hotel-gallery">
-                    <Card
-                      className="card-grid-sm card-element-hover card-overlay-hover overflow-hidden"
-                      style={{ backgroundImage: `url(${subImages[0] || mainImage})`, backgroundPosition: 'center', backgroundSize: 'cover' }}
+                    <SkeletonImage
+                      src={subImages[0] || mainImage}
+                      alt={hotel.name}
+                      height="200px"
+                      className="card-grid-sm card-element-hover card-overlay-hover overflow-hidden shadow-sm rounded-3"
                     >
                       <div className="hover-element position-absolute w-100 h-100">
                         <BsFullscreen
@@ -137,14 +141,16 @@ const HotelGallery = ({ hotel }: { hotel: any }) => {
                           className=" fs-6 text-white position-absolute top-50 start-50 translate-middle bg-dark rounded-1 p-2 lh-1"
                         />
                       </div>
-                    </Card>
+                    </SkeletonImage>
                   </GlightBox>
                 </Col>
                 <Col md={6}>
                   <GlightBox image={subImages[1] || mainImage} data-glightbox="" data-gallery="hotel-gallery">
-                    <Card
-                      className="card-grid-sm card-element-hover card-overlay-hover overflow-hidden"
-                      style={{ backgroundImage: `url(${subImages[1] || mainImage})`, backgroundPosition: 'center', backgroundSize: 'cover' }}
+                    <SkeletonImage
+                      src={subImages[1] || mainImage}
+                      alt={hotel.name}
+                      height="200px"
+                      className="card-grid-sm card-element-hover card-overlay-hover overflow-hidden shadow-sm rounded-3"
                     >
                       <div className="hover-element position-absolute w-100 h-100">
                         <BsFullscreen
@@ -152,13 +158,15 @@ const HotelGallery = ({ hotel }: { hotel: any }) => {
                           className="bifs-6 text-white position-absolute top-50 start-50 translate-middle bg-dark rounded-1 p-2 lh-1"
                         />
                       </div>
-                    </Card>
+                    </SkeletonImage>
                   </GlightBox>
                 </Col>
                 <Col md={6}>
-                  <Card
-                    className="card-grid-sm overflow-hidden"
-                    style={{ backgroundImage: `url(${subImages[2] || mainImage})`, backgroundPosition: 'center', backgroundSize: 'cover' }}
+                  <SkeletonImage
+                    src={subImages[2] || mainImage}
+                    alt={hotel.name}
+                    height="200px"
+                    className="card-grid-sm overflow-hidden shadow-sm rounded-3"
                   >
                     <div className="bg-overlay bg-dark opacity-7" />
                     <GlightBox image={subImages[2] || mainImage} data-glightbox="" data-gallery="hotel-gallery" className="stretched-link z-index-9" />
@@ -172,7 +180,7 @@ const HotelGallery = ({ hotel }: { hotel: any }) => {
                         </Link>
                       </h6>
                     </div>
-                  </Card>
+                  </SkeletonImage>
                 </Col>
               </Row>
             </Col>

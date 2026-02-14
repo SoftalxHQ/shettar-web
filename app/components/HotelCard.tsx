@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useState } from 'react';
 import { Hotel } from '../types/hotel';
 import Image from 'next/image';
@@ -99,7 +100,7 @@ export default function HotelCard({ hotel }: HotelCardProps) {
 
         {/* Hotel Name */}
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-          <a href={`/hotels/${hotel.id}`}>{hotel.name}</a>
+          <Link href={`/hotel/${hotel.slug || hotel.id}`}>{hotel.name}</Link>
         </h3>
 
         {/* Features */}
@@ -127,15 +128,15 @@ export default function HotelCard({ hotel }: HotelCardProps) {
             </div>
 
             {/* View Detail Button */}
-            <a
-              href={`/hotels/${hotel.id}`}
+            <Link
+              href={`/hotel/${hotel.slug || hotel.id}`}
               className="inline-flex items-center justify-center gap-2 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-4 py-2 rounded-lg hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 dark:hover:text-white transition-colors duration-200 text-sm font-medium"
             >
               View Detail
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
-            </a>
+            </Link>
           </div>
         </div>
       </div>

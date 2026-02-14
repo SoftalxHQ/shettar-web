@@ -69,7 +69,7 @@ const WishCard = ({ wishCard }: { wishCard: WishCardType }) => {
               </ul>
             </div>
             <h5 className="card-title mb-1">
-              <Link href="/hotels/detail">{name}</Link>
+              <Link href={`/hotel/${wishCard.slug || wishCard.id}`}>{name}</Link>
             </h5>
             <small className="items-center">
               <BsGeoAlt className=" me-2" />
@@ -84,7 +84,7 @@ const WishCard = ({ wishCard }: { wishCard: WishCardType }) => {
                 <span className="mb-0 me-2 small">/day</span>
               </div>
               <div className="mt-3 mt-sm-0">
-                <Link href="/hotels/detail" className="btn btn-sm btn-dark w-100 mb-0">
+                <Link href={`/hotel/${wishCard.slug || wishCard.id}`} className="btn btn-sm btn-dark w-100 mb-0">
                   View hotel
                 </Link>
               </div>

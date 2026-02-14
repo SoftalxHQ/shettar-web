@@ -19,10 +19,10 @@ const footerLinks = [
   {
     title: 'Explore',
     items: [
-      { name: 'Hotels', link: '/hotels' },
-      { name: 'Near Me', link: '/hotels' },
-      { name: 'Best Deals', link: '/hotels' },
-      { name: 'Luxury Stays', link: '/hotels' },
+      { name: 'Hotels', link: '/hotel' },
+      { name: 'Near Me', link: '/hotel' },
+      { name: 'Best Deals', link: '/hotel' },
+      { name: 'Luxury Stays', link: '/hotel' },
     ],
   },
 ];
@@ -79,16 +79,16 @@ export default function FooterWithLinks() {
             <h5 className="text-white mb-3 mb-md-4">Explore</h5>
             <Nav className="flex-column text-primary-hover">
               <NavItem>
-                <NavLink className="text-body-secondary ps-0" href="/hotels">Hotels</NavLink>
+                <NavLink className="text-body-secondary ps-0" href="/hotel">Hotels</NavLink>
               </NavItem>
               <NavItem>
-                <NavLink className="text-body-secondary ps-0" href="/hotels">Near Me</NavLink>
+                <NavLink className="text-body-secondary ps-0" href="/hotel">Near Me</NavLink>
               </NavItem>
               <NavItem>
-                <NavLink className="text-body-secondary ps-0" href="/hotels">Best Deals</NavLink>
+                <NavLink className="text-body-secondary ps-0" href="/hotel">Best Deals</NavLink>
               </NavItem>
               <NavItem>
-                <NavLink className="text-body-secondary ps-0" href="/hotels">Luxury Stays</NavLink>
+                <NavLink className="text-body-secondary ps-0" href="/hotel">Luxury Stays</NavLink>
               </NavItem>
             </Nav>
           </Col>

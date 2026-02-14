@@ -11,7 +11,7 @@ import { Hotel } from '@/app/types/hotel';
 import { Skeleton } from '@/app/components';
 
 export default function HotelDetailPage() {
-  const { id } = useParams();
+  const { slug } = useParams();
   const [hotel, setHotel] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -20,7 +20,7 @@ export default function HotelDetailPage() {
     setIsLoading(true);
     try {
       const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
-      let url = `${API_URL}/api/v1/businesses/${id}`;
+      let url = `${API_URL}/api/v1/businesses/${slug}`;
 
       if (searchParams) {
         const query = new URLSearchParams();
@@ -47,10 +47,10 @@ export default function HotelDetailPage() {
   };
 
   useEffect(() => {
-    if (id) {
+    if (slug) {
       fetchHotelDetail();
     }
-  }, [id]);
+  }, [slug]);
 
   const handleSearch = (searchData: any) => {
     const params = {
@@ -90,7 +90,7 @@ export default function HotelDetailPage() {
         <div className="container mt-5 pt-5 text-center py-5 my-5">
           <h2 className="text-danger mb-3">Error</h2>
           <p className="mb-4">{error || 'Something went wrong.'}</p>
-          <a href="/hotels/list" className="btn btn-primary px-4">Back to Hotels</a>
+          <a href="/hotel/list" className="btn btn-primary px-4">Back to Hotels</a>
         </div>
         <Footer />
       </>

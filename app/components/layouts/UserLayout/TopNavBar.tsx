@@ -25,7 +25,7 @@ import {
 } from 'react-bootstrap';
 import { BsBell, BsBookmarkCheck, BsCircleHalf, BsGear, BsHeart, BsInfoCircle, BsLightningCharge, BsMoonStars, BsPerson, BsPower, BsStar, BsSun } from 'react-icons/bs';
 import Link from 'next/link';
-import { notificationData } from '@/app/data/hotels';
+import { notificationData } from '@/app/data/hotel';
 
 import avatar1 from '@/public/images/avatar/01.jpg';
 

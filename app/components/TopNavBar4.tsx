@@ -30,7 +30,7 @@ import { useLayoutContext } from '@/app/states';
 
 import avatar1 from '@/public/images/avatar/01.jpg';
 
-import { notificationData } from '@/app/data/hotels';
+import { notificationData } from '@/app/data/hotel';
 
 type ThemeModeType = {
   theme: 'light' | 'dark' | 'auto';

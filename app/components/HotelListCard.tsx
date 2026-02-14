@@ -119,7 +119,7 @@ const HotelListCard = ({ hotel }: { hotel: Hotel }) => {
               </ul>
             </div>
             <h5 className="card-title mb-1">
-              <Link href={`/hotels/${hotel.id}`}>{name}</Link>
+              <Link href={`/hotel/${hotel.slug || hotel.id}`}>{name}</Link>
             </h5>
             <small className="d-flex align-items-center">
               <BsGeoAlt className="me-2" />
@@ -161,7 +161,7 @@ const HotelListCard = ({ hotel }: { hotel: Hotel }) => {
                 {sale && <span className="text-decoration-line-through mb-0 small">{currency}{((price || 0) * 1.25).toLocaleString()}</span>}
               </div>
               <div className="mt-3 mt-sm-0">
-                <Link href={`/hotels/${hotel.id}`} className="btn btn-sm btn-dark mb-0 w-100">
+                <Link href={`/hotel/${hotel.slug || hotel.id}`} className="btn btn-sm btn-dark mb-0 w-100">
                   Select Room
                 </Link>
               </div>

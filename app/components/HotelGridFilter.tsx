@@ -85,12 +85,12 @@ const HotelGridFilter = () => {
               </label>
               <ul className="nav nav-pills nav-pills-dark" id="tour-pills-tab" role="tablist">
                 <li className="nav-item">
-                  <Link className="nav-link rounded-start rounded-0 mb-0" href="/hotels/list" passHref>
+                  <Link className="nav-link rounded-start rounded-0 mb-0" href="/hotel/list" passHref>
                     <BsListUl size={16} className=" fa-fw" />
                   </Link>
                 </li>
                 <li className="nav-item">
-                  <Link className="nav-link rounded-end rounded-0 mb-0 active" href="/hotels/grid" passHref>
+                  <Link className="nav-link rounded-end rounded-0 mb-0 active" href="/hotel/grid" passHref>
                     <BsGridFill size={16} className=" fa-fw" />
                   </Link>
                 </li>

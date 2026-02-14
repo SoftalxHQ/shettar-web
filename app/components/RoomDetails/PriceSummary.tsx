@@ -47,7 +47,7 @@ const PriceSummary = () => {
             </li>
           </ul>
           <div className="d-grid gap-2">
-            <Link href="/hotels/booking">
+            <Link href="/hotel/booking">
               <Button variant="dark" className="mb-0 w-100">
                 Continue To Book
               </Button>

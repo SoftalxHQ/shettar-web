@@ -52,7 +52,7 @@ const RoomCard = ({ images, name, price, sqfeet }: HotelRoomType) => {
                 </h6>
                 <span className="fw-light">/per night</span>
               </div>
-              <Link href="/hotels/booking">
+              <Link href="/hotel/booking">
                 <Button size="sm" variant="dark" className="mb-0">
                   Select room
                 </Button>

@@ -3,6 +3,7 @@ import { FaCreditCard } from 'react-icons/fa6';
 
 export type HotelsRoomType = {
   id: number;
+  slug: string;
   name: string;
   sale?: string;
   images: string[];
@@ -32,6 +33,7 @@ export const notificationData: NotificationType[] = [
 const hotelRooms: HotelsRoomType[] = [
   {
     id: 1,
+    slug: 'luxury-room-with-balcony',
     name: 'Luxury Room with Balcony',
     images: ['/images/category/hotel/4by3/04.jpg', '/images/category/hotel/4by3/03.jpg', '/images/category/hotel/4by3/02.jpg', '/images/category/hotel/4by3/01.jpg'],
     price: 750,
@@ -41,6 +43,7 @@ const hotelRooms: HotelsRoomType[] = [
   },
   {
     id: 2,
+    slug: 'pride-moon-village-resort-spa',
     name: 'Pride moon Village Resort & Spa',
     images: ['/images/category/hotel/4by3/04.jpg', '/images/category/hotel/4by3/03.jpg', '/images/category/hotel/4by3/02.jpg', '/images/category/hotel/4by3/01.jpg'],
     price: 980,

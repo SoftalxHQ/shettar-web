@@ -14,7 +14,7 @@ import 'tiny-slider/dist/tiny-slider.css';
 
 import { HotelsGridType } from '@/app/types/hotel';
 
-const HotelGridCard = ({ id, feature, images, name, price, rating, sale }: HotelsGridType) => {
+const HotelGridCard = ({ id, slug, feature, images, name, price, rating, sale }: HotelsGridType) => {
   const { isOpen, toggle } = useToggle();
   const { dir } = useLayoutContext();
 
@@ -62,7 +62,7 @@ const HotelGridCard = ({ id, feature, images, name, price, rating, sale }: Hotel
           </Link>
         </div>
         <h5 className="card-title">
-          <Link href={`/hotels/${id}`}>{name}</Link>
+          <Link href={`/hotel/${slug || id}`}>{name}</Link>
         </h5>
         <ul className="nav nav-divider mb-2 mb-sm-3">
           {feature.map((feat, idx) => (
@@ -84,7 +84,7 @@ const HotelGridCard = ({ id, feature, images, name, price, rating, sale }: Hotel
             {sale && <span className="text-decoration-line-through small">{currency}{((price || 0) * 1.25).toLocaleString()}</span>}
           </div>
           <div className="mt-2 mt-sm-0">
-            <Link href={`/hotels/${id}`} className="btn btn-sm btn-primary-soft mb-0 w-100 items-center">
+            <Link href={`/hotel/${slug || id}`} className="btn btn-sm btn-primary-soft mb-0 w-100 items-center">
               View Detail
               <BsArrowRight className=" ms-2" />
             </Link>

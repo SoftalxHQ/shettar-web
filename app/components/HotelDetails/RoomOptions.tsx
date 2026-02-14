@@ -32,6 +32,7 @@ const RoomOptions = ({ availableRoomTypes }: { availableRoomTypes: any[] }) => {
                 features={['Air Conditioning', 'Wifi', 'Kitchen', 'pool']} // Fallback features until API provides them per room type
                 images={room_type.images_url || ['/images/category/hotel/4by3/04.jpg']}
                 id={room_type.id}
+                slug={room_type.slug}
                 name={room_type.name}
                 price={room_type.price}
                 sale={room_type.old_price ? `${Math.round(((room_type.old_price - room_type.price) / room_type.old_price) * 100)}% Off` : undefined}

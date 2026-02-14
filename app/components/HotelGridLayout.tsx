@@ -39,6 +39,7 @@ const HotelGridLayout = () => {
 
           return {
             id: b.id,
+            slug: b.slug,
             name: b.name,
             address: `${b.address}, ${b.city}, ${b.state}`,
             images: b.images_url || [],
@@ -85,6 +86,7 @@ const HotelGridLayout = () => {
                   <Col key={idx} md={6} xl={4}>
                     <HotelGridCard
                       id={hotel.id}
+                      slug={hotel.slug}
                       name={hotel.name}
                       price={hotel.price}
                       feature={hotel.feature}
