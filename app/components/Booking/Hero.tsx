@@ -4,7 +4,7 @@ import { Card, CardBody, Col, Container, Image, Row } from 'react-bootstrap';
 import { BsHouse } from 'react-icons/bs';
 import Link from 'next/link';
 
-const Hero = () => {
+const Hero = ({ room }: { room: any }) => {
   return (
     <section className="py-0">
       <Container>
@@ -15,12 +15,12 @@ const Hero = () => {
                 <nav aria-label="breadcrumb">
                   <ol className="breadcrumb breadcrumb-dots mb-0">
                     <li className="breadcrumb-item">
-                      <Link href="/" className="items-center">
+                      <Link href="/" className="items-center text-primary text-decoration-none">
                         <BsHouse className=" me-2" /> Home
                       </Link>
                     </li>
                     <li className="breadcrumb-item">Hotel detail</li>
-                    <li className="breadcrumb-item active">Booking</li>
+                    <li className="breadcrumb-item active">{room?.name || 'Booking'}</li>
                   </ol>
                 </nav>
                 <h1 className="m-0 h2 card-title">Review your Booking</h1>

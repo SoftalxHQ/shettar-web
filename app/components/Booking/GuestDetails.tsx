@@ -82,18 +82,6 @@ const GuestDetails = () => {
           </Link>{' '}
           to prefill all details and get access to secret deals
         </Alert>
-        <Card className="border mt-4">
-          <CardHeader className="border-bottom bg-transparent">
-            <h5 className="card-title mb-0">Special request</h5>
-          </CardHeader>
-          <CardBody>
-            <form className="hstack flex-wrap gap-3">
-              {SpecialRequest.map((request, idx) => {
-                return <CheckFormInput key={idx} id={`checkbox-${idx}`} type="checkbox" name={`checkbox-${idx}`} label={request} control={control} />;
-              })}
-            </form>
-          </CardBody>
-        </Card>
       </CardBody>
     </Card>
   );

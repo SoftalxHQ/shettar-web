@@ -4,40 +4,41 @@ import { Card, CardBody, CardFooter, CardHeader, CardTitle } from 'react-bootstr
 
 const currency = '₦';
 
-const PriceSummary = () => {
+const PriceSummary = ({ room, hotel }: { room: any, hotel: any }) => {
+  const price = room?.price || 0;
+  const nights = 1; // Default for now
+  const roomCharges = price * nights;
+  const discount = 0;
+  const taxes = roomCharges * 0.05; // 5% tax example
+  const total = roomCharges - discount + taxes;
+
   return (
-    <Card className="shadow rounded-2">
-      <CardHeader className="border-bottom bg-transparent">
+    <Card className="shadow rounded-2 border-0">
+      <CardHeader className="border-bottom bg-transparent p-4">
         <CardTitle as="h5" className="mb-0">
           Price Summary
         </CardTitle>
       </CardHeader>
-      <CardBody>
+      <CardBody className="p-4">
         <ul className="list-group list-group-borderless">
-          <li className="list-group-item d-flex justify-content-between align-items-center">
+          <li className="list-group-item d-flex justify-content-between align-items-center px-0">
             <span className="h6 fw-light mb-0">Room Charges</span>
-            <span className="fs-5">{currency}28,660</span>
+            <span className="h6 mb-0">{currency}{roomCharges.toLocaleString()}</span>
           </li>
-          <li className="list-group-item d-flex justify-content-between align-items-center">
-            <span className="h6 fw-light mb-0">
-              Total Discount<span className="badge text-bg-danger smaller mb-0 ms-2">10% off</span>
-            </span>
-            <span className="fs-5 text-success">-{currency}2,560</span>
+          <li className="list-group-item d-flex justify-content-between align-items-center px-0">
+            <span className="h6 fw-light mb-0">Total Discount</span>
+            <span className="h6 mb-0 text-success">-{currency}{discount.toLocaleString()}</span>
           </li>
-          <li className="list-group-item d-flex justify-content-between align-items-center">
-            <span className="h6 fw-light mb-0">Price after discount</span>
-            <span className="fs-5">{currency}1852</span>
-          </li>
-          <li className="list-group-item d-flex justify-content-between align-items-center">
-            <span className="h6 fw-light mb-0">Taxes % Fees</span>
-            <span className="fs-5">{currency}350</span>
+          <li className="list-group-item d-flex justify-content-between align-items-center px-0">
+            <span className="h6 fw-light mb-0">Taxes &amp; Fees</span>
+            <span className="h6 mb-0">{currency}{taxes.toLocaleString()}</span>
           </li>
         </ul>
       </CardBody>
-      <CardFooter className="border-top bg-transparent">
-        <div className="d-flex justify-content-between align-items-center font-bold">
+      <CardFooter className="border-top bg-light p-4">
+        <div className="d-flex justify-content-between align-items-center">
           <span className="h5 mb-0">Payable Now</span>
-          <span className="h5 mb-0">{currency}22,500</span>
+          <span className="h5 mb-0 text-primary">{currency}{total.toLocaleString()}</span>
         </div>
       </CardFooter>
     </Card>

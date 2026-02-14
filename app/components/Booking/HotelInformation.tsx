@@ -8,40 +8,40 @@ import { FaStarHalfAlt } from 'react-icons/fa';
 
 const currentYear = new Date().getFullYear();
 
-const HotelInformation = () => {
+const HotelInformation = ({ room, hotel }: { room: any, hotel: any }) => {
+  const images = room?.images_url || [];
+  const mainImage = images[0] || '/images/category/hotel/4by3/02.jpg';
+
   return (
     <Card className="shadow">
       <CardHeader className="p-4 border-bottom">
         <h3 className="mb-0 items-center">
           <FaHotel className="me-2" />
-          Hotel Information
+          {hotel?.name} - {room?.name}
         </h3>
       </CardHeader>
       <CardBody className="p-4">
-        <Card className="mb-4">
-          <Row className="align-items-center">
+        <Card className="mb-4 shadow-none border p-3">
+          <Row className="align-items-center text-center text-md-start">
             <Col sm={6} md={3}>
-              <Image src="/images/category/hotel/4by3/02.jpg" className="card-img" alt="hotel" />
+              <Image src={mainImage} className="card-img rounded-2" alt="hotel" style={{ height: '100px', objectFit: 'cover' }} />
             </Col>
             <Col sm={6} md={9}>
-              <CardBody className="pt-3 pt-sm-0 p-0">
-                <h5 className="card-title">
-                  <Link href="">Pride moon Village Resort &amp; Spa</Link>
+              <CardBody className="pt-3 pt-sm-0 p-0 ps-md-3">
+                <h5 className="card-title mb-1">
+                  <Link href={`/hotel/${hotel?.slug}`} className="text-decoration-none text-dark">{hotel?.name || 'Hotel Name'}</Link>
                 </h5>
-                <p className="small mb-2 items-center">
-                  <BsGeoAlt className=" me-2" />
-                  5855 W Century Blvd, Los Angeles - 90045
+                <p className="small mb-2 items-center text-muted">
+                  <BsGeoAlt className=" me-2 text-primary" />
+                  {hotel?.address}, {hotel?.city}, {hotel?.state}
                 </p>
                 <ul className="list-inline mb-0 items-center">
-                  {Array.from(new Array(4)).map((_val, idx) => (
+                  {Array.from(new Array(5)).map((_val, idx) => (
                     <li key={idx} className="list-inline-item me-1 mb-1 small">
-                      <FaStar size={16} className="text-warning" />
+                      <FaStar size={14} className="text-warning" />
                     </li>
                   ))}
-                  <li className="list-inline-item me-0 mb-1 small">
-                    <FaStarHalfAlt size={16} className="text-warning" />
-                  </li>
-                  <li className="list-inline-item ms-3 h6 small fw-bold mb-0">4.5/5.0</li>
+                  <li className="list-inline-item ms-2 h6 small fw-bold mb-0">5.0/5.0</li>
                 </ul>
               </CardBody>
             </Col>
@@ -49,64 +49,35 @@ const HotelInformation = () => {
         </Card>
         <Row className="g-4">
           <Col lg={4}>
-            <div className="bg-light py-3 px-4 rounded-3">
-              <h6 className="fw-light small mb-1">Check-in</h6>
-              <h5 className="mb-1">4 March {currentYear}</h5>
-              <small className="items-center">
+            <div className="bg-light py-3 px-4 rounded-3 h-100 border">
+              <h6 className="fw-light small mb-1 text-muted">Check-in</h6>
+              <h5 className="mb-1 h6">4 March {currentYear}</h5>
+              <small className="items-center text-muted">
                 <BsAlarm className=" me-1" />
-                12:30 pm
+                {hotel?.check_in || '12:00 pm'}
               </small>
             </div>
           </Col>
           <Col lg={4}>
-            <div className="bg-light py-3 px-4 rounded-3">
-              <h6 className="fw-light small mb-1">Check out</h6>
-              <h5 className="mb-1">8 March {currentYear}</h5>
-              <small className="items-center">
+            <div className="bg-light py-3 px-4 rounded-3 h-100 border">
+              <h6 className="fw-light small mb-1 text-muted">Check out</h6>
+              <h5 className="mb-1 h6">8 March {currentYear}</h5>
+              <small className="items-center text-muted">
                 <BsAlarm className=" me-1" />
-                4:30 pm
+                {hotel?.check_out || '11:00 am'}
               </small>
             </div>
           </Col>
           <Col lg={4}>
-            <div className="bg-light py-3 px-4 rounded-3">
-              <h6 className="fw-light small mb-1">Rooms &amp; Guests</h6>
-              <h5 className="mb-1">2 G - 1 R</h5>
-              <small className="items-center">
-                <BsBrightnessHigh className=" me-1" />3 Nights - 4 Days
+            <div className="bg-light py-3 px-4 rounded-3 h-100 border">
+              <h6 className="fw-light small mb-1 text-muted">Rooms &amp; Guests</h6>
+              <h5 className="mb-1 h6">2 Guests - 1 Room</h5>
+              <small className="items-center text-muted">
+                <BsBrightnessHigh className=" me-1" />{room?.name}
               </small>
             </div>
           </Col>
         </Row>
-        <Card className="border mt-4">
-          <CardHeader className="border-bottom d-md-flex justify-content-md-between bg-transparent">
-            <h5 className="card-title mb-0">Deluxe Pool View with Breakfast</h5>
-            <Button variant="link" className="p-0 mb-0">
-              View Cancellation Policy
-            </Button>
-          </CardHeader>
-          <CardBody className="card-body">
-            <h6>Price Included</h6>
-            <ul className="list-group list-group-borderless mb-0">
-              <li className="list-group-item h6 fw-light d-flex mb-0 items-center ">
-                <BsPatchCheckFill className=" text-success me-2" />
-                Free Breakfast and Lunch/Dinner.
-              </li>
-              <li className="list-group-item h6 fw-light d-flex mb-0 items-center ">
-                <BsPatchCheckFill className=" text-success me-2" />
-                Great Small Breaks.
-              </li>
-              <li className="list-group-item h6 fw-light d-flex mb-0 items-center ">
-                <BsPatchCheckFill className=" text-success me-2" />
-                Free Stay for Kids Below the age of 12 years.
-              </li>
-              <li className="list-group-item h6 fw-light d-flex mb-0 items-center ">
-                <BsPatchCheckFill className=" text-success me-2" />
-                On Cancellation, You will not get any refund
-              </li>
-            </ul>
-          </CardBody>
-        </Card>
       </CardBody>
     </Card>
   );

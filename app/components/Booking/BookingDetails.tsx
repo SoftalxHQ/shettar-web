@@ -8,24 +8,24 @@ import OfferAndDiscounts from './OfferAndDiscounts';
 import PaymentOptions from './PaymentOptions';
 import PriceSummary from './PriceSummary';
 
-const BookingDetails = () => {
+const BookingDetails = ({ room, hotel }: { room: any, hotel: any }) => {
   return (
     <section className="pt-4">
       <Container>
         <Row className="g-4 g-lg-5">
           <Col xl={8}>
             <div className="vstack gap-5">
-              <HotelInformation />
+              <HotelInformation room={room} hotel={hotel} />
 
               <GuestDetails />
 
-              <PaymentOptions />
+              <PaymentOptions room={room} hotel={hotel} />
             </div>
           </Col>
           <Col as="aside" xl={4}>
             <Row className="g-4">
               <Col md={6} xl={12}>
-                <PriceSummary />
+                <PriceSummary room={room} hotel={hotel} />
               </Col>
               <Col md={6} xl={12}>
                 <OfferAndDiscounts />
