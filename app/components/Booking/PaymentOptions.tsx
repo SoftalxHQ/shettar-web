@@ -25,7 +25,7 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import { SelectFormInput, TextFormInput } from '@/app/components';
 import { useToggle } from '@/app/hooks';
 
-const currency = '$';
+const currency = '₦';
 
 const paymentCards = [
   '/images/element/visa.svg',

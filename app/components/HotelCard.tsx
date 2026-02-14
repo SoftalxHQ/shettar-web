@@ -9,6 +9,7 @@ interface HotelCardProps {
 }
 
 export default function HotelCard({ hotel }: HotelCardProps) {
+  const currency = '₦';
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isBookmarked, setIsBookmarked] = useState(false);
 
@@ -117,11 +118,11 @@ export default function HotelCard({ hotel }: HotelCardProps) {
             {/* Price */}
             <div className="flex items-baseline gap-2">
               <span className="text-2xl font-bold text-green-600 dark:text-green-500">
-                ${hotel.price}
+                ₦{hotel.price.toLocaleString()}
               </span>
               <span className="text-sm text-gray-500">/day</span>
               {hotel.sale && (
-                <span className="text-sm text-gray-400 line-through">$1000</span>
+                <span className="text-sm text-gray-400 line-through">₦{(hotel.price * 1.25).toLocaleString()}</span>
               )}
             </div>
 

@@ -8,10 +8,17 @@ import Link from 'next/link';
 import Sticky from 'react-sticky-el';
 import useViewPort from '@/app/hooks/useViewPort';
 
-const currency = '$';
+const currency = '₦';
 
-const PriceOverView = () => {
+const PriceOverView = ({ hotel }: { hotel: any }) => {
   const { width } = useViewPort();
+
+  if (!hotel) return null;
+
+  const averageRating = hotel.average_rating || 0;
+  const reviewsCount = hotel.reviews_count || hotel.reviews?.length || 0;
+  const startingPrice = typeof hotel.starting_from === 'number' ? hotel.starting_from : parseFloat(hotel.starting_from || '0');
+  const oldPrice = typeof hotel.old_price === 'number' ? hotel.old_price : parseFloat(hotel.old_price || '0');
 
   return (
     <Sticky
@@ -21,63 +28,50 @@ const PriceOverView = () => {
       boundaryElement="aside"
       hideOnBoundaryHit={false}
       stickyStyle={{ transition: '0.2s all linear' }}>
-      <Card as={CardBody} className="border">
+      <Card as={CardBody} className="border shadow-sm">
         <div className="d-sm-flex justify-content-sm-between align-items-center mb-3">
           <div>
             <span>Price Start at</span>
-            <h4 className="card-title mb-0">{currency}3,500</h4>
+            <div className="d-flex align-items-center">
+              <h4 className="card-title mb-0 me-2">{currency}{startingPrice > 0 ? startingPrice.toLocaleString() : '---'}</h4>
+              {oldPrice > startingPrice && (
+                <span className="text-decoration-line-through small text-muted">{currency}{oldPrice.toLocaleString()}</span>
+              )}
+            </div>
           </div>
-          <div>
-            <h6 className="fw-normal mb-0">1 room per night</h6>
-            <small>+ {currency}285 taxes &amp; fees</small>
+          <div className="text-sm-end">
+            <h6 className="fw-normal mb-0">per night</h6>
+            <small className="text-muted">+ {currency}0 taxes &amp; fees</small>
           </div>
         </div>
         <ul className="list-inline mb-2 items-center">
           <li className="list-inline-item me-1 h6 fw-light mb-0">
-            <BsArrowRight className="  me-2" />
-            4.5
+            {averageRating}
           </li>
-          {Array.from(new Array(4)).map((_val, idx) => (
+          {Array.from(new Array(Math.floor(averageRating))).map((_val, idx) => (
             <li className="list-inline-item me-1 small" key={idx}>
               <FaStar size={16} className="text-warning" />
             </li>
           ))}
-          <li className="list-inline-item me-0 small">
-            <FaStarHalfAlt className="text-warning" />
-          </li>
+          {averageRating % 1 !== 0 && (
+            <li className="list-inline-item me-0 small">
+              <FaStarHalfAlt className="text-warning" />
+            </li>
+          )}
+          <li className="list-inline-item ms-2 small">({reviewsCount} reviews)</li>
         </ul>
         <p className="h6 fw-light mb-4 items-center">
-          <BsArrowRight className=" me-2" />
-          Free breakfast available
+          <BsArrowRight className=" me-2 text-primary" />
+          Best price guaranteed
         </p>
         <div className="d-grid">
-          <Link href="/hotels/room-detail">
-            <Button variant="primary-soft" size="lg" className="mb-0 w-100">
-              View 10 Rooms Options
+          <a href="#room-options">
+            <Button variant="primary" size="lg" className="mb-0 w-100">
+              View {hotel.available_room_types?.length || 0} Room Options
             </Button>
-          </Link>
+          </a>
         </div>
       </Card>
-      <div className="mt-4 d-none d-xl-block">
-        <h4>Today's Best Deal</h4>
-        <Card className="shadow rounded-3 overflow-hidden">
-          <Row className="g-0 align-items-center">
-            <Col sm={6} md={12} lg={6}>
-              <Image src="/images/offer/04.jpg" className="card-img rounded-0" alt="Offer" />
-            </Col>
-            <Col sm={6} md={12} lg={6}>
-              <CardBody className="p-3">
-                <h6 className="card-title">
-                  <Link href="/offer-detail" className="stretched-link">
-                    Travel Plan
-                  </Link>
-                </h6>
-                <p className="mb-0">Get up to {currency}10,000 for lifetime limits</p>
-              </CardBody>
-            </Col>
-          </Row>
-        </Card>
-      </div>
     </Sticky>
   );
 };

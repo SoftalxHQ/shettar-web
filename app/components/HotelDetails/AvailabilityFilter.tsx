@@ -17,11 +17,11 @@ type AvailabilityFormType = {
   };
 };
 
-const AvailabilityFilter = () => {
+const AvailabilityFilter = ({ hotel, onSearch, isLoading }: { hotel: any, onSearch?: (data: AvailabilityFormType) => void, isLoading?: boolean }) => {
   const { isOpen, toggle } = useToggle();
 
   const initialValue: AvailabilityFormType = {
-    location: 'San Jacinto, USA',
+    location: hotel ? `${hotel.city}, ${hotel.state}` : 'San Jacinto, USA',
     stayFor: [new Date(), new Date(Date.now() + 5 * 24 * 60 * 60 * 1000)],
     guests: {
       adults: 2,
@@ -31,6 +31,13 @@ const AvailabilityFilter = () => {
   };
 
   const [formValue, setFormValue] = useState<AvailabilityFormType>(initialValue);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (onSearch) {
+      onSearch(formValue);
+    }
+  };
 
   const updateGuests = (type: keyof AvailabilityFormType['guests'], increase: boolean = true) => {
     const val = formValue.guests[type];
@@ -60,17 +67,14 @@ const AvailabilityFilter = () => {
 
   const FilterInput = () => {
     return (
-      <div className="bg-light p-4 rounded w-100">
-        <form className="row g-4">
+      <div className="bg-body-tertiary p-4 rounded w-100 shadow-sm border">
+        <form className="row g-4" onSubmit={handleSubmit}>
           <Col md={6} lg={4}>
             <div className="form-size-lg form-fs-md">
               <label className="form-label">Location</label>
-              <SelectFormInput className="form-select js-choice">
-                <option value={-1}>Select location</option>
-                <option>San Jacinto, USA</option>
-                <option>North Dakota, Canada</option>
-                <option>West Virginia, Paris</option>
-              </SelectFormInput>
+              <div className="form-control-lg form-control selection-result d-flex align-items-center">
+                {formValue.location}
+              </div>
             </div>
           </Col>
           <Col md={6} lg={3}>
@@ -94,24 +98,24 @@ const AvailabilityFilter = () => {
                 <Dropdown className="guest-selector me-2">
                   <DropdownToggle
                     as="input"
-                    className="form-guest-selector form-control-lg form-control selection-result"
+                    className="form-guest-selector form-control-lg form-control selection-result cursor-pointer"
                     value={getGuestsValue()}
                     onChange={() => { }}
                     readOnly
                   />
 
-                  <DropdownMenu className="guest-selector-dropdown">
-                    <li className="d-flex justify-content-between px-3">
+                  <DropdownMenu className="guest-selector-dropdown shadow border">
+                    <li className="d-flex justify-content-between px-3 py-1">
                       <div>
                         <h6 className="mb-0">Adults</h6>
-                        <small>Ages 13 or above</small>
+                        <small className="text-muted">Ages 13 or above</small>
                       </div>
                       <div className="hstack gap-1 align-items-center">
-                        <Button variant="link" className="adult-remove p-0 mb-0" onClick={() => updateGuests('adults', false)}>
+                        <Button variant="link" className="adult-remove p-0 mb-0 text-reset" onClick={() => updateGuests('adults', false)}>
                           <BsDashCircle className=" fs-5 fa-fw" />
                         </Button>
-                        <h6 className="guest-selector-count mb-0 adults">{formValue.guests.adults ?? 0}</h6>
-                        <Button variant="link" className="adult-add p-0 mb-0" onClick={() => updateGuests('adults')}>
+                        <h6 className="guest-selector-count mb-0 adults" style={{ width: '20px', textAlign: 'center' }}>{formValue.guests.adults ?? 0}</h6>
+                        <Button variant="link" className="adult-add p-0 mb-0 text-reset" onClick={() => updateGuests('adults')}>
                           <BsPlusCircle className=" fs-5 fa-fw" />
                         </Button>
                       </div>
@@ -119,21 +123,21 @@ const AvailabilityFilter = () => {
 
                     <DropdownDivider />
 
-                    <li className="d-flex justify-content-between px-3">
+                    <li className="d-flex justify-content-between px-3 py-1">
                       <div>
                         <h6 className="mb-0">Children</h6>
-                        <small>Ages 13 below</small>
+                        <small className="text-muted">Ages 13 below</small>
                       </div>
                       <div className="hstack gap-1 align-items-center">
                         <Button
                           variant="link"
                           type="button"
-                          className="btn btn-link child-remove p-0 mb-0"
+                          className="btn btn-link child-remove p-0 mb-0 text-reset"
                           onClick={() => updateGuests('children', false)}>
                           <BsDashCircle className="fs-5 fa-fw" />
                         </Button>
-                        <h6 className="guest-selector-count mb-0 child">{formValue.guests.children ?? 0}</h6>
-                        <Button variant="link" type="button" className="btn btn-link child-add p-0 mb-0" onClick={() => updateGuests('children')}>
+                        <h6 className="guest-selector-count mb-0 child" style={{ width: '20px', textAlign: 'center' }}>{formValue.guests.children ?? 0}</h6>
+                        <Button variant="link" type="button" className="btn btn-link child-add p-0 mb-0 text-reset" onClick={() => updateGuests('children')}>
                           <BsPlusCircle className=" fs-5 fa-fw" />
                         </Button>
                       </div>
@@ -141,17 +145,17 @@ const AvailabilityFilter = () => {
 
                     <DropdownDivider />
 
-                    <li className="d-flex justify-content-between px-3">
+                    <li className="d-flex justify-content-between px-3 py-1">
                       <div>
                         <h6 className="mb-0">Rooms</h6>
-                        <small>Max room 8</small>
+                        <small className="text-muted">Max room 8</small>
                       </div>
                       <div className="hstack gap-1 align-items-center">
-                        <Button variant="link" type="button" className="room-remove p-0 mb-0" onClick={() => updateGuests('rooms', false)}>
+                        <Button variant="link" type="button" className="room-remove p-0 mb-0 text-reset" onClick={() => updateGuests('rooms', false)}>
                           <BsDashCircle className=" fs-5 fa-fw" />
                         </Button>
-                        <h6 className="guest-selector-count mb-0 rooms">{formValue.guests.rooms ?? 0}</h6>
-                        <Button variant="link" type="button" className="btn btn-link room-add p-0 mb-0" onClick={() => updateGuests('rooms')}>
+                        <h6 className="guest-selector-count mb-0 rooms" style={{ width: '20px', textAlign: 'center' }}>{formValue.guests.rooms ?? 0}</h6>
+                        <Button variant="link" type="button" className="btn btn-link room-add p-0 mb-0 text-reset" onClick={() => updateGuests('rooms')}>
                           <BsPlusCircle className=" fs-5 fa-fw" />
                         </Button>
                       </div>
@@ -162,9 +166,13 @@ const AvailabilityFilter = () => {
             </div>
           </Col>
           <Col md={6} lg={2} className="mt-md-auto">
-            <Button variant="primary" size="lg" className="w-100 mb-0 flex-centered" href="#">
-              <BsSearch className="fa-fw me-1" />
-              Search
+            <Button variant="primary" size="lg" className="w-100 mb-0 flex-centered" type="submit" disabled={isLoading}>
+              {isLoading ? (
+                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" />
+              ) : (
+                <BsSearch className="fa-fw me-1" />
+              )}
+              {isLoading ? 'Searching...' : 'Search'}
             </Button>
           </Col>
         </form>

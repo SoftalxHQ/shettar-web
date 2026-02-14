@@ -2,7 +2,7 @@
 
 import { Card, CardHeader } from 'react-bootstrap';
 
-const currency = '$';
+const currency = '₦';
 
 const OfferAndDiscounts = () => {
   return (

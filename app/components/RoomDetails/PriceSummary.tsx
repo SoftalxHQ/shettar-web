@@ -3,7 +3,7 @@
 import { Button, Card, CardBody, CardHeader, Col, Row } from 'react-bootstrap';
 import Link from 'next/link';
 
-const currency = '$';
+const currency = '₦';
 const currentYear = new Date().getFullYear();
 
 const PriceSummary = () => {

@@ -14,7 +14,7 @@ import 'tiny-slider/dist/tiny-slider.css';
 
 import { HotelsGridType } from '@/app/types/hotel';
 
-const HotelGridCard = ({ feature, images, name, price, rating, sale }: HotelsGridType) => {
+const HotelGridCard = ({ id, feature, images, name, price, rating, sale }: HotelsGridType) => {
   const { isOpen, toggle } = useToggle();
   const { dir } = useLayoutContext();
 
@@ -62,7 +62,7 @@ const HotelGridCard = ({ feature, images, name, price, rating, sale }: HotelsGri
           </Link>
         </div>
         <h5 className="card-title">
-          <Link href="/hotels/detail">{name}</Link>
+          <Link href={`/hotels/${id}`}>{name}</Link>
         </h5>
         <ul className="nav nav-divider mb-2 mb-sm-3">
           {feature.map((feat, idx) => (
@@ -77,14 +77,14 @@ const HotelGridCard = ({ feature, images, name, price, rating, sale }: HotelsGri
           <div className="d-flex align-items-center">
             <h5 className="fw-normal text-success mb-0 me-1">
               {currency}
-              {price}
+              {price?.toLocaleString()}
             </h5>
-            <span className="mb-0 me-2">/day</span>
+            <span className="mb-0 me-2 small">/day</span>
 
-            {sale && <span className="text-decoration-line-through">{currency}1000</span>}
+            {sale && <span className="text-decoration-line-through small">{currency}{((price || 0) * 1.25).toLocaleString()}</span>}
           </div>
           <div className="mt-2 mt-sm-0">
-            <Link href="/hotels/detail" className="btn btn-sm btn-primary-soft mb-0 w-100 items-center">
+            <Link href={`/hotels/${id}`} className="btn btn-sm btn-primary-soft mb-0 w-100 items-center">
               View Detail
               <BsArrowRight className=" ms-2" />
             </Link>

@@ -7,10 +7,23 @@ import { FaFacebookSquare, FaShareAlt, FaTwitterSquare } from 'react-icons/fa';
 import { FaCopy, FaHeart, FaLinkedin } from 'react-icons/fa6';
 import Link from 'next/link';
 import GlightBox from '../GlightBox';
+import { Skeleton } from '../';
+import { useState } from 'react';
 
-const HotelGallery = () => {
+const HotelGallery = ({ hotel }: { hotel: any }) => {
   const { isOpen, toggle } = useToggle();
   const { isOpen: alertVisible, hide: hideAlert } = useToggle(true);
+  const [isMapLoading, setIsMapLoading] = useState(true);
+
+  if (!hotel) return null;
+
+  const images = hotel.images_url || [];
+  const mainImage = images[0] || '/images/gallery/14.jpg';
+  const subImages = images.slice(1);
+
+  const latitude = hotel.latitude || 0;
+  const longitude = hotel.longitude || 0;
+  const mapUrl = `https://maps.google.com/maps?q=${latitude},${longitude}&z=15&output=embed`;
 
   return (
     <>
@@ -20,10 +33,10 @@ const HotelGallery = () => {
             <Col xs={12}>
               <div className="d-lg-flex justify-content-lg-between mb-1">
                 <div className="mb-2 mb-lg-0">
-                  <h1 className="fs-2">Courtyard by Marriott New York </h1>
-                  <p className="fw-bold mb-0 items-center flex-wrap">
+                  <h1 className="fs-2">{hotel.name}</h1>
+                  <p className="fw-bold mb-0 items-center flex-wrap text-muted">
                     <BsGeoAlt className=" me-2" />
-                    5855 W Century Blvd, Los Angeles - 90045
+                    {hotel.address}, {hotel.city}, {hotel.state}
                     <Link
                       href="#"
                       onClick={(e) => { e.preventDefault(); toggle(); }}
@@ -82,11 +95,11 @@ const HotelGallery = () => {
                 <BsExclamationOctagonFill />
               </span>
               <span>
-                <strong className="alert-heading me-2">Covid Policy:</strong>You may require to present an RT-PCR negative test report at the hotel
+                <strong className="alert-heading me-2">Notice:</strong>Please follow all health and safety guidelines during your stay.
               </span>
             </div>
             <Button variant="link" onClick={hideAlert} type="button" className="pb-0 pt-1 text-end">
-              <BsXLg className=" text-dark" />
+              <BsXLg className="text-reset" />
             </Button>
           </Alert>
         </Container>
@@ -96,10 +109,10 @@ const HotelGallery = () => {
         <Container>
           <Row className="g-2">
             <Col md={6}>
-              <GlightBox image="/images/gallery/14.jpg" data-glightbox="" data-gallery="hotel-gallery">
+              <GlightBox image={mainImage} data-glightbox="" data-gallery="hotel-gallery">
                 <Card
                   className="card-grid-lg card-element-hover card-overlay-hover overflow-hidden"
-                  style={{ backgroundImage: `url(/images/gallery/14.jpg)`, backgroundPosition: 'center left', backgroundSize: 'cover' }}
+                  style={{ backgroundImage: `url(${mainImage})`, backgroundPosition: 'center', backgroundSize: 'cover' }}
                 >
                   <div className="hover-element position-absolute w-100 h-100">
                     <BsFullscreen
@@ -113,10 +126,10 @@ const HotelGallery = () => {
             <Col md={6}>
               <Row className="g-2">
                 <Col xs={12}>
-                  <GlightBox image="/images/gallery/13.jpg" data-glightbox="" data-gallery="hotel-gallery">
+                  <GlightBox image={subImages[0] || mainImage} data-glightbox="" data-gallery="hotel-gallery">
                     <Card
                       className="card-grid-sm card-element-hover card-overlay-hover overflow-hidden"
-                      style={{ backgroundImage: `url(/images/gallery/13.jpg)`, backgroundPosition: 'center left', backgroundSize: 'cover' }}
+                      style={{ backgroundImage: `url(${subImages[0] || mainImage})`, backgroundPosition: 'center', backgroundSize: 'cover' }}
                     >
                       <div className="hover-element position-absolute w-100 h-100">
                         <BsFullscreen
@@ -128,10 +141,10 @@ const HotelGallery = () => {
                   </GlightBox>
                 </Col>
                 <Col md={6}>
-                  <GlightBox image="/images/gallery/12.jpg" data-glightbox="" data-gallery="hotel-gallery">
+                  <GlightBox image={subImages[1] || mainImage} data-glightbox="" data-gallery="hotel-gallery">
                     <Card
                       className="card-grid-sm card-element-hover card-overlay-hover overflow-hidden"
-                      style={{ backgroundImage: `url(/images/gallery/12.jpg)`, backgroundPosition: 'center left', backgroundSize: 'cover' }}
+                      style={{ backgroundImage: `url(${subImages[1] || mainImage})`, backgroundPosition: 'center', backgroundSize: 'cover' }}
                     >
                       <div className="hover-element position-absolute w-100 h-100">
                         <BsFullscreen
@@ -145,12 +158,13 @@ const HotelGallery = () => {
                 <Col md={6}>
                   <Card
                     className="card-grid-sm overflow-hidden"
-                    style={{ backgroundImage: `url(/images/gallery/11.jpg)`, backgroundPosition: 'center left', backgroundSize: 'cover' }}
+                    style={{ backgroundImage: `url(${subImages[2] || mainImage})`, backgroundPosition: 'center', backgroundSize: 'cover' }}
                   >
                     <div className="bg-overlay bg-dark opacity-7" />
-                    <GlightBox image="/images/gallery/11.jpg" data-glightbox="" data-gallery="hotel-gallery" className="stretched-link z-index-9" />
-                    <GlightBox image="/images/gallery/15.jpg" data-glightbox="" data-gallery="hotel-gallery" />
-                    <GlightBox image="/images/gallery/16.jpg" data-glightbox="" data-gallery="hotel-gallery" />
+                    <GlightBox image={subImages[2] || mainImage} data-glightbox="" data-gallery="hotel-gallery" className="stretched-link z-index-9" />
+                    {subImages.slice(3).map((img: string, i: number) => (
+                      <GlightBox key={i} image={img} data-glightbox="" data-gallery="hotel-gallery" />
+                    ))}
                     <div className="card-img-overlay d-flex h-100 w-100">
                       <h6 className="card-title m-auto fw-light text-decoration-underline">
                         <Link href="#" onClick={(e) => e.preventDefault()} className="text-white">
@@ -172,11 +186,17 @@ const HotelGallery = () => {
             View Our Hotel Location
           </h5>
         </ModalHeader>
-        <div className="modal-body p-0">
+        <div className="modal-body p-0 position-relative" style={{ height: '400px' }}>
+          {isMapLoading && (
+            <div className="position-absolute top-0 start-0 w-100 h-100 bg-body z-index-1">
+              <Skeleton height="100%" width="100%" />
+            </div>
+          )}
           <iframe
             className="w-100"
             height={400}
-            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3022.9663095343008!2d-74.00425878428698!3d40.74076684379132!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x89c259bf5c1654f3%3A0xc80f9cfce5383d5d!2sGoogle!5e0!3m2!1sen!2sin!4v1586000412513!5m2!1sen!2sin"
+            src={mapUrl}
+            onLoad={() => setIsMapLoading(false)}
             style={{ border: 0 }}
             title="map"
             aria-hidden="false"
@@ -184,10 +204,15 @@ const HotelGallery = () => {
           />
         </div>
         <div className="modal-footer">
-          <button type="button" className="btn btn-sm btn-primary mb-0 items-center">
+          <a
+            href={`https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn btn-sm btn-primary mb-0 items-center"
+          >
             <BsPinMapFill className="me-2" />
             View In Google Map
-          </button>
+          </a>
         </div>
       </Modal>
     </>

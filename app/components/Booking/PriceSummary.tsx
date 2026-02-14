@@ -2,7 +2,7 @@
 
 import { Card, CardBody, CardFooter, CardHeader, CardTitle } from 'react-bootstrap';
 
-const currency = '$';
+const currency = '₦';
 
 const PriceSummary = () => {
   return (

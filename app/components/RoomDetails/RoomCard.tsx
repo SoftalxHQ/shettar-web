@@ -7,7 +7,7 @@ import { BsArrowRight } from 'react-icons/bs';
 import { FaBed, FaSquare, FaTableCellsLarge } from 'react-icons/fa6';
 import { type HotelRoomType } from '@/app/data/room-details';
 
-const currency = '$';
+const currency = '₦';
 
 const RoomCard = ({ images, name, price, sqfeet }: HotelRoomType) => {
   return (

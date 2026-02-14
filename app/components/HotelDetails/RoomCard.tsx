@@ -1,16 +1,18 @@
 'use client';
 
+import { useMemo } from 'react';
 import TinySlider from '../TinySlider';
 import { useToggle } from '@/app/hooks';
-import { Button, Card, CardBody, CardHeader, Col, Image, Modal, ModalBody, ModalHeader, Row } from 'react-bootstrap';
+import { Button, Card, CardBody, CardHeader, Col, Modal, ModalBody, ModalHeader, Row } from 'react-bootstrap';
 import { renderToString } from 'react-dom/server';
 import { BsArrowLeft, BsArrowRight, BsEyeFill } from 'react-icons/bs';
 import { FaCheckCircle } from 'react-icons/fa';
 import Link from 'next/link';
 import { type TinySliderSettings } from 'tiny-slider';
 import { type HotelsRoomType } from '@/app/data/hotel-details';
+import { SkeletonImage } from '../';
 
-const currency = '$';
+const currency = '₦';
 
 const amenities: string[] = ['Swimming Pool', 'Spa', 'Kids Play Area', 'Gym', 'Tv', 'Mirror', 'Ac', 'Slippers'];
 
@@ -22,11 +24,10 @@ const splitArray = <T,>(array: T[], size: number): T[][] => {
   return result;
 };
 
-const RoomCard = ({ features, images, name, price, sale, schemes }: HotelsRoomType) => {
+const RoomCard = ({ id, features, images, name, price, sale, schemes }: HotelsRoomType) => {
   const { isOpen, toggle } = useToggle();
 
-  const roomSliderSettings: TinySliderSettings = {
-    nested: 'inner',
+  const roomSliderSettings: TinySliderSettings = useMemo(() => ({
     autoplay: false,
     controls: true,
     autoplayButton: false,
@@ -38,10 +39,11 @@ const RoomCard = ({ features, images, name, price, sale, schemes }: HotelsRoomTy
     mouseDrag: true,
     slideBy: 'page',
     autoWidth: false,
-  };
+  }), []);
 
   const chunk_size = 2;
   const amenitiesChunks = splitArray(amenities, chunk_size);
+  const formattedPrice = typeof price === 'number' ? price : parseFloat(price || '0');
 
   return (
     <Card className="shadow p-3">
@@ -52,11 +54,11 @@ const RoomCard = ({ features, images, name, price, sale, schemes }: HotelsRoomTy
               <div className="badge text-bg-danger">{sale}</div>
             </div>
           )}
-          <div className="tiny-slider arrow-round arrow-xs arrow-dark overflow-hidden rounded-2">
+          <div className="tiny-slider arrow-round arrow-xs arrow-dark overflow-hidden rounded-2" style={{ height: '220px' }}>
             <TinySlider settings={roomSliderSettings}>
               {images.map((image, idx) => (
                 <div key={idx}>
-                  <Image src={image} alt="Card image" className="w-100" />
+                  <SkeletonImage src={image} alt="Room image" className="w-100" height="220px" />
                 </div>
               ))}
             </TinySlider>
@@ -69,11 +71,11 @@ const RoomCard = ({ features, images, name, price, sale, schemes }: HotelsRoomTy
         <Col md={7}>
           <div className="card-body d-flex flex-column h-100 p-0">
             <h5 className="card-title">
-              <Link href="/hotels/room-detail">{name}</Link>
+              {name}
             </h5>
             <ul className="nav nav-divider mb-2">
               {features.map((feature, idx) => (
-                <li key={idx} className="nav-item">
+                <li key={idx} className="nav-item small">
                   {feature}
                 </li>
               ))}
@@ -81,7 +83,8 @@ const RoomCard = ({ features, images, name, price, sale, schemes }: HotelsRoomTy
 
             {schemes ? (
               schemes.map((scheme, idx) => (
-                <p key={idx} className="text-success mb-0">
+                <p key={idx} className="text-success mb-1 small">
+                  <FaCheckCircle className="me-2" />
                   {scheme}
                 </p>
               ))
@@ -93,17 +96,14 @@ const RoomCard = ({ features, images, name, price, sale, schemes }: HotelsRoomTy
               <div className="d-flex align-items-center">
                 <h5 className="fw-bold mb-0 me-1">
                   {currency}
-                  {price}
+                  {formattedPrice.toLocaleString()}
                 </h5>
-                <span className="mb-0 me-2">/day</span>
-                <span className="text-decoration-line-through mb-0">{currency}1000</span>
+                <span className="mb-0 me-2 small">/night</span>
               </div>
               <div className="mt-3 mt-sm-0">
-                <Link href="/hotels/room-detail">
-                  <Button variant="primary" size="sm" className="mb-0">
-                    Select Room
-                  </Button>
-                </Link>
+                <Button variant="primary" size="sm" className="mb-0">
+                  Select Room
+                </Button>
               </div>
             </div>
           </div>
@@ -111,38 +111,33 @@ const RoomCard = ({ features, images, name, price, sale, schemes }: HotelsRoomTy
           <Modal show={isOpen} onHide={toggle}>
             <ModalHeader closeButton className="p-3">
               <h5 className="modal-title mb-0">
-                Room detail
+                {name}
               </h5>
             </ModalHeader>
             <ModalBody className="p-0">
               <Card className="bg-transparent p-3 border-0">
-                <div className="tiny-slider arrow-round arrow-dark overflow-hidden rounded-2">
+                <div className="tiny-slider arrow-round arrow-dark overflow-hidden rounded-2" style={{ height: '250px' }}>
                   <TinySlider settings={roomSliderSettings} className="rounded-2 overflow-hidden">
                     {images.map((image, idx) => (
                       <div key={idx}>
-                        <Image src={image} className="rounded-2 w-100" alt="Card image" />
+                        <SkeletonImage src={image} className="rounded-2 w-100" alt="Room detail" height="250px" />
                       </div>
                     ))}
                   </TinySlider>
                 </div>
-                <CardHeader className="bg-transparent pb-0">
-                  <h3 className="card-title mb-0">Deluxe Pool View</h3>
-                </CardHeader>
-                <CardBody>
-                  <p>
-                    Club rooms are well furnished with air conditioner, 32 inch LCD television and a mini bar. They have attached bathroom with
-                    showerhead and hair dryer and 24 hours supply of hot and cold running water. Complimentary wireless internet access is available.
-                    Additional amenities include bottled water, a safe and a desk.
+                <CardBody className="px-0">
+                  <p className="small">
+                    High-quality room with modern amenities, comfortable bedding, and a peaceful environment to ensure a pleasant stay.
                   </p>
-                  <h5 className="mb-0">Amenities</h5>
+                  <h5 className="mb-3">Room Amenities</h5>
                   {amenitiesChunks.map((chunk, idx) => (
                     <Row key={idx}>
                       {chunk.map((item, idx) => (
                         <Col key={idx} md={6}>
-                          <ul className="list-group list-group-borderless mt-2 mb-0">
-                            <li className="list-group-item d-flex mb-0">
-                              <FaCheckCircle className="text-success me-2" />
-                              <span className="h6 fw-light mb-0">{item}</span>
+                          <ul className="list-group list-group-borderless mb-2">
+                            <li className="list-group-item d-flex mb-0 p-0 align-items-center">
+                              <FaCheckCircle className="text-success me-2" size={14} />
+                              <span className="h6 fw-light mb-0 small">{item}</span>
                             </li>
                           </ul>
                         </Col>
