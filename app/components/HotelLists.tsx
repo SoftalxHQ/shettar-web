@@ -95,7 +95,7 @@ const HotelLists = () => {
                 </span>
               </div>
               <Button variant="link" onClick={hideAlert} type="button" className="pb-0 pt-1 text-end" data-bs-dismiss="alert" aria-label="Close">
-                <BsXLg className=" text-dark" />
+                <BsXLg className="text-inherit" />
               </Button>
             </Alert>
 
@@ -177,7 +177,7 @@ const HotelLists = () => {
               ) : (
                 <div className="text-center py-5">
                   <h4>No hotels found</h4>
-                  <p className="text-muted">Try adjusting your filters or search criteria</p>
+                  <p className="opacity-50">Try adjusting your filters or search criteria</p>
                 </div>
               )}
 

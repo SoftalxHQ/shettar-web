@@ -73,19 +73,19 @@ const PaymentOptions = ({ room, hotel }: { room: any, hotel: any }) => {
         <Accordion defaultActiveKey="1" className="accordion-icon accordion-bg-light" id="accordioncircle">
           <AccordionItem eventKey="1" className="mb-3">
             <AccordionHeader as="h6" id="heading-1">
-              <BsWalletFill className=" text-primary me-2" /> <span className="me-5 text-dark">Pay with Wallet</span>
+              <BsWalletFill className=" text-primary me-2" /> <span className="me-5 text-inherit">Pay with Wallet</span>
             </AccordionHeader>
             <AccordionBody>
               <div className="bg-light p-3 rounded-3 mb-3 border">
                 <div className="d-flex justify-content-between align-items-center">
                   <div>
-                    <h6 className="mb-1">Available Balance</h6>
+                    <h6 className="mb-1 opacity-75">Available Balance</h6>
                     <h5 className="mb-0 text-primary">{currency}0.00</h5>
                   </div>
                   <Button variant="outline-primary" size="sm">Add Funds</Button>
                 </div>
               </div>
-              <p className="small text-muted mb-3">Your wallet balance will be debited for this booking.</p>
+              <p className="small opacity-50 mb-3">Your wallet balance will be debited for this booking.</p>
               <Button variant="primary" className="w-100 mb-0" onClick={onSubmit}>
                 Pay {currency}{total.toLocaleString()} Now
               </Button>
@@ -94,14 +94,14 @@ const PaymentOptions = ({ room, hotel }: { room: any, hotel: any }) => {
 
           <AccordionItem eventKey="2" className="mb-3">
             <AccordionHeader as="h6" id="heading-2">
-              <BsCreditCard className=" text-primary me-2" /> <span className="me-5 text-dark">Pay with Card (Paystack)</span>
+              <BsCreditCard className=" text-primary me-2" /> <span className="me-5 text-inherit">Pay with Card (Paystack)</span>
             </AccordionHeader>
             <AccordionBody>
               <div className="text-center py-4">
                 <Image src="/images/element/visa.svg" className="h-30px me-2" alt="visa" />
                 <Image src="/images/element/mastercard.svg" className="h-30px me-2" alt="mastercard" />
                 <Image src="/images/element/expresscard.svg" className="h-30px" alt="express" />
-                <p className="mt-3 mb-4">You will be redirected to Paystack to complete your payment securely.</p>
+                <p className="mt-3 mb-4 opacity-75">You will be redirected to Paystack to complete your payment securely.</p>
                 <Button variant="primary" className="w-100 mb-0" onClick={onSubmit}>
                   Proceed to Payment
                 </Button>
@@ -110,9 +110,9 @@ const PaymentOptions = ({ room, hotel }: { room: any, hotel: any }) => {
           </AccordionItem>
         </Accordion>
       </CardBody>
-      <div className="card-footer p-4 pt-0 bg-transparent">
-        <p className="mb-0 text-muted small">
-          By processing, You accept Abri <Link href="#" className="text-primary text-decoration-none">Terms of Services</Link> and <Link href="#" className="text-primary text-decoration-none">Policy</Link>
+      <div className="card-footer p-4 pt-0 bg-transparent text-center">
+        <p className="mb-0 opacity-50 small">
+          By processing, You accept Abri <Link href="#" className="text-primary text-decoration-none border-bottom">Terms of Services</Link> and <Link href="#" className="text-primary text-decoration-none border-bottom">Policy</Link>
         </p>
       </div>
     </Card>

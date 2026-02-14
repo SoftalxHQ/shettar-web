@@ -125,7 +125,7 @@ const HotelGridLayout = () => {
         ) : (
           <div className="text-center py-5">
             <h4>No hotels found</h4>
-            <p className="text-muted">Try adjusting your filters or search criteria</p>
+            <p className="opacity-50">Try adjusting your filters or search criteria</p>
           </div>
         )}
       </Container>

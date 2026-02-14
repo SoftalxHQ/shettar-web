@@ -119,15 +119,15 @@ const HotelListCard = ({ hotel }: { hotel: Hotel }) => {
               </ul>
             </div>
             <h5 className="card-title mb-1">
-              <Link href={`/hotel/${hotel.slug || hotel.id}`}>{name}</Link>
+              <Link href={`/hotel/${hotel.slug || hotel.id}`} className="text-inherit">{name}</Link>
             </h5>
-            <small className="d-flex align-items-center">
-              <BsGeoAlt className="me-2" />
+            <small className="d-flex align-items-center opacity-75">
+              <BsGeoAlt className="me-2 text-primary" />
               {address}
             </small>
             <ul className="nav nav-divider mt-3">
               {features?.map((feature, idx) => (
-                <li key={idx} className="nav-item">
+                <li key={idx} className="nav-item opacity-75">
                   {feature}
                 </li>
               ))}
@@ -137,7 +137,7 @@ const HotelListCard = ({ hotel }: { hotel: Hotel }) => {
                 <Fragment>
                   {schemes.map((scheme, idx) => {
                     return (
-                      <li key={idx} className="list-group-item d-flex text-success p-0 align-items-center">
+                      <li key={idx} className="list-group-item d-flex text-success p-0 align-items-center bg-transparent border-0">
                         <BsPatchCheckFill className="me-2" />
                         {scheme}
                       </li>
@@ -145,7 +145,7 @@ const HotelListCard = ({ hotel }: { hotel: Hotel }) => {
                   })}
                 </Fragment>
               ) : (
-                <li className="list-group-item d-flex text-danger p-0 align-items-center">
+                <li className="list-group-item d-flex text-danger p-0 align-items-center bg-transparent border-0">
                   <BsPatchCheckFill className="me-2" />
                   Non Refundable
                 </li>
@@ -157,11 +157,11 @@ const HotelListCard = ({ hotel }: { hotel: Hotel }) => {
                   {currency}
                   {price?.toLocaleString()}
                 </h5>
-                <span className="mb-0 me-2 small">/day</span>
-                {sale && <span className="text-decoration-line-through mb-0 small">{currency}{((price || 0) * 1.25).toLocaleString()}</span>}
+                <span className="mb-0 me-2 small opacity-50">/day</span>
+                {sale && <span className="text-decoration-line-through mb-0 small opacity-50">{currency}{((price || 0) * 1.25).toLocaleString()}</span>}
               </div>
               <div className="mt-3 mt-sm-0">
-                <Link href={`/hotel/${hotel.slug || hotel.id}`} className="btn btn-sm btn-dark mb-0 w-100">
+                <Link href={`/hotel/${hotel.slug || hotel.id}`} className="btn btn-sm btn-dark mb-0 w-100 shadow-sm">
                   Select Room
                 </Link>
               </div>

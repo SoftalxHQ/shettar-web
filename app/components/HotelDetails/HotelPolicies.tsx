@@ -51,7 +51,7 @@ const HotelPolicies = ({ checkIn, checkOut }: { checkIn: string, checkOut: strin
           ))}
         </ul>
         <div className="bg-body-tertiary rounded-2 p-3 mb-3 border">
-          <p className="mb-0 small text-muted">
+          <p className="mb-0 small opacity-50">
             The hotel reserves the right of admission. Please review all terms before booking.
           </p>
         </div>

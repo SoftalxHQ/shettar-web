@@ -35,17 +35,17 @@ const PriceOverView = ({ hotel }: { hotel: any }) => {
             <div className="d-flex align-items-center">
               <h4 className="card-title mb-0 me-2">{currency}{startingPrice > 0 ? startingPrice.toLocaleString() : '---'}</h4>
               {oldPrice > startingPrice && (
-                <span className="text-decoration-line-through small text-muted">{currency}{oldPrice.toLocaleString()}</span>
+                <span className="text-decoration-line-through small opacity-50">{currency}{oldPrice.toLocaleString()}</span>
               )}
             </div>
           </div>
           <div className="text-sm-end">
-            <h6 className="fw-normal mb-0">per night</h6>
-            <small className="text-muted">+ {currency}0 taxes &amp; fees</small>
+            <h6 className="fw-normal mb-0 opacity-75">per night</h6>
+            <small className="opacity-50">+ {currency}0 taxes &amp; fees</small>
           </div>
         </div>
         <ul className="list-inline mb-2 items-center">
-          <li className="list-inline-item me-1 h6 fw-light mb-0">
+          <li className="list-inline-item me-1 h6 fw-light mb-0 opacity-75">
             {averageRating}
           </li>
           {Array.from(new Array(Math.floor(averageRating))).map((_val, idx) => (
@@ -58,7 +58,7 @@ const PriceOverView = ({ hotel }: { hotel: any }) => {
               <FaStarHalfAlt className="text-warning" />
             </li>
           )}
-          <li className="list-inline-item ms-2 small">({reviewsCount} reviews)</li>
+          <li className="list-inline-item ms-2 small opacity-50">({reviewsCount} reviews)</li>
         </ul>
         <p className="h6 fw-light mb-4 items-center">
           <BsArrowRight className=" me-2 text-primary" />

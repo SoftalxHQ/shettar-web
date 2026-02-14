@@ -89,7 +89,7 @@ const RoomCard = ({ id, slug, features, images, name, price, sale, schemes, hote
               </h5>
               <ul className="nav nav-divider mb-2">
                 {features.map((feature, idx) => (
-                  <li key={idx} className="nav-item small text-muted">
+                  <li key={idx} className="nav-item small opacity-75">
                     {feature}
                   </li>
                 ))}
@@ -113,9 +113,9 @@ const RoomCard = ({ id, slug, features, images, name, price, sale, schemes, hote
                   <h3 className="fw-bold mb-0">
                     {currency}{formattedPrice.toLocaleString()}
                   </h3>
-                  <span className="ms-1 small text-muted">/night</span>
+                  <span className="ms-1 small opacity-50">/night</span>
                 </div>
-                <Link href={roomLink} className="btn btn-primary mb-0 px-4">
+                <Link href={roomLink} className="btn btn-primary mb-0 px-4 shadow-sm">
                   Select Room
                 </Link>
               </div>

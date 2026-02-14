@@ -28,8 +28,8 @@ const GuestDetails = () => {
           </Col>
           <Col md={2}>
             <div className="form-size-lg">
-              <label className="form-label text-dark">Title</label>
-              <SelectFormInput className="form-select js-choice">
+              <label className="form-label opacity-75">Title</label>
+              <SelectFormInput className="form-select">
                 <option value={-1}>Title</option>
                 <option>Mr</option>
                 <option>Mrs</option>

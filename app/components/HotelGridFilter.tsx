@@ -99,7 +99,7 @@ const HotelGridFilter = () => {
           </Col>
         </Row>
         <Collapse in={isOpen}>
-          <Card className="bg-light p-4 mt-4 z-index-9 border-0">
+          <Card className="bg-body-tertiary p-4 mt-4 z-index-9 border-0 shadow-sm border">
             <CardBody className="p-0">
               <form onSubmit={handleSubmit(() => { })} className="row g-4">
                 <Col md={6} lg={4}>
@@ -152,25 +152,25 @@ const HotelGridFilter = () => {
                     <ul className="list-inline mb-0 g-3">
                       <li className="list-inline-item">
                         <input type="checkbox" className="btn-check" id="btn-check-1" />
-                        <label className="btn btn-white btn-primary-soft-check" htmlFor="btn-check-1">
+                        <label className="btn btn-light btn-primary-soft-check" htmlFor="btn-check-1">
                           3+
                         </label>
                       </li>
                       <li className="list-inline-item">
                         <input type="checkbox" className="btn-check" id="btn-check-2" />
-                        <label className="btn btn-white btn-primary-soft-check" htmlFor="btn-check-2">
+                        <label className="btn btn-light btn-primary-soft-check" htmlFor="btn-check-2">
                           3.5+
                         </label>
                       </li>
                       <li className="list-inline-item">
                         <input type="checkbox" className="btn-check" id="btn-check-3" />
-                        <label className="btn btn-white btn-primary-soft-check" htmlFor="btn-check-3">
+                        <label className="btn btn-light btn-primary-soft-check" htmlFor="btn-check-3">
                           4+
                         </label>
                       </li>
                       <li className="list-inline-item">
                         <input type="checkbox" className="btn-check" id="btn-check-4" />
-                        <label className="btn btn-white btn-primary-soft-check" htmlFor="btn-check-4">
+                        <label className="btn btn-light btn-primary-soft-check" htmlFor="btn-check-4">
                           4.5+
                         </label>
                       </li>
@@ -184,9 +184,9 @@ const HotelGridFilter = () => {
                       {Array.from(new Array(5)).map((_val, idx) => (
                         <li className="list-inline-item" key={idx}>
                           <input type="checkbox" className="btn-check" id={`btn-check2-${idx}`} />
-                          <label className="btn btn-white btn-primary-soft-check items-center" htmlFor={`btn-check2-${idx}`}>
+                          <label className="btn btn-light btn-primary-soft-check items-center" htmlFor={`btn-check2-${idx}`}>
                             {idx + 1}
-                            <BsStarFill />
+                            <BsStarFill className="ms-1" />
                           </label>
                         </li>
                       ))}

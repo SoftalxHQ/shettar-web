@@ -34,13 +34,13 @@ const HotelGallery = ({ hotel }: { hotel: any }) => {
               <div className="d-lg-flex justify-content-lg-between mb-1">
                 <div className="mb-2 mb-lg-0">
                   <h1 className="fs-2">{hotel.name}</h1>
-                  <p className="fw-bold mb-0 items-center flex-wrap text-muted">
+                  <p className="fw-bold mb-0 items-center flex-wrap opacity-75">
                     <BsGeoAlt className=" me-2" />
                     {hotel.address}, {hotel.city}, {hotel.state}
                     <Link
                       href="#"
                       onClick={(e) => { e.preventDefault(); toggle(); }}
-                      className="ms-3 text-decoration-underline items-center"
+                      className="ms-3 text-decoration-underline items-center text-primary"
                     >
                       <BsEyeFill className="me-1" />
                       View On Map

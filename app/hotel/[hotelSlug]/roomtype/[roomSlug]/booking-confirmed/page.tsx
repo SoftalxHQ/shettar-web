@@ -53,29 +53,29 @@ export default function BookingConfirmedPage() {
   return (
     <>
       <TopNavBar4 />
-      <main className="py-5 bg-light min-vh-100">
+      <main className="py-5 min-vh-100">
         <Container>
           <div className="text-center mb-5">
             <div className="mb-4">
               <BsCheckCircleFill size={80} className="text-success shadow-sm rounded-circle" />
             </div>
             <h1 className="display-4 fw-bold">Booking Confirmed!</h1>
-            <p className="lead text-muted">Your stay at {roomType?.business?.name || 'the hotel'} is all set. We've sent a confirmation email to your inbox.</p>
+            <p className="lead opacity-75">Your stay at {roomType?.business?.name || 'the hotel'} is all set. We've sent a confirmation email to your inbox.</p>
           </div>
 
           <Row className="justify-content-center">
             <Col lg={8}>
-              <Card className="border-0 shadow-lg rounded-4 overflow-hidden mb-4">
+              <Card className="border shadow-lg rounded-4 overflow-hidden mb-4">
                 <div className="bg-primary p-4 text-white d-flex justify-content-between align-items-center">
                   <div>
-                    <span className="text-white-50 small text-uppercase fw-bold">Booking ID</span>
-                    <h4 className="mb-0">{bookingId}</h4>
+                    <span className="text-white-50 small text-uppercase fw-bold opacity-75">Booking ID</span>
+                    <h4 className="mb-0 text-white">{bookingId}</h4>
                   </div>
                   <div className="d-flex gap-2">
-                    <Button variant="light" size="sm" className="items-center px-3">
+                    <Button variant="light" size="sm" className="items-center px-3 btn-sm">
                       <BsPrinter className="me-2" /> Print
                     </Button>
-                    <Button variant="light" size="sm" className="items-center px-3">
+                    <Button variant="light" size="sm" className="items-center px-3 btn-sm">
                       <BsDownload className="me-2" /> PDF
                     </Button>
                   </div>
@@ -84,15 +84,15 @@ export default function BookingConfirmedPage() {
                 <Card.Body className="p-4 p-md-5">
                   <Row className="g-4 mb-5">
                     <Col md={6}>
-                      <h6 className="text-muted small text-uppercase mb-3 fw-bold">Hotel Details</h6>
+                      <h6 className="opacity-50 small text-uppercase mb-3 fw-bold">Hotel Details</h6>
                       <h5 className="mb-1">{roomType?.business?.name}</h5>
-                      <p className="mb-0 text-muted small">{roomType?.business?.address}</p>
-                      <p className="mb-0 text-muted small">{roomType?.business?.city}, {roomType?.business?.state}</p>
+                      <p className="mb-0 opacity-75 small">{roomType?.business?.address}</p>
+                      <p className="mb-0 opacity-75 small">{roomType?.business?.city}, {roomType?.business?.state}</p>
                     </Col>
                     <Col md={6} className="text-md-end">
-                      <h6 className="text-muted small text-uppercase mb-3 fw-bold">Room Selection</h6>
+                      <h6 className="opacity-50 small text-uppercase mb-3 fw-bold">Room Selection</h6>
                       <h5 className="mb-1">{roomType?.name}</h5>
-                      <p className="mb-0 text-muted small">Standard Occupancy: 2 Guests</p>
+                      <p className="mb-0 opacity-75 small">Standard Occupancy: 2 Guests</p>
                     </Col>
                   </Row>
 
@@ -100,21 +100,21 @@ export default function BookingConfirmedPage() {
                     <Row className="align-items-center g-4">
                       <Col sm={4} className="text-center border-end border-sm-0">
                         <BsCalendarCheck size={24} className="text-primary mb-2" />
-                        <h6 className="fw-light small mb-1">Check-in</h6>
+                        <h6 className="fw-light small mb-1 opacity-75">Check-in</h6>
                         <h6 className="mb-0">4 March 2026</h6>
-                        <small className="text-muted">{roomType?.business?.check_in || '12:00 PM'}</small>
+                        <small className="opacity-50">{roomType?.business?.check_in || '12:00 PM'}</small>
                       </Col>
                       <Col sm={4} className="text-center border-end border-sm-0">
                         <BsCalendarCheck size={24} className="text-primary mb-2" />
-                        <h6 className="fw-light small mb-1">Check-out</h6>
+                        <h6 className="fw-light small mb-1 opacity-75">Check-out</h6>
                         <h6 className="mb-0">8 March 2026</h6>
-                        <small className="text-muted">{roomType?.business?.check_out || '11:00 AM'}</small>
+                        <small className="opacity-50">{roomType?.business?.check_out || '11:00 AM'}</small>
                       </Col>
                       <Col sm={4} className="text-center">
                         <BsHouse size={24} className="text-primary mb-2" />
-                        <h6 className="fw-light small mb-1">Duration</h6>
+                        <h6 className="fw-light small mb-1 opacity-75">Duration</h6>
                         <h6 className="mb-0">4 Nights</h6>
-                        <small className="text-muted">Total Stay</small>
+                        <small className="opacity-50">Total Stay</small>
                       </Col>
                     </Row>
                   </div>
@@ -122,17 +122,17 @@ export default function BookingConfirmedPage() {
                   <div className="d-flex justify-content-between align-items-center border-top pt-4">
                     <div>
                       <h4 className="mb-0 text-primary">₦{(roomType?.price * 1.05 * 4).toLocaleString()}</h4>
-                      <p className="small text-muted mb-0">Total amount paid via Wallet</p>
+                      <p className="small opacity-50 mb-0">Total amount paid via Wallet</p>
                     </div>
                     <Link href="/">
-                      <Button variant="dark" className="px-4 py-2 rounded-pill">Back to Home</Button>
+                      <Button variant="primary" className="px-4 py-2 rounded-pill shadow-sm">Back to Home</Button>
                     </Link>
                   </div>
                 </Card.Body>
               </Card>
 
               <div className="text-center">
-                <p className="text-muted">Need help with your booking? <Link href="/contact" className="text-primary fw-bold text-decoration-none">Contact Support</Link></p>
+                <p className="opacity-50">Need help with your booking? <Link href="/contact" className="text-primary fw-bold text-decoration-none border-bottom">Contact Support</Link></p>
               </div>
             </Col>
           </Row>

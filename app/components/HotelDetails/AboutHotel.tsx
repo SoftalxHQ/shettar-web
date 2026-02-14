@@ -2,7 +2,7 @@
 
 import { useToggle } from '@/app/hooks';
 import { Fragment } from 'react';
-import { Card, CardBody, CardHeader, Col, Collapse, Container, OverlayTrigger, Row, Tooltip } from 'react-bootstrap';
+import { Button, Card, CardBody, CardHeader, Col, Collapse, Container, OverlayTrigger, Row, Tooltip } from 'react-bootstrap';
 import { BsPatchCheckFill, BsShieldFillCheck } from 'react-icons/bs';
 import { FaCheckCircle, FaConciergeBell, FaSwimmingPool, FaVolumeUp } from 'react-icons/fa';
 import { FaAngleDown, FaAngleUp, FaSnowflake, FaWifi } from 'react-icons/fa6';
@@ -40,72 +40,78 @@ const AboutHotel = ({ hotel }: { hotel: any }) => {
                   <h3 className="mb-0">About This Hotel</h3>
                 </CardHeader>
                 <CardBody className="pt-4 p-0">
-                  <h5 className="fw-light mb-4">Main Highlights</h5>
+                  <h5 className="fw-light mb-4 opacity-75">Main Highlights</h5>
                   <div className="hstack gap-3 mb-3">
                     {hasWifi && (
                       <OverlayTrigger overlay={<Tooltip>Free Wifi</Tooltip>}>
-                        <div className="icon-lg bg-body-tertiary h5 rounded-2 flex-centered" style={{ width: '50px', height: '50px' }}>
+                        <div className="icon-lg bg-body-tertiary h5 rounded-2 flex-centered border" style={{ width: '50px', height: '50px' }}>
                           <FaWifi size={24} className="text-primary" />
                         </div>
                       </OverlayTrigger>
                     )}
                     {hasPool && (
                       <OverlayTrigger overlay={<Tooltip>Swimming Pool</Tooltip>}>
-                        <div className="icon-lg bg-body-tertiary h5 rounded-2 flex-centered" style={{ width: '50px', height: '50px' }}>
+                        <div className="icon-lg bg-body-tertiary h5 rounded-2 flex-centered border" style={{ width: '50px', height: '50px' }}>
                           <FaSwimmingPool size={24} className="text-primary" />
                         </div>
                       </OverlayTrigger>
                     )}
                     {hasAC && (
                       <OverlayTrigger overlay={<Tooltip>Air Conditioning</Tooltip>}>
-                        <div className="icon-lg bg-body-tertiary h5 rounded-2 flex-centered" style={{ width: '50px', height: '50px' }}>
+                        <div className="icon-lg bg-body-tertiary h5 rounded-2 flex-centered border" style={{ width: '50px', height: '50px' }}>
                           <FaSnowflake size={24} className="text-primary" />
                         </div>
                       </OverlayTrigger>
                     )}
                     {hasRoomService && (
                       <OverlayTrigger overlay={<Tooltip>Room Service</Tooltip>}>
-                        <div className="icon-lg bg-body-tertiary h5 rounded-2 flex-centered" style={{ width: '50px', height: '50px' }}>
+                        <div className="icon-lg bg-body-tertiary h5 rounded-2 flex-centered border" style={{ width: '50px', height: '50px' }}>
                           <FaConciergeBell size={24} className="text-primary" />
                         </div>
                       </OverlayTrigger>
                     )}
                   </div>
                   <div className="mb-3">
-                    <p className={clsx("mb-0", { "text-truncate-2": !isOpen })} style={{ whiteSpace: 'pre-line' }}>
+                    <p className={clsx("mb-0 opacity-75", { "text-truncate-more": !isOpen })} style={{
+                      whiteSpace: 'pre-line',
+                      display: '-webkit-box',
+                      WebkitLineClamp: isOpen ? 'unset' : 3,
+                      WebkitBoxOrient: 'vertical',
+                      overflow: 'hidden'
+                    }}>
                       {hotel.description || "No description available for this hotel."}
                     </p>
                   </div>
 
-                  {hotel.description && hotel.description.length > 200 && (
-                    <a onClick={(e) => { e.preventDefault(); toggle(); }} className="p-0 mb-4 mt-2 btn-more d-flex align-items-center collapsed text-primary" href="#">
+                  {hotel.description && hotel.description.length > 150 && (
+                    <Button
+                      variant="link"
+                      onClick={toggle}
+                      className="p-0 mb-4 mt-1 d-flex align-items-center text-primary text-decoration-none fw-bold small"
+                    >
                       {!isOpen ? (
-                        <Fragment>
-                          <span className="see-more" role="button">
-                            See more
-                          </span>
-                          <FaAngleDown className="ms-2" />
-                        </Fragment>
+                        <>
+                          See more <FaAngleDown className="ms-1" />
+                        </>
                       ) : (
-                        <Fragment>
-                          <span role="button">See less</span>
-                          <FaAngleUp className="ms-2" />
-                        </Fragment>
+                        <>
+                          See less <FaAngleUp className="ms-1" />
+                        </>
                       )}
-                    </a>
+                    </Button>
                   )}
 
-                  <h5 className="fw-light mb-2 mt-4">Advantages</h5>
+                  <h5 className="fw-light mb-2 mt-4 opacity-75">Advantages</h5>
                   <ul className="list-group list-group-borderless mb-0">
-                    <li className="list-group-item h6 fw-light d-flex mb-0 items-center bg-transparent border-0 px-0">
+                    <li className="list-group-item h6 fw-light d-flex mb-0 items-center bg-transparent border-0 px-0 opacity-75">
                       <BsPatchCheckFill className=" text-success me-2" />
                       Every hotel staff to have Proper PPT kit
                     </li>
-                    <li className="list-group-item h6 fw-light d-flex mb-0 items-center bg-transparent border-0 px-0">
+                    <li className="list-group-item h6 fw-light d-flex mb-0 items-center bg-transparent border-0 px-0 opacity-75">
                       <BsPatchCheckFill className=" text-success me-2" />
                       Every staff member wears face masks and gloves.
                     </li>
-                    <li className="list-group-item h6 fw-light d-flex mb-0 items-center bg-transparent border-0 px-0">
+                    <li className="list-group-item h6 fw-light d-flex mb-0 items-center bg-transparent border-0 px-0 opacity-75">
                       <BsPatchCheckFill className=" text-success me-2" />
                       Hotel staff ensures to maintain social distancing.
                     </li>

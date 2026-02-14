@@ -29,9 +29,9 @@ const HotelInformation = ({ room, hotel }: { room: any, hotel: any }) => {
             <Col sm={6} md={9}>
               <CardBody className="pt-3 pt-sm-0 p-0 ps-md-3">
                 <h5 className="card-title mb-1">
-                  <Link href={`/hotel/${hotel?.slug}`} className="text-decoration-none text-dark">{hotel?.name || 'Hotel Name'}</Link>
+                  <Link href={`/hotel/${hotel?.slug}`} className="text-decoration-none">{hotel?.name || 'Hotel Name'}</Link>
                 </h5>
-                <p className="small mb-2 items-center text-muted">
+                <p className="small mb-2 items-center opacity-75">
                   <BsGeoAlt className=" me-2 text-primary" />
                   {hotel?.address}, {hotel?.city}, {hotel?.state}
                 </p>
@@ -50,9 +50,9 @@ const HotelInformation = ({ room, hotel }: { room: any, hotel: any }) => {
         <Row className="g-4">
           <Col lg={4}>
             <div className="bg-light py-3 px-4 rounded-3 h-100 border">
-              <h6 className="fw-light small mb-1 text-muted">Check-in</h6>
+              <h6 className="fw-light small mb-1 opacity-50">Check-in</h6>
               <h5 className="mb-1 h6">4 March {currentYear}</h5>
-              <small className="items-center text-muted">
+              <small className="items-center opacity-75">
                 <BsAlarm className=" me-1" />
                 {hotel?.check_in || '12:00 pm'}
               </small>
@@ -60,9 +60,9 @@ const HotelInformation = ({ room, hotel }: { room: any, hotel: any }) => {
           </Col>
           <Col lg={4}>
             <div className="bg-light py-3 px-4 rounded-3 h-100 border">
-              <h6 className="fw-light small mb-1 text-muted">Check out</h6>
+              <h6 className="fw-light small mb-1 opacity-50">Check out</h6>
               <h5 className="mb-1 h6">8 March {currentYear}</h5>
-              <small className="items-center text-muted">
+              <small className="items-center opacity-75">
                 <BsAlarm className=" me-1" />
                 {hotel?.check_out || '11:00 am'}
               </small>
@@ -70,9 +70,9 @@ const HotelInformation = ({ room, hotel }: { room: any, hotel: any }) => {
           </Col>
           <Col lg={4}>
             <div className="bg-light py-3 px-4 rounded-3 h-100 border">
-              <h6 className="fw-light small mb-1 text-muted">Rooms &amp; Guests</h6>
+              <h6 className="fw-light small mb-1 opacity-50">Rooms &amp; Guests</h6>
               <h5 className="mb-1 h6">2 Guests - 1 Room</h5>
-              <small className="items-center text-muted">
+              <small className="items-center opacity-75">
                 <BsBrightnessHigh className=" me-1" />{room?.name}
               </small>
             </div>

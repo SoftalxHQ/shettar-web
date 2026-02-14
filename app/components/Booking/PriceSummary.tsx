@@ -35,10 +35,10 @@ const PriceSummary = ({ room, hotel }: { room: any, hotel: any }) => {
           </li>
         </ul>
       </CardBody>
-      <CardFooter className="border-top bg-light p-4">
+      <CardFooter className="border-top bg-light bg-opacity-10 p-4">
         <div className="d-flex justify-content-between align-items-center">
-          <span className="h5 mb-0">Payable Now</span>
-          <span className="h5 mb-0 text-primary">{currency}{total.toLocaleString()}</span>
+          <span className="h5 mb-0 fw-bold">Payable Now</span>
+          <span className="h5 mb-0 text-primary fw-bold">{currency}{total.toLocaleString()}</span>
         </div>
       </CardFooter>
     </Card>

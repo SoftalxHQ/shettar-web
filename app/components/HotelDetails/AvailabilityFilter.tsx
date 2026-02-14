@@ -108,14 +108,14 @@ const AvailabilityFilter = ({ hotel, onSearch, isLoading }: { hotel: any, onSear
                     <li className="d-flex justify-content-between px-3 py-1">
                       <div>
                         <h6 className="mb-0">Adults</h6>
-                        <small className="text-muted">Ages 13 or above</small>
+                        <small className="opacity-50">Ages 13 or above</small>
                       </div>
                       <div className="hstack gap-1 align-items-center">
-                        <Button variant="link" className="adult-remove p-0 mb-0 text-reset" onClick={() => updateGuests('adults', false)}>
+                        <Button variant="link" className="adult-remove p-0 mb-0 text-inherit opacity-75" onClick={() => updateGuests('adults', false)}>
                           <BsDashCircle className=" fs-5 fa-fw" />
                         </Button>
                         <h6 className="guest-selector-count mb-0 adults" style={{ width: '20px', textAlign: 'center' }}>{formValue.guests.adults ?? 0}</h6>
-                        <Button variant="link" className="adult-add p-0 mb-0 text-reset" onClick={() => updateGuests('adults')}>
+                        <Button variant="link" className="adult-add p-0 mb-0 text-inherit opacity-75" onClick={() => updateGuests('adults')}>
                           <BsPlusCircle className=" fs-5 fa-fw" />
                         </Button>
                       </div>
@@ -126,18 +126,18 @@ const AvailabilityFilter = ({ hotel, onSearch, isLoading }: { hotel: any, onSear
                     <li className="d-flex justify-content-between px-3 py-1">
                       <div>
                         <h6 className="mb-0">Children</h6>
-                        <small className="text-muted">Ages 13 below</small>
+                        <small className="opacity-50">Ages 13 below</small>
                       </div>
                       <div className="hstack gap-1 align-items-center">
                         <Button
                           variant="link"
                           type="button"
-                          className="btn btn-link child-remove p-0 mb-0 text-reset"
+                          className="btn btn-link child-remove p-0 mb-0 text-inherit opacity-75"
                           onClick={() => updateGuests('children', false)}>
                           <BsDashCircle className="fs-5 fa-fw" />
                         </Button>
                         <h6 className="guest-selector-count mb-0 child" style={{ width: '20px', textAlign: 'center' }}>{formValue.guests.children ?? 0}</h6>
-                        <Button variant="link" type="button" className="btn btn-link child-add p-0 mb-0 text-reset" onClick={() => updateGuests('children')}>
+                        <Button variant="link" type="button" className="btn btn-link child-add p-0 mb-0 text-inherit opacity-75" onClick={() => updateGuests('children')}>
                           <BsPlusCircle className=" fs-5 fa-fw" />
                         </Button>
                       </div>
@@ -148,14 +148,14 @@ const AvailabilityFilter = ({ hotel, onSearch, isLoading }: { hotel: any, onSear
                     <li className="d-flex justify-content-between px-3 py-1">
                       <div>
                         <h6 className="mb-0">Rooms</h6>
-                        <small className="text-muted">Max room 8</small>
+                        <small className="opacity-50">Max room 8</small>
                       </div>
                       <div className="hstack gap-1 align-items-center">
-                        <Button variant="link" type="button" className="room-remove p-0 mb-0 text-reset" onClick={() => updateGuests('rooms', false)}>
+                        <Button variant="link" type="button" className="room-remove p-0 mb-0 text-inherit opacity-75" onClick={() => updateGuests('rooms', false)}>
                           <BsDashCircle className=" fs-5 fa-fw" />
                         </Button>
                         <h6 className="guest-selector-count mb-0 rooms" style={{ width: '20px', textAlign: 'center' }}>{formValue.guests.rooms ?? 0}</h6>
-                        <Button variant="link" type="button" className="btn btn-link room-add p-0 mb-0 text-reset" onClick={() => updateGuests('rooms')}>
+                        <Button variant="link" type="button" className="btn btn-link room-add p-0 mb-0 text-inherit opacity-75" onClick={() => updateGuests('rooms')}>
                           <BsPlusCircle className=" fs-5 fa-fw" />
                         </Button>
                       </div>

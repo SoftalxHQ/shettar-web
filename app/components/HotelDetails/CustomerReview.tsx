@@ -34,7 +34,7 @@ const CustomerReview = ({ reviews, averageRating }: { reviews: any[], averageRat
             <Col md={4}>
               <div className="text-center">
                 <h2 className="mb-0">{displayRating}</h2>
-                <p className="mb-2 text-muted">Based on {displayCount} Reviews</p>
+                <p className="mb-2 opacity-50">Based on {displayCount} Reviews</p>
                 <ul className="list-inline mb-0 text-center justify-content-center d-flex">
                   {Array.from(new Array(Math.floor(displayRating))).map((_val, idx) => (
                     <li className="list-inline-item me-1" key={idx}>
@@ -85,7 +85,7 @@ const CustomerReview = ({ reviews, averageRating }: { reviews: any[], averageRat
                     <div>
                       <h6 className="me-3 mb-0">{review.reviewer || 'Anonymous'}</h6>
                       <ul className="nav nav-divider small mb-2">
-                        <li className="nav-item text-muted">{new Date(review.created_at).toLocaleDateString()}</li>
+                        <li className="nav-item opacity-50">{new Date(review.created_at).toLocaleDateString()}</li>
                       </ul>
                     </div>
                     <div className="icon-md rounded text-bg-warning fs-6 d-flex align-items-center justify-content-center" style={{ width: '40px', height: '40px' }}>{review.rating}</div>
@@ -101,7 +101,7 @@ const CustomerReview = ({ reviews, averageRating }: { reviews: any[], averageRat
 
           {(!reviews || reviews.length === 0) && (
             <div className="text-center py-4 bg-body-tertiary rounded-3 mb-4">
-              <p className="text-muted mb-0">No reviews yet for this hotel.</p>
+              <p className="opacity-50 mb-0">No reviews yet for this hotel.</p>
             </div>
           )}
         </div>
