@@ -9,6 +9,7 @@ import Link from 'next/link';
 import GlightBox from '../GlightBox';
 import { Skeleton, SkeletonImage } from '../';
 import { useState } from 'react';
+import { toast } from 'react-hot-toast';
 
 const HotelGallery = ({ hotel }: { hotel: any }) => {
   const { isOpen, toggle } = useToggle();
@@ -62,19 +63,32 @@ const HotelGallery = ({ hotel }: { hotel: any }) => {
                       <FaShareAlt className="fa-fw" />
                     </DropdownToggle>
                     <DropdownMenu className="dropdown-menu-end min-w-auto shadow rounded" aria-labelledby="dropdownShare">
-                      <DropdownItem href="#">
-                        <FaTwitterSquare className="me-2" />
+                      <DropdownItem onClick={() => {
+                        const url = window.location.href;
+                        const text = `Check out ${hotel.name} on Abri!`;
+                        window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, '_blank');
+                      }}>
+                        <FaTwitterSquare className="me-2 text-info" />
                         Twitter
                       </DropdownItem>
-                      <DropdownItem href="#">
-                        <FaFacebookSquare className="me-2" />
+                      <DropdownItem onClick={() => {
+                        const url = window.location.href;
+                        window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank');
+                      }}>
+                        <FaFacebookSquare className="me-2 text-primary" />
                         Facebook
                       </DropdownItem>
-                      <DropdownItem href="#">
-                        <FaLinkedin className="me-2" />
+                      <DropdownItem onClick={() => {
+                        const url = window.location.href;
+                        window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`, '_blank');
+                      }}>
+                        <FaLinkedin className="me-2 text-primary" />
                         LinkedIn
                       </DropdownItem>
-                      <DropdownItem href="#">
+                      <DropdownItem onClick={() => {
+                        navigator.clipboard.writeText(window.location.href);
+                        toast.success('Link copied to clipboard!');
+                      }}>
                         <FaCopy className="me-2" />
                         Copy link
                       </DropdownItem>

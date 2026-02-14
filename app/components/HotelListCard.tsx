@@ -13,6 +13,7 @@ import { type Hotel } from '@/app/types/hotel';
 
 import 'tiny-slider/dist/tiny-slider.css';
 import Link from 'next/link';
+import { toast } from 'react-hot-toast';
 
 const HotelListCard = ({ hotel }: { hotel: Hotel }) => {
   const { address, features, images, name, price, rating, sale, schemes } = hotel;
@@ -93,27 +94,39 @@ const HotelListCard = ({ hotel }: { hotel: Hotel }) => {
                     <FaShareAlt className="fa-fw" />
                   </DropdownToggle>
                   <DropdownMenu className="dropdown-menu-end min-w-auto shadow rounded" aria-labelledby="dropdownShare">
-
-                    <DropdownItem href="">
-                      <FaTwitterSquare className="me-2" />
+                    <DropdownItem onClick={() => {
+                      const url = `${window.location.origin}/hotel/${hotel.slug || hotel.id}`;
+                      const text = `Check out ${hotel.name} on Abri!`;
+                      window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, '_blank');
+                    }}>
+                      <FaTwitterSquare className="me-2 text-info" />
                       Twitter
                     </DropdownItem>
 
-                    <DropdownItem href="">
-                      <FaFacebookSquare className="me-2" />
+                    <DropdownItem onClick={() => {
+                      const url = `${window.location.origin}/hotel/${hotel.slug || hotel.id}`;
+                      window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank');
+                    }}>
+                      <FaFacebookSquare className="me-2 text-primary" />
                       Facebook
                     </DropdownItem>
 
-                    <DropdownItem href="">
-                      <FaLinkedin className="me-2" />
+                    <DropdownItem onClick={() => {
+                      const url = `${window.location.origin}/hotel/${hotel.slug || hotel.id}`;
+                      window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`, '_blank');
+                    }}>
+                      <FaLinkedin className="me-2 text-primary" />
                       LinkedIn
                     </DropdownItem>
 
-                    <DropdownItem href="">
+                    <DropdownItem onClick={() => {
+                      const url = `${window.location.origin}/hotel/${hotel.slug || hotel.id}`;
+                      navigator.clipboard.writeText(url);
+                      toast.success('Link copied to clipboard!');
+                    }}>
                       <FaCopy className="me-2" />
                       Copy link
                     </DropdownItem>
-
                   </DropdownMenu>
                 </Dropdown>
               </ul>

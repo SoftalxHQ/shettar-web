@@ -8,6 +8,7 @@ export const metadata: Metadata = {
 };
 
 import { LayoutProvider } from "./states";
+import { Toaster } from 'react-hot-toast';
 
 export default function RootLayout({
   children,
@@ -35,6 +36,32 @@ export default function RootLayout({
         />
       </head>
       <body className="antialiased">
+        <Toaster
+          position="top-center"
+          reverseOrder={false}
+          containerStyle={{ zIndex: 99999 }}
+          toastOptions={{
+            className: 'abri-toast',
+            duration: 4000,
+            style: {
+              background: 'var(--bs-body-bg)',
+              color: 'var(--bs-body-color)',
+              border: '1px solid var(--bs-border-color)',
+            },
+            success: {
+              iconTheme: {
+                primary: 'var(--bs-primary)',
+                secondary: 'var(--bs-body-bg)',
+              },
+            },
+            error: {
+              iconTheme: {
+                primary: 'var(--bs-danger)',
+                secondary: 'var(--bs-body-bg)',
+              },
+            },
+          }}
+        />
         <LayoutProvider>
           {children}
         </LayoutProvider>

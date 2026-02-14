@@ -2,11 +2,12 @@ import { Card, CardBody, Col, Row, Button } from 'react-bootstrap';
 import { BsWallet2, BsBank, BsCopy } from 'react-icons/bs';
 import { currency } from '@/app/states';
 import Link from 'next/link';
+import { toast } from 'react-hot-toast';
 
 const AccountWallet = () => {
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
-    alert('Copied to clipboard!');
+    toast.success('Copied to clipboard!');
   };
 
   return (

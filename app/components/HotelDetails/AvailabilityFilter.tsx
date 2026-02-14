@@ -181,7 +181,7 @@ const AvailabilityFilter = ({ hotel, onSearch, isLoading }: { hotel: any, onSear
   };
 
   return (
-    <div className="py-3 py-sm-0">
+    <div className="py-3 py-sm-0 mb-4">
       <Container>
         <div className="d-none d-sm-block">
           <FilterInput />
