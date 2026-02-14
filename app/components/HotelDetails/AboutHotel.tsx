@@ -134,7 +134,7 @@ const AboutHotel = ({ hotel }: { hotel: any }) => {
                 </CardBody>
               </Card>
 
-              <RoomOptions availableRoomTypes={hotel.available_room_types} />
+              <RoomOptions availableRoomTypes={hotel.available_room_types} hotel={hotel} />
 
               <CustomerReview reviews={hotel.reviews} averageRating={hotel.average_rating} />
 

@@ -5,7 +5,7 @@ import SelectFormInput from '../form/SelectFormInput';
 import RoomCard from './RoomCard';
 import { hotelRooms } from '@/app/data/hotel-details';
 
-const RoomOptions = ({ availableRoomTypes }: { availableRoomTypes: any[] }) => {
+const RoomOptions = ({ availableRoomTypes, hotel }: { availableRoomTypes: any[], hotel: any }) => {
   if (!availableRoomTypes || availableRoomTypes.length === 0) {
     return (
       <Card className="bg-transparent" id="room-options">
@@ -33,6 +33,7 @@ const RoomOptions = ({ availableRoomTypes }: { availableRoomTypes: any[] }) => {
                 images={room_type.images_url || ['/images/category/hotel/4by3/04.jpg']}
                 id={room_type.id}
                 slug={room_type.slug}
+                hotelSlug={hotel?.slug}
                 name={room_type.name}
                 price={room_type.price}
                 sale={room_type.old_price ? `${Math.round(((room_type.old_price - room_type.price) / room_type.old_price) * 100)}% Off` : undefined}

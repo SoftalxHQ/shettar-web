@@ -1,5 +1,6 @@
 export type HotelRoomType = {
   id: number;
+  slug: string;
   name: string;
   sqfeet: number;
   price: number;
@@ -27,6 +28,7 @@ export const notificationData: NotificationType[] = [
 export const roomDetails: HotelRoomType[] = [
   {
     id: 1,
+    slug: 'deluxe-pool-view-with-breakfast',
     name: 'Deluxe Pool View with Breakfast',
     images: [
       '/images/category/hotel/4by3/10.jpg',
@@ -40,6 +42,7 @@ export const roomDetails: HotelRoomType[] = [
   },
   {
     id: 2,
+    slug: 'deluxe-room',
     name: 'Deluxe Room',
     images: [
       '/images/category/hotel/4by3/11.jpg',

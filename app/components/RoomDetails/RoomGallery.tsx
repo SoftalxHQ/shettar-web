@@ -1,7 +1,7 @@
 'use client';
 
-import { GlightBox, TinySlider } from '@/app/components';
-import { Col, Container, Image, Row } from 'react-bootstrap';
+import { GlightBox, SkeletonImage, TinySlider } from '@/app/components';
+import { Col, Container, Row } from 'react-bootstrap';
 import { renderToString } from 'react-dom/server';
 import { BsArrowLeft, BsArrowRight, BsFullscreen, BsGeoAlt } from 'react-icons/bs';
 import { type TinySliderSettings } from 'tiny-slider';
@@ -15,9 +15,8 @@ const roomSlides = [
   '/images/gallery/11.jpg'
 ];
 
-const RoomGallery = () => {
+const RoomGallery = ({ room }: { room: any }) => {
   const roomSliderSettings: TinySliderSettings = {
-    nested: 'inner',
     autoplay: true,
     controls: true,
     gutter: 30,
@@ -27,6 +26,7 @@ const RoomGallery = () => {
     arrowKeys: true,
     items: 2,
     nav: false,
+    mouseDrag: true,
     responsive: {
       0: { items: 1 },
       576: { items: 1 },
@@ -36,32 +36,52 @@ const RoomGallery = () => {
     },
   };
 
+  const images = room?.images_url && room.images_url.length > 0 ? room.images_url : [
+    '/images/gallery/16.jpg',
+    '/images/gallery/13.jpg',
+    '/images/gallery/14.jpg',
+    '/images/gallery/11.jpg'
+  ];
+
   return (
     <section className="pt-4">
       <Container>
         <Row>
           <Col xs={12} className="mb-4">
-            <h1 className="fs-3">Luxury Room with Balcony</h1>
-            <p className="fw-bold mb-0">
-              <BsGeoAlt className=" me-2" />
-              5855 W Century Blvd, Los Angeles - 90045{' '}
-            </p>
+            <h1 className="fs-3">
+              {room?.business?.name ? `${room.business.name} - ` : ''}{room?.name || 'Room Details'}
+            </h1>
+            {room?.business && (
+              <p className="fw-bold mb-2">
+                <BsGeoAlt className=" me-2" />
+                {room.business.address}, {room.business.city}, {room.business.state}
+              </p>
+            )}
+            {room?.description && (
+              <p className="mb-0 text-muted">
+                {room.description}
+              </p>
+            )}
           </Col>
         </Row>
         <div className="tiny-slider arrow-round arrow-blur overflow-hidden">
-          <TinySlider settings={roomSliderSettings}>
-            {roomSlides.map((image, idx) => (
+          <TinySlider settings={roomSliderSettings} style={{ height: '400px' }} className="rounded-3 overflow-hidden">
+            {images.map((image: string, idx: number) => (
               <div key={idx}>
-                <GlightBox className="w-100 h-100" data-glightbox="" data-gallery="gallery" image={image}>
-                  <div className="card card-element-hover card-overlay-hover overflow-hidden">
-                    <Image src={image} className="rounded-3 w-100" alt="Room slide" />
-                    <div className="hover-element w-100 h-100">
+                <GlightBox className="w-100 h-100" data-glightbox="" data-gallery="room-gallery" image={image}>
+                  <SkeletonImage
+                    src={image}
+                    alt="Room slide"
+                    height="400px"
+                    className="card-element-hover card-overlay-hover overflow-hidden rounded-3"
+                  >
+                    <div className="hover-element position-absolute w-100 h-100">
                       <BsFullscreen
                         size={32}
                         className=" fs-6 text-white position-absolute top-50 start-50 translate-middle bg-dark rounded-1 p-2 lh-1"
                       />
                     </div>
-                  </div>
+                  </SkeletonImage>
                 </GlightBox>
               </div>
             ))}

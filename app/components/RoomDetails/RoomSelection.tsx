@@ -6,7 +6,7 @@ import { roomDetails } from '@/app/data/room-details';
 import PriceSummary from './PriceSummary';
 import RoomCard from './RoomCard';
 
-const RoomSelection = () => {
+const RoomSelection = ({ room, hotel }: { room: any, hotel: any }) => {
   return (
     <section className="pt-0">
       <Container>
@@ -14,29 +14,45 @@ const RoomSelection = () => {
           <Col xl={7}>
             <Card className="bg-transparent p-0 border-0">
               <CardHeader className="bg-transparent border-bottom d-sm-flex justify-content-sm-between align-items-center p-0 pb-3">
-                <h4 className="mb-2 mb-sm-0">Select Rooms</h4>
-                <Col sm={4}>
-                  <form className="form-control-bg-light">
-                    <SelectFormInput className="form-select form-select-sm js-choice border-0">
-                      <option value={-1}>Select Option</option>
-                      <option>Recently search</option>
-                      <option>Most popular</option>
-                      <option>Top rated</option>
-                    </SelectFormInput>
-                  </form>
-                </Col>
+                <h4 className="mb-2 mb-sm-0">Confirm Selection</h4>
               </CardHeader>
               <CardBody className="p-0 pt-3">
                 <div className="vstack gap-5">
-                  {roomDetails.map((room, idx) => (
-                    <RoomCard key={idx} {...room} />
-                  ))}
+                  <RoomCard
+                    id={room.id}
+                    slug={room.slug}
+                    name={room.name}
+                    price={room.price}
+                    images={room.images_url || []}
+                    sqfeet={room.sqfeet || 250}
+                    isSelected={true}
+                  />
+
+                  {room.other_room_types && room.other_room_types.length > 0 && (
+                    <div className="mt-5">
+                      <h4 className="mb-4">Other Available Rooms</h4>
+                      <div className="vstack gap-4">
+                        {room.other_room_types.map((otherRoom: any, idx: number) => (
+                          <RoomCard
+                            key={idx}
+                            id={otherRoom.id}
+                            slug={otherRoom.slug}
+                            name={otherRoom.name}
+                            price={otherRoom.price}
+                            images={otherRoom.images_url || []}
+                            sqfeet={otherRoom.sqfeet || 250}
+                            hotelSlug={hotel?.slug}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </CardBody>
             </Card>
           </Col>
 
-          <PriceSummary />
+          <PriceSummary room={room} hotel={hotel} />
         </Row>
       </Container>
     </section>

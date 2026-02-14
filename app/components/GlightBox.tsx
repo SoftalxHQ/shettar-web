@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import { useEffect, useRef, type AnchorHTMLAttributes } from 'react';
@@ -11,6 +12,9 @@ interface GlightBoxProps extends AnchorHTMLAttributes<HTMLAnchorElement> {
   'data-gallery'?: string;
 }
 
+// Global instance to avoid multiple conflicts and support multiple components
+let sharedLightbox: any = null;
+
 const GlightBox = ({
   children,
   image,
@@ -19,30 +23,33 @@ const GlightBox = ({
   ...other
 }: GlightBoxProps) => {
   const ref = useRef<HTMLAnchorElement | null>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const instanceRef = useRef<any>(null);
 
   useEffect(() => {
     let isMounted = true;
 
     const initLightbox = async () => {
       try {
-        // Dynamic import ensures the library is only loaded on the client
         const { default: GLightbox } = await import('glightbox');
 
-        if (ref.current && isMounted) {
-          // If an instance already exists, destroy it before creating a new one
-          if (instanceRef.current) {
-            instanceRef.current.destroy();
+        if (isMounted) {
+          if (!sharedLightbox) {
+            sharedLightbox = GLightbox({
+              selector: '.glightbox',
+              openEffect: 'fade',
+              closeEffect: 'fade',
+              touchNavigation: true,
+              loop: true,
+              autoplayVideos: true,
+            });
+          } else {
+            // Debounce the reload slightly for React renders
+            const timeoutId = setTimeout(() => {
+              if (sharedLightbox && typeof sharedLightbox.reload === 'function') {
+                sharedLightbox.reload();
+              }
+            }, 50);
+            return () => clearTimeout(timeoutId);
           }
-
-          instanceRef.current = GLightbox({
-            openEffect: 'fade',
-            closeEffect: 'fade',
-            touchNavigation: true,
-            loop: true,
-            autoplayVideos: true,
-          });
         }
       } catch (error) {
         console.error('GLightbox initialization failed:', error);
@@ -53,12 +60,8 @@ const GlightBox = ({
 
     return () => {
       isMounted = false;
-      if (instanceRef.current) {
-        instanceRef.current.destroy();
-        instanceRef.current = null;
-      }
     };
-  }, [image]);
+  }, [image, dataGallery]);
 
   return (
     <a

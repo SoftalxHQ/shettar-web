@@ -24,7 +24,7 @@ const splitArray = <T,>(array: T[], size: number): T[][] => {
   return result;
 };
 
-const RoomCard = ({ id, slug, features, images, name, price, sale, schemes }: HotelsRoomType) => {
+const RoomCard = ({ id, slug, features, images, name, price, sale, schemes, hotelSlug }: HotelsRoomType & { hotelSlug?: string }) => {
   const { isOpen, toggle } = useToggle();
 
   const roomSliderSettings: TinySliderSettings = useMemo(() => ({
@@ -44,6 +44,12 @@ const RoomCard = ({ id, slug, features, images, name, price, sale, schemes }: Ho
   const chunk_size = 2;
   const amenitiesChunks = splitArray(amenities, chunk_size);
   const formattedPrice = typeof price === 'number' ? price : parseFloat(price || '0');
+
+  // Build the link based on hotelSlug
+  const roomIdentifier = slug && slug !== "" ? slug : id;
+  const roomLink = hotelSlug
+    ? `/hotel/${hotelSlug}/roomtype/${roomIdentifier}`
+    : `/hotel/room/${roomIdentifier}`; // Fallback if no hotelSlug
 
   return (
     <>
@@ -109,9 +115,9 @@ const RoomCard = ({ id, slug, features, images, name, price, sale, schemes }: Ho
                   </h3>
                   <span className="ms-1 small text-muted">/night</span>
                 </div>
-                <Button variant="primary" className="mb-0 px-4">
+                <Link href={roomLink} className="btn btn-primary mb-0 px-4">
                   Select Room
-                </Button>
+                </Link>
               </div>
             </div>
           </Col>

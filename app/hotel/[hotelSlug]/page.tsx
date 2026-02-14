@@ -11,7 +11,7 @@ import { Hotel } from '@/app/types/hotel';
 import { Skeleton } from '@/app/components';
 
 export default function HotelDetailPage() {
-  const { slug } = useParams();
+  const { hotelSlug } = useParams();
   const [hotel, setHotel] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -20,7 +20,7 @@ export default function HotelDetailPage() {
     setIsLoading(true);
     try {
       const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
-      let url = `${API_URL}/api/v1/businesses/${slug}`;
+      let url = `${API_URL}/api/v1/businesses/${hotelSlug}`;
 
       if (searchParams) {
         const query = new URLSearchParams();
@@ -47,10 +47,10 @@ export default function HotelDetailPage() {
   };
 
   useEffect(() => {
-    if (slug) {
+    if (hotelSlug) {
       fetchHotelDetail();
     }
-  }, [slug]);
+  }, [hotelSlug]);
 
   const handleSearch = (searchData: any) => {
     const params = {
