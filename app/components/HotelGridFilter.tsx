@@ -225,6 +225,7 @@ const HotelGridFilter = () => {
                         onChange={(val) => setSortBy(val)}
                       >
                         <option value="-1">Select Option</option>
+                        <option value="most_popular">Most Popular</option>
                         <option value="price_asc">Price Low to High</option>
                         <option value="price_desc">Price High to Low</option>
                         <option value="rating_desc">Top Rated</option>

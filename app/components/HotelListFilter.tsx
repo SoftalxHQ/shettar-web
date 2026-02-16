@@ -16,9 +16,13 @@ const HotelListFilter = () => {
   const { isOpen: hotelTypeIsOpen, toggle: hotelTypeToggle } = useToggle();
   const { isOpen: hotelAmenitiesIsOpen, toggle: hotelAmenitiesToggle } = useToggle();
   const [hotelName, setHotelName] = useState(searchParams.get('name') || '');
+  const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
+  const [minRating, setMinRating] = useState<number>(0);
 
   useEffect(() => {
     setHotelName(searchParams.get('name') || '');
+    setSelectedAmenities(searchParams.get('amenities')?.split(',') || []);
+    setMinRating(parseFloat(searchParams.get('min_rating') || '0'));
   }, [searchParams]);
 
   const updateFilter = (key: string, value: string | null) => {
@@ -28,9 +32,35 @@ const HotelListFilter = () => {
     router.push(`${pathname}?${params.toString()}`);
   };
 
+  const handleRatingToggle = (rating: number) => {
+    const newValue = minRating === rating ? null : rating.toString();
+    updateFilter('min_rating', newValue);
+  };
+
+  const handleAmenityToggle = (amenity: string) => {
+    let newAmenities: string[];
+    if (selectedAmenities.includes(amenity)) {
+      newAmenities = selectedAmenities.filter(a => a !== amenity);
+    } else {
+      newAmenities = [...selectedAmenities, amenity];
+    }
+    updateFilter('amenities', newAmenities.length > 0 ? newAmenities.join(',') : null);
+  };
+
   const handleNameSearch = (e: React.FormEvent) => {
     e.preventDefault();
     updateFilter('name', hotelName);
+  };
+
+  const clearAll = () => {
+    const params = new URLSearchParams();
+    // Preserve core search params
+    const preserve = ['start_date', 'end_date', 'rooms', 'location'];
+    preserve.forEach(key => {
+      const val = searchParams.get(key);
+      if (val) params.set(key, val);
+    });
+    router.push(`${pathname}?${params.toString()}`);
   };
 
 
@@ -176,9 +206,27 @@ const HotelListFilter = () => {
         <h6 className="mb-2">Popular Type</h6>
         <div className="col-12">
           <div className="form-check">
-            <input className="form-check-input" type="checkbox" id="popolarType1" />
+            <input
+              className="form-check-input"
+              type="checkbox"
+              id="popolarType1"
+              checked={selectedAmenities.includes('breakfast')}
+              onChange={() => handleAmenityToggle('breakfast')}
+            />
             <label className="form-check-label" htmlFor="popolarType1">
               Free Breakfast Included
+            </label>
+          </div>
+          <div className="form-check">
+            <input
+              className="form-check-input"
+              type="checkbox"
+              id="popolarTypeWifi"
+              checked={selectedAmenities.includes('wifi')}
+              onChange={() => handleAmenityToggle('wifi')}
+            />
+            <label className="form-check-label" htmlFor="popolarTypeWifi">
+              Free WiFi
             </label>
           </div>
           <div className="form-check">
@@ -199,30 +247,20 @@ const HotelListFilter = () => {
       <Card className="rounded-0 p-4 border-0">
         <h6 className="mb-2">Customer Rating</h6>
         <ul className="list-inline mb-0 g-3">
-          <li className="list-inline-item mb-0">
-            <input type="checkbox" className="btn-check" id="btn-check-c1" />
-            <label className="btn btn-sm btn-light btn-primary-soft-check" htmlFor="btn-check-c1">
-              3+
-            </label>
-          </li>
-          <li className="list-inline-item mb-0">
-            <input type="checkbox" className="btn-check" id="btn-check-c2" />
-            <label className="btn btn-sm btn-light btn-primary-soft-check" htmlFor="btn-check-c2">
-              3.5+
-            </label>
-          </li>
-          <li className="list-inline-item mb-0">
-            <input type="checkbox" className="btn-check" id="btn-check-c3" />
-            <label className="btn btn-sm btn-light btn-primary-soft-check" htmlFor="btn-check-c3">
-              4+
-            </label>
-          </li>
-          <li className="list-inline-item mb-0">
-            <input type="checkbox" className="btn-check" id="btn-check-c4" />
-            <label className="btn btn-sm btn-light btn-primary-soft-check" htmlFor="btn-check-c4">
-              4.5+
-            </label>
-          </li>
+          {[3, 3.5, 4, 4.5].map((rating) => (
+            <li className="list-inline-item mb-0" key={rating}>
+              <input
+                type="checkbox"
+                className="btn-check"
+                id={`btn-check-c-${rating}`}
+                checked={minRating === rating}
+                onChange={() => handleRatingToggle(rating)}
+              />
+              <label className="btn btn-sm btn-light btn-primary-soft-check" htmlFor={`btn-check-c-${rating}`}>
+                {rating}+
+              </label>
+            </li>
+          ))}
         </ul>
       </Card>
       <hr className="my-0" />
@@ -265,68 +303,50 @@ const HotelListFilter = () => {
       <Card className="rounded-0 rounded-bottom p-4 border-0">
         <h6 className="mb-2">Amenities</h6>
         <div className="col-12">
-          <div className="form-check">
-            <input className="form-check-input" type="checkbox" id="amenitiesType1" />
-            <label className="form-check-label" htmlFor="amenitiesType1">
-              All
-            </label>
-          </div>
-          <div className="form-check">
-            <input className="form-check-input" type="checkbox" id="amenitiesType2" />
-            <label className="form-check-label" htmlFor="amenitiesType2">
-              Air Conditioning
-            </label>
-          </div>
-          <div className="form-check">
-            <input className="form-check-input" type="checkbox" id="amenitiesType3" />
-            <label className="form-check-label" htmlFor="amenitiesType3">
-              Bar
-            </label>
-          </div>
-          <div className="form-check">
-            <input className="form-check-input" type="checkbox" id="amenitiesType4" />
-            <label className="form-check-label" htmlFor="amenitiesType4">
-              Bonfire
-            </label>
-          </div>
-          <div className="form-check">
-            <input className="form-check-input" type="checkbox" id="amenitiesType5" />
-            <label className="form-check-label" htmlFor="amenitiesType5">
-              Business Services
-            </label>
-          </div>
-          <div className="form-check">
-            <input className="form-check-input" type="checkbox" id="amenitiesType6" />
-            <label className="form-check-label" htmlFor="amenitiesType6">
-              Caretaker
-            </label>
-          </div>
+          {[
+            { label: 'Air Conditioning', value: 'ac' },
+            { label: 'Bar', value: 'bar' },
+            { label: 'Swimming Pool', value: 'swimming_pool' },
+            { label: 'Gym', value: 'gym' },
+            { label: 'Restaurant', value: 'restaurant' },
+            { label: 'Parking', value: 'parking' },
+          ].map((item, idx) => (
+            <div className="form-check" key={idx}>
+              <input
+                className="form-check-input"
+                type="checkbox"
+                id={`amenitiesType-${item.value}`}
+                checked={selectedAmenities.includes(item.value)}
+                onChange={() => handleAmenityToggle(item.value)}
+              />
+              <label className="form-check-label" htmlFor={`amenitiesType-${item.value}`}>
+                {item.label}
+              </label>
+            </div>
+          ))}
+
           <Collapse in={hotelAmenitiesIsOpen}>
             <div className="multi-collapse" id="amenitiesCollapes">
-              <div className="form-check">
-                <input className="form-check-input" type="checkbox" id="amenitiesType7" />
-                <label className="form-check-label" htmlFor="amenitiesType7">
-                  Dining
-                </label>
-              </div>
-              <div className="form-check">
-                <input className="form-check-input" type="checkbox" id="amenitiesType8" />
-                <label className="form-check-label" htmlFor="amenitiesType8">
-                  Free Internet
-                </label>
-              </div>
-              <div className="form-check">
-                <input className="form-check-input" type="checkbox" id="amenitiesType9" />
-                <label className="form-check-label" htmlFor="amenitiesType9">
-                  Hair nets
-                </label>
-              </div>
-              <div className="form-check">
-                <input className="form-check-input" type="checkbox" id="amenitiesType10" />
-                <label className="form-check-label" htmlFor="amenitiesType10">
-                  Masks
-                </label>
-              </div>
+              {[
+                { label: 'Spa', value: 'spa' },
+                { label: 'WiFi', value: 'wifi' },
+                { label: 'Kitchenette', value: 'kitchenette' },
+                { label: 'Room Service', value: 'room_service' },
+                { label: 'Laundry', value: 'laundry' },
+              ].map((item, idx) => (
+                <div className="form-check" key={`more-${idx}`}>
+                  <input
+                    className="form-check-input"
+                    type="checkbox"
+                    id={`amenitiesMore-${item.value}`}
+                    checked={selectedAmenities.includes(item.value)}
+                    onChange={() => handleAmenityToggle(item.value)}
+                  />
+                  <label className="form-check-label" htmlFor={`amenitiesMore-${item.value}`}>
+                    {item.label}
+                  </label>
+                </div>
+              ))}
             </div>
           </Collapse>
           <button
@@ -337,10 +357,15 @@ const HotelListFilter = () => {
             aria-controls="amenitiesCollapes"
           >
             See <span className="ms-1">{hotelAmenitiesIsOpen ? 'less' : 'more'}</span>
-            <FaAngleDown className="ms-2" />
           </button>
         </div>
       </Card>
+
+      <div className="d-grid p-4 pt-0">
+        <button className="btn btn-outline-primary" type="button" onClick={clearAll}>
+          Clear all filters
+        </button>
+      </div>
     </div>
   )
 }
