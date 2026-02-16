@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, usePathname, useRouter, useSearchParams } from 'next/navigation';
 import TopNavBar4 from '@/app/components/TopNavBar4';
 import Footer from '@/app/components/Footer';
 import AvailabilityFilter from '@/app/components/HotelDetails/AvailabilityFilter';
@@ -12,21 +12,30 @@ import { Skeleton } from '@/app/components';
 
 export default function HotelDetailPage() {
   const { hotelSlug } = useParams();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+
   const [hotel, setHotel] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchHotelDetail = async (searchParams?: any) => {
+  const fetchHotelDetail = async () => {
     setIsLoading(true);
     try {
       const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
       let url = `${API_URL}/api/v1/businesses/${hotelSlug}`;
 
-      if (searchParams) {
-        const query = new URLSearchParams();
-        if (searchParams.start_date) query.append('start_date', searchParams.start_date);
-        if (searchParams.end_date) query.append('end_date', searchParams.end_date);
-        if (searchParams.number_of_rooms) query.append('number_of_rooms', searchParams.number_of_rooms);
+      const query = new URLSearchParams();
+      const start_date = searchParams.get('start_date');
+      const end_date = searchParams.get('end_date');
+      const rooms = searchParams.get('rooms');
+
+      if (start_date) query.append('start_date', start_date);
+      if (end_date) query.append('end_date', end_date);
+      if (rooms) query.append('number_of_rooms', rooms);
+
+      if (query.toString()) {
         url += `?${query.toString()}`;
       }
 
@@ -50,15 +59,21 @@ export default function HotelDetailPage() {
     if (hotelSlug) {
       fetchHotelDetail();
     }
-  }, [hotelSlug]);
+  }, [hotelSlug, searchParams]);
 
   const handleSearch = (searchData: any) => {
-    const params = {
-      start_date: searchData.stayFor[0]?.toISOString().split('T')[0],
-      end_date: searchData.stayFor[1]?.toISOString().split('T')[0],
-      number_of_rooms: searchData.guests.rooms
-    };
-    fetchHotelDetail(params);
+    const query = new URLSearchParams(searchParams.toString());
+
+    if (searchData.stayFor && Array.isArray(searchData.stayFor) && searchData.stayFor.length === 2) {
+      query.set('start_date', searchData.stayFor[0].toISOString().split('T')[0]);
+      query.set('end_date', searchData.stayFor[1].toISOString().split('T')[0]);
+    }
+
+    if (searchData.guests && searchData.guests.rooms) {
+      query.set('rooms', searchData.guests.rooms.toString());
+    }
+
+    router.push(`${pathname}?${query.toString()}`);
   };
 
   if (isLoading && !hotel) {

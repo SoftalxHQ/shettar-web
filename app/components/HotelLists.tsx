@@ -5,7 +5,8 @@ import { Alert, Button, Col, Container, Offcanvas, OffcanvasBody, OffcanvasHeade
 import { BsExclamationOctagonFill, BsGridFill, BsListUl, BsXLg } from 'react-icons/bs';
 import { FaAngleLeft, FaAngleRight, FaSliders } from 'react-icons/fa6';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
+import { useSearchParams } from 'next/navigation';
 
 // Components
 import HotelListCard from './HotelListCard';
@@ -18,62 +19,76 @@ import { Hotel } from '@/app/types/hotel';
 const HotelLists = () => {
   const { isOpen, toggle } = useToggle();
   const { isOpen: alertVisible, hide: hideAlert } = useToggle(true);
+  const searchParams = useSearchParams();
 
   const [hotels, setHotels] = useState<Hotel[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchHotels = async () => {
-      try {
-        const rawUrl = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:3000";
-        const API_URL = rawUrl.endsWith('/') ? rawUrl.slice(0, -1) : rawUrl;
-        const response = await fetch(`${API_URL}/api/v1/businesses`);
+  const fetchHotels = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const rawUrl = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:3000";
+      const API_URL = rawUrl.endsWith('/') ? rawUrl.slice(0, -1) : rawUrl;
 
-        if (!response.ok) {
-          throw new Error('Failed to fetch hotels');
-        }
+      const query = new URLSearchParams();
+      const start_date = searchParams.get('start_date');
+      const end_date = searchParams.get('end_date');
+      const rooms = searchParams.get('rooms');
+      const location = searchParams.get('location');
 
-        const data = await response.json();
+      if (start_date) query.append('start_date', start_date);
+      if (end_date) query.append('end_date', end_date);
+      if (rooms) query.append('number_of_rooms', rooms);
+      if (location) query.append('location', location);
 
-        // Map API data to Hotel interface
-        const mappedHotels: Hotel[] = data.map((b: any) => {
-          // Convert amenities object to features array
-          const features = Object.entries(b.amenities || {})
-            .filter(([_, value]) => value === true)
-            .map(([key]) => key.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' '))
-            .slice(0, 4); // Limit to 4 features for UI
+      const response = await fetch(`${API_URL}/api/v1/businesses?${query.toString()}`);
 
-          const price = parseFloat(b.starting_from) || 0;
-          const oldPrice = parseFloat(b.old_price) || 0;
-          const sale = (oldPrice > price) ? `${Math.round(((oldPrice - price) / oldPrice) * 100)}% Off` : undefined;
-
-          return {
-            id: b.id,
-            slug: b.slug,
-            name: b.name,
-            address: `${b.address}, ${b.city}, ${b.state}`,
-            images: b.images_url || [],
-            price: price,
-            rating: parseFloat(b.average_rating) || 0,
-            feature: features.length > 0 ? features : ['Standard Room'],
-            features: features.length > 0 ? features : ['Standard Room'],
-            sale: sale,
-            schemes: ['Free Cancellation', 'Instant Confirmation']
-          };
-        });
-
-        setHotels(mappedHotels);
-      } catch (err) {
-        console.error('Error fetching hotels:', err);
-        setError('Unable to load hotels. Please try again later.');
-      } finally {
-        setIsLoading(false);
+      if (!response.ok) {
+        throw new Error('Failed to fetch hotels');
       }
-    };
 
+      const data = await response.json();
+
+      // Map API data to Hotel interface
+      const mappedHotels: Hotel[] = data.map((b: any) => {
+        // Convert amenities object to features array
+        const features = Object.entries(b.amenities || {})
+          .filter(([_, value]) => value === true)
+          .map(([key]) => key.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' '))
+          .slice(0, 4); // Limit to 4 features for UI
+
+        const price = parseFloat(b.starting_from) || 0;
+        const oldPrice = parseFloat(b.old_price) || 0;
+        const sale = (oldPrice > price) ? `${Math.round(((oldPrice - price) / oldPrice) * 100)}% Off` : undefined;
+
+        return {
+          id: b.id,
+          slug: b.slug,
+          name: b.name,
+          address: `${b.address}, ${b.city}, ${b.state}`,
+          images: b.images_url || [],
+          price: price,
+          rating: parseFloat(b.average_rating) || 0,
+          feature: features.length > 0 ? features : ['Standard Room'],
+          features: features.length > 0 ? features : ['Standard Room'],
+          sale: sale,
+          schemes: ['Free Cancellation', 'Instant Confirmation']
+        };
+      });
+
+      setHotels(mappedHotels);
+    } catch (err) {
+      console.error('Error fetching hotels:', err);
+      setError('Unable to load hotels. Please try again later.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
     fetchHotels();
-  }, []);
+  }, [fetchHotels]);
 
   return (
     <section className="pt-0">
@@ -105,9 +120,6 @@ const HotelLists = () => {
                 variant="primary-soft"
                 className="btn-primary-check mb-0 d-xl-none"
                 type="button"
-                data-bs-toggle="offcanvas"
-                data-bs-target="#offcanvasSidebar"
-                aria-controls="offcanvasSidebar"
               >
                 <FaSliders className="me-1" /> Show filters
               </Button>
@@ -141,11 +153,9 @@ const HotelLists = () => {
               onHide={toggle}
               className="offcanvas-xl"
               tabIndex={-1}
-              id="offcanvasSidebar"
-              aria-labelledby="offcanvasSidebarLabel"
             >
               <OffcanvasHeader className="offcanvas-header" closeButton>
-                <h5 className="offcanvas-title" id="offcanvasSidebarLabel">
+                <h5 className="offcanvas-title">
                   Advance Filters
                 </h5>
               </OffcanvasHeader>

@@ -1,50 +1,79 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useEffect, useState, useCallback } from 'react';
+import { useParams, usePathname, useRouter, useSearchParams } from 'next/navigation';
 import TopNavBar4 from '@/app/components/TopNavBar4';
 import RoomGallery from '@/app/components/RoomDetails/RoomGallery';
-import RoomSelection from '@/app/components/RoomDetails/RoomSelection';
 import Footer from '@/app/components/Footer';
 import { Skeleton } from '@/app/components';
+import AvailabilityFilter from '@/app/components/HotelDetails/AvailabilityFilter';
 
 export default function RoomDetailPage() {
   const params = useParams();
   const hotelSlug = params.hotelSlug as string;
   const roomSlug = params.roomSlug as string;
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
 
   const [roomType, setRoomType] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchRoomDetail = async () => {
-      if (!hotelSlug || !roomSlug) return;
+  const fetchRoomDetail = useCallback(async () => {
+    if (!hotelSlug || !roomSlug) return;
 
-      setIsLoading(true);
-      try {
-        const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
-        // API is nested: /api/v1/businesses/:hotelSlug/room_types/:roomSlug
-        const response = await fetch(`${API_URL}/api/v1/businesses/${hotelSlug}/room_types/${roomSlug}`);
+    setIsLoading(true);
+    try {
+      const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
+      let url = `${API_URL}/api/v1/businesses/${hotelSlug}/room_types/${roomSlug}`;
 
-        if (!response.ok) {
-          throw new Error('Room details not found');
-        }
+      const query = new URLSearchParams();
+      const start_date = searchParams.get('start_date');
+      const end_date = searchParams.get('end_date');
+      if (start_date) query.append('start_date', start_date);
+      if (end_date) query.append('end_date', end_date);
 
-        const data = await response.json();
-        setRoomType(data);
-      } catch (err) {
-        console.error('Error fetching room details:', err);
-        setError('Unable to load room details.');
-      } finally {
-        setIsLoading(false);
+      if (query.toString()) {
+        url += `?${query.toString()}`;
       }
-    };
 
+      const response = await fetch(url);
+
+      if (!response.ok) {
+        throw new Error('Room details not found');
+      }
+
+      const data = await response.json();
+      setRoomType(data);
+    } catch (err) {
+      console.error('Error fetching room details:', err);
+      setError('Unable to load room details.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [hotelSlug, roomSlug, searchParams]);
+
+  useEffect(() => {
     fetchRoomDetail();
-  }, [hotelSlug, roomSlug]);
+  }, [fetchRoomDetail]);
 
-  if (isLoading) {
+  const handleSearch = (searchData: any) => {
+    const query = new URLSearchParams(searchParams.toString());
+
+    if (searchData.stayFor && Array.isArray(searchData.stayFor) && searchData.stayFor.length === 2) {
+      query.set('start_date', searchData.stayFor[0].toISOString().split('T')[0]);
+      query.set('end_date', searchData.stayFor[1].toISOString().split('T')[0]);
+    }
+
+    if (searchData.guests && searchData.guests.rooms) {
+      query.set('rooms', searchData.guests.rooms.toString());
+    }
+
+    router.push(`${pathname}?${query.toString()}`);
+  };
+
+  if (isLoading && !roomType) {
     return (
       <>
         <TopNavBar4 />
@@ -83,7 +112,16 @@ export default function RoomDetailPage() {
     <>
       <TopNavBar4 />
       <main>
-        <RoomGallery room={roomType} hotel={roomType.business} />
+        <div className={isLoading ? "opacity-50 pointer-events-none" : ""}>
+          {roomType.business && (
+            <AvailabilityFilter
+              hotel={roomType.business}
+              onSearch={handleSearch}
+              isLoading={isLoading}
+            />
+          )}
+          <RoomGallery room={roomType} hotel={roomType.business} />
+        </div>
       </main>
       <Footer />
     </>

@@ -1,16 +1,17 @@
 'use client';
 
 import { type Options as ChoiceOption } from 'choices.js';
-import { type ReactElement, useEffect, useRef } from 'react';
+import { type ReactNode, useEffect, useRef } from 'react';
 
 export type ChoiceProp = Partial<ChoiceOption> & {
-  children: ReactElement[];
+  children: ReactNode;
   multiple?: boolean;
   className?: string;
   onChange?: (text: string) => void;
+  value?: string | string[];
 };
 
-const SelectFormInput = ({ children, multiple, className, onChange, ...choiceOptions }: ChoiceProp) => {
+const SelectFormInput = ({ children, multiple, className, onChange, value, ...choiceOptions }: ChoiceProp) => {
   const selectE = useRef<HTMLSelectElement>(null);
   const choicesInstanceRef = useRef<any>(null);
 
@@ -72,8 +73,20 @@ const SelectFormInput = ({ children, multiple, className, onChange, ...choiceOpt
     };
   }, [onChange, JSON.stringify(choiceOptions)]);
 
+  useEffect(() => {
+    if (choicesInstanceRef.current && value !== undefined) {
+      choicesInstanceRef.current.setChoiceByValue(value);
+    }
+  }, [value]);
+
   return (
-    <select ref={selectE} multiple={multiple} className={className}>
+    <select
+      ref={selectE}
+      multiple={multiple}
+      className={className}
+      value={value}
+      onChange={(e) => onChange?.(e.target.value)}
+    >
       {children}
     </select>
   );

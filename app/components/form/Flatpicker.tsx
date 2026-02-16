@@ -13,60 +13,70 @@ type FlatpickerProps = {
 
 const Flatpicker = ({ className, options, placeholder, value, getValue }: FlatpickerProps) => {
   const element = useRef<HTMLInputElement | null>(null);
+  const instanceRef = useRef<any>(null);
 
   const handleDateChange = useCallback(
     (selectedDates: Date[]) => {
-      const newDate = selectedDates.length === 1 ? selectedDates[0] : selectedDates;
+      // In range mode, we should always pass the array to keep the state consistent
+      // Only collapse to a single date if NOT in range mode and only one date is present
+      const isRange = options?.mode === 'range';
+      const newDate = (!isRange && selectedDates.length === 1) ? selectedDates[0] : selectedDates;
       getValue?.(newDate);
     },
-    [getValue],
+    [getValue, options?.mode],
   );
 
   useEffect(() => {
+    let instance: any;
     const initFlatpickr = async () => {
-      // Dynamic import to avoid "document is not defined" during SSR
       const { default: flatpickr } = await import('flatpickr');
       if (element.current) {
-        const instance = flatpickr(element.current, {
+        instance = flatpickr(element.current, {
           defaultDate: value,
+          static: true,
           ...options,
-          closeOnSelect: false, // Force false initially to control closing manually in onChange
-          onChange: (selectedDates, dateStr, instance) => {
-            // Call internal handler
+          // Explicitly set closeOnSelect for range mode to prevent premature closing
+          closeOnSelect: options?.mode === 'range' ? false : options?.closeOnSelect,
+          onChange: (selectedDates, dateStr, inst) => {
             handleDateChange(selectedDates);
 
-            // Call user provided onChange if exists
+            // If range is complete, we can close it if closeOnSelect isn't explicitly false
+            if (options?.mode === 'range' && selectedDates.length === 2 && options?.closeOnSelect !== false) {
+              inst.close();
+            }
+
             if (options?.onChange) {
               // @ts-expect-error - options.onChange type mismatch
-              options.onChange(selectedDates, dateStr, instance);
-            }
-
-            // Custom closing logic
-            // If user explicitly set closeOnSelect: false, respect it and never close automatically
-            if (options?.closeOnSelect === false) {
-              return;
-            }
-
-            // Default behavior: Close on single date or full range
-            if (options?.mode === 'range') {
-              if (selectedDates.length === 2) {
-                instance.close();
-              }
-            } else {
-              instance.close();
+              options.onChange(selectedDates, dateStr, inst);
             }
           },
         });
-
-        return () => {
-          instance.destroy();
-        };
+        instanceRef.current = instance;
       }
     };
     initFlatpickr();
-  }, [value, options, handleDateChange]);
 
-  return <input ref={element} className={`form-control flatpickr ${className}`} placeholder={placeholder} />;
+    return () => {
+      instance?.destroy();
+      instanceRef.current = null;
+    };
+  }, [JSON.stringify(options), handleDateChange]);
+
+  useEffect(() => {
+    if (instanceRef.current && value) {
+      // Only update if the dates are actually different to avoid resetting internal state
+      const currentDate = instanceRef.current.selectedDates;
+      const isSame = Array.isArray(value)
+        ? value.length === currentDate.length && value.every((d, i) => d.getTime() === currentDate[i]?.getTime())
+        : value instanceof Date && currentDate.length === 1 && value.getTime() === currentDate[0]?.getTime();
+
+      if (!isSame) {
+        instanceRef.current.setDate(value, false);
+      }
+    }
+  }, [value]);
+
+  return <input ref={element} data-input className={`form-control flatpickr w-100 ${className}`} placeholder={placeholder} />;
 };
 
 export default Flatpicker;

@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Button, Col, Dropdown, DropdownDivider, DropdownMenu, DropdownToggle, FormLabel, Row } from 'react-bootstrap';
 import { BsCalendar, BsDashCircle, BsGeoAlt, BsPerson, BsPlusCircle, BsSearch } from 'react-icons/bs';
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import SelectFormInput from './form/SelectFormInput';
 import Flatpicker from './form/Flatpicker';
 
@@ -16,18 +17,92 @@ type AvailabilityFormType = {
   };
 };
 
+let locationsCache: any[] | null = null;
+
 const AvailabilityFilter = () => {
-  const initialValue: AvailabilityFormType = {
-    location: 'San Jacinto, USA',
-    stayFor: [new Date(), new Date(Date.now() + 5 * 24 * 60 * 60 * 1000)],
-    guests: {
-      adults: 2,
-      rooms: 1,
-      children: 0,
-    },
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+
+  const getInitialValue = (): AvailabilityFormType => {
+    const start_date_str = searchParams.get('start_date');
+    const end_date_str = searchParams.get('end_date');
+    const rooms_str = searchParams.get('rooms');
+    const location_str = searchParams.get('location') || '';
+
+    let stayFor: Date | Array<Date> = [new Date(), new Date(Date.now() + 24 * 60 * 60 * 1000)];
+
+    if (start_date_str && end_date_str) {
+      const s = new Date(start_date_str);
+      const e = new Date(end_date_str);
+      if (!isNaN(s.getTime()) && !isNaN(e.getTime())) {
+        stayFor = [s, e];
+      }
+    }
+
+    return {
+      location: location_str,
+      stayFor: stayFor,
+      guests: {
+        adults: 2,
+        rooms: rooms_str ? parseInt(rooms_str) : 1,
+        children: 0,
+      },
+    };
   };
 
-  const [formValue, setFormValue] = useState<AvailabilityFormType>(initialValue);
+  const [formValue, setFormValue] = useState<AvailabilityFormType>(getInitialValue());
+  const [availableLocations, setAvailableLocations] = useState<any[]>([]);
+
+  useEffect(() => {
+    setFormValue(getInitialValue());
+  }, [searchParams]);
+
+  useEffect(() => {
+    const fetchLocations = async () => {
+      if (locationsCache) {
+        setAvailableLocations(locationsCache);
+        return;
+      }
+
+      try {
+        const rawUrl = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:3000";
+        const API_URL = rawUrl.endsWith('/') ? rawUrl.slice(0, -1) : rawUrl;
+        const response = await fetch(`${API_URL}/api/v1/businesses/locations`);
+        if (response.ok) {
+          const data = await response.json();
+          locationsCache = data;
+          setAvailableLocations(data);
+        }
+      } catch (error) {
+        console.error('Error fetching locations:', error);
+      }
+    };
+    fetchLocations();
+  }, []);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const query = new URLSearchParams();
+
+    if (Array.isArray(formValue.stayFor) && formValue.stayFor.length === 2) {
+      query.set('start_date', formValue.stayFor[0].toISOString().split('T')[0]);
+      query.set('end_date', formValue.stayFor[1].toISOString().split('T')[0]);
+    }
+
+    if (formValue.guests.rooms) {
+      query.set('rooms', formValue.guests.rooms.toString());
+    }
+
+    if (formValue.location) {
+      query.set('location', formValue.location);
+    }
+
+    // Determine target page: keep grid if already on grid or if on the root page (which is grid by default)
+    const targetPage = (pathname.includes('/hotel/grid') || pathname === '/') ? '/hotel/grid' : '/hotel/list';
+    console.log(`Searching: ${targetPage}?${query.toString()}`);
+    router.push(`${targetPage}?${query.toString()}`);
+  };
 
   const updateGuests = (type: keyof AvailabilityFormType['guests'], increase: boolean = true) => {
     const val = formValue.guests[type];
@@ -55,8 +130,13 @@ const AvailabilityFilter = () => {
     return value;
   };
 
+  const flatpickrOptions = useMemo(() => ({
+    mode: 'range' as const,
+    dateFormat: 'd M',
+  }), []);
+
   return (
-    <form className="bg-mode shadow rounded-3 position-relative p-4 pe-md-5 pb-5 pb-md-4 mb-4">
+    <form className="bg-mode shadow rounded-3 position-relative p-4 pe-md-5 pb-5 pb-md-4 mb-4" onSubmit={handleSubmit}>
       <Row className="g-4 align-items-center">
         <Col lg={4}>
           <div className="form-control-border form-control-transparent form-fs-md flex-centered gap-2">
@@ -64,13 +144,16 @@ const AvailabilityFilter = () => {
 
             <div className="flex-grow-1">
               <FormLabel className="form-label">Location</FormLabel>
-              <SelectFormInput>
-                <option value={-1} disabled>
-                  Select location
+              <SelectFormInput
+                value={formValue.location}
+                onChange={(val) => setFormValue({ ...formValue, location: val })}
+              >
+                <option value="" disabled hidden>
+                  City/Town, State
                 </option>
-                <option value="1">San Jacinto, USA</option>
-                <option value="2">North Dakota, Canada</option>
-                <option value="3">West Virginia, Paris</option>
+                {availableLocations.map((loc, idx) => (
+                  <option key={idx} value={loc.display}>{loc.display}</option>
+                ))}
               </SelectFormInput>
             </div>
           </div>
@@ -82,15 +165,12 @@ const AvailabilityFilter = () => {
               <BsCalendar size={37} className=" me-2" />
             </div>
 
-            <div className="form-control-border form-control-transparent form-fs-md">
+            <div className="form-control-border form-control-transparent form-fs-md w-100">
               <FormLabel className="form-label">Check in - out</FormLabel>
               <Flatpicker
                 value={formValue.stayFor}
                 getValue={(val) => setFormValue({ ...formValue, stayFor: val })}
-                options={{
-                  mode: 'range',
-                  dateFormat: 'd M',
-                }}
+                options={flatpickrOptions}
                 className="form-control flatpickr"
               />
             </div>
