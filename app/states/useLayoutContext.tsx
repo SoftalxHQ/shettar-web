@@ -6,11 +6,14 @@ import { type ReactNode, createContext, useContext, useState, useEffect, useCall
 export type LayoutState = {
   theme: 'light' | 'dark' | 'auto';
   dir: 'ltr' | 'rtl';
+  hotelCount: number | null;
+  hotelLocation: string | null;
 };
 
 type LayoutType = LayoutState & {
   updateTheme: (theme: LayoutState['theme']) => void;
   updateDir: (dir: LayoutState['dir']) => void;
+  updateHotelStats: (count: number, location: string | null) => void;
 };
 
 const LayoutContext = createContext<LayoutType | undefined>(undefined);
@@ -29,11 +32,17 @@ export const LayoutProvider = ({ children }: { children: ReactNode }) => {
   const [settings, setSettings] = useState<LayoutState>({
     theme: 'light', // Default initial state
     dir: 'ltr',
+    hotelCount: null,
+    hotelLocation: null,
   });
 
   const updateSettings = useCallback((newSettings: Partial<LayoutState>) => {
     setSettings((prev) => ({ ...prev, ...newSettings }));
   }, []);
+
+  const updateHotelStats = useCallback((count: number, location: string | null) => {
+    updateSettings({ hotelCount: count, hotelLocation: location });
+  }, [updateSettings]);
 
   useEffect(() => {
     const foundTheme = localStorage.getItem(themeKey) as LayoutState['theme'] | null;
@@ -78,6 +87,7 @@ export const LayoutProvider = ({ children }: { children: ReactNode }) => {
         ...settings,
         updateTheme,
         updateDir,
+        updateHotelStats,
       }}
     >
       {children}

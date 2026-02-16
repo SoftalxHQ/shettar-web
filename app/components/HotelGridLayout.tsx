@@ -8,12 +8,14 @@ import Link from 'next/link';
 import { useSearchParams, usePathname } from 'next/navigation';
 import { useEffect, useState, useCallback } from 'react';
 import { Hotel } from '@/app/types/hotel';
+import { useLayoutContext } from '@/app/states/useLayoutContext';
 
 const HotelGridLayout = () => {
   const [hotels, setHotels] = useState<Hotel[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const searchParams = useSearchParams();
+  const { updateHotelStats } = useLayoutContext();
 
   const fetchHotels = useCallback(async () => {
     setIsLoading(true);
@@ -68,13 +70,14 @@ const HotelGridLayout = () => {
       });
 
       setHotels(mappedHotels);
+      updateHotelStats(mappedHotels.length, location);
     } catch (err) {
       console.error('Error fetching hotels:', err);
       setError('Unable to load hotels. Please try again later.');
     } finally {
       setIsLoading(false);
     }
-  }, [searchParams]);
+  }, [searchParams, updateHotelStats]);
 
   useEffect(() => {
     fetchHotels();
