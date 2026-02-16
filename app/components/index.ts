@@ -1,7 +1,7 @@
 export { default as TinySlider } from './TinySlider/index';
 export { default as LogoBox } from './LogoBox';
 export { default as AppMenu } from './AppMenu';
-export { default as TopNavBar4 } from './TopNavBar4';
+export { default as Header } from './Header';
 export { default as Hero } from './Hero';
 export { default as AvailabilityFilter } from './AvailabilityFilter';
 export { default as HotelListFilter } from './HotelListFilter';

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, usePathname, useRouter, useSearchParams } from 'next/navigation';
-import TopNavBar4 from '@/app/components/TopNavBar4';
+import { Header } from '@/app/components';
 import Footer from '@/app/components/Footer';
 import AvailabilityFilter from '@/app/components/HotelDetails/AvailabilityFilter';
 import HotelGallery from '@/app/components/HotelDetails/HotelGallery';
@@ -86,7 +86,7 @@ export default function HotelDetailPage() {
   if (isLoading && !hotel) {
     return (
       <>
-        <TopNavBar4 />
+        <Header />
         <div className="container mt-5 pt-5">
           <Skeleton height="400px" className="mb-4 rounded-3" />
           <div className="row">
@@ -108,7 +108,7 @@ export default function HotelDetailPage() {
   if (error || !hotel) {
     return (
       <>
-        <TopNavBar4 />
+        <Header />
         <div className="container mt-5 pt-5 text-center py-5 my-5">
           <h2 className="text-danger mb-3">Error</h2>
           <p className="mb-4">{error || 'Something went wrong.'}</p>
@@ -121,7 +121,7 @@ export default function HotelDetailPage() {
 
   return (
     <>
-      <TopNavBar4 />
+      <Header />
 
       <main>
         <div className={isLoading ? "opacity-50 pointer-events-none" : ""}>

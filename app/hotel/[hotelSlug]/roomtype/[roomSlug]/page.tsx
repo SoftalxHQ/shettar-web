@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, usePathname, useRouter, useSearchParams } from 'next/navigation';
-import TopNavBar4 from '@/app/components/TopNavBar4';
+import { Header } from '@/app/components';
 import RoomGallery from '@/app/components/RoomDetails/RoomGallery';
 import Footer from '@/app/components/Footer';
 import { Skeleton } from '@/app/components';
@@ -85,7 +85,7 @@ export default function RoomDetailPage() {
   if (isLoading && !roomType) {
     return (
       <>
-        <TopNavBar4 />
+        <Header />
         <div className="container mt-5 pt-5">
           <Skeleton height="400px" className="mb-4 rounded-3" />
           <div className="row">
@@ -106,7 +106,7 @@ export default function RoomDetailPage() {
   if (error || !roomType) {
     return (
       <>
-        <TopNavBar4 />
+        <Header />
         <div className="container mt-5 pt-5 text-center py-5">
           <h2 className="text-danger">Error</h2>
           <p>{error || 'Something went wrong.'}</p>
@@ -119,7 +119,7 @@ export default function RoomDetailPage() {
 
   return (
     <>
-      <TopNavBar4 />
+      <Header />
       <main>
         <div className={isLoading ? "opacity-50 pointer-events-none" : ""}>
           {roomType.business && (

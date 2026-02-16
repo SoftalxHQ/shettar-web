@@ -1,9 +1,9 @@
-import { TopNavBar4, Hero, HotelGridFilter, HotelGridLayout, Footer } from '@/app/components';
+import { Header, Hero, HotelGridFilter, HotelGridLayout, Footer } from '@/app/components';
 
 export default function HotelGridPage() {
   return (
     <>
-      <TopNavBar4 />
+      <Header />
       <main>
         <Hero />
         <HotelGridFilter />

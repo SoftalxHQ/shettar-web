@@ -8,12 +8,15 @@ export type LayoutState = {
   dir: 'ltr' | 'rtl';
   hotelCount: number | null;
   hotelLocation: string | null;
+  isAuthenticated: boolean;
 };
 
 type LayoutType = LayoutState & {
   updateTheme: (theme: LayoutState['theme']) => void;
   updateDir: (dir: LayoutState['dir']) => void;
   updateHotelStats: (count: number, location: string | null) => void;
+  refreshAuth: () => void;
+  logout: () => void;
 };
 
 const LayoutContext = createContext<LayoutType | undefined>(undefined);
@@ -34,6 +37,7 @@ export const LayoutProvider = ({ children }: { children: ReactNode }) => {
     dir: 'ltr',
     hotelCount: null,
     hotelLocation: null,
+    isAuthenticated: false,
   });
 
   const updateSettings = useCallback((newSettings: Partial<LayoutState>) => {
@@ -42,6 +46,18 @@ export const LayoutProvider = ({ children }: { children: ReactNode }) => {
 
   const updateHotelStats = useCallback((count: number, location: string | null) => {
     updateSettings({ hotelCount: count, hotelLocation: location });
+  }, [updateSettings]);
+
+  const refreshAuth = useCallback(() => {
+    const token = localStorage.getItem('token');
+    const user = localStorage.getItem('user');
+    updateSettings({ isAuthenticated: !!(token && user) });
+  }, [updateSettings]);
+
+  const logout = useCallback(() => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    updateSettings({ isAuthenticated: false });
   }, [updateSettings]);
 
   useEffect(() => {
@@ -64,7 +80,8 @@ export const LayoutProvider = ({ children }: { children: ReactNode }) => {
     }
 
     setSettings(prev => ({ ...prev, theme: initialTheme }));
-  }, []);
+    refreshAuth();
+  }, [refreshAuth]);
 
   const updateTheme = (newTheme: LayoutState['theme']) => {
     const preferredTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
@@ -88,6 +105,8 @@ export const LayoutProvider = ({ children }: { children: ReactNode }) => {
         updateTheme,
         updateDir,
         updateHotelStats,
+        refreshAuth,
+        logout,
       }}
     >
       {children}

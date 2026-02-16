@@ -1,9 +1,9 @@
-import { TopNavBar4, Hero, HotelListFilter, HotelLists, Footer } from '@/app/components';
+import { Header, Hero, HotelListFilter, HotelLists, Footer } from '@/app/components';
 
 export default function HotelListPage() {
   return (
     <>
-      <TopNavBar4 />
+      <Header />
       <main>
         <Hero />
         <HotelLists />

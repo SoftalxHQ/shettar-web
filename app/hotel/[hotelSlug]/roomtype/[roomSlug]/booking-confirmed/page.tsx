@@ -5,7 +5,7 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { Button, Card, Col, Container, Row, Image } from 'react-bootstrap';
 import { BsCheckCircleFill, BsCalendarCheck, BsHouse, BsDownload, BsPrinter } from 'react-icons/bs';
-import TopNavBar4 from '@/app/components/TopNavBar4';
+import { Header } from '@/app/components';
 import Footer from '@/app/components/Footer';
 import { Skeleton } from '@/app/components';
 
@@ -39,7 +39,7 @@ export default function BookingConfirmedPage() {
   if (isLoading) {
     return (
       <>
-        <TopNavBar4 />
+        <Header />
         <Container className="py-5 text-center">
           <Skeleton height="400px" width="100%" className="rounded-4" />
         </Container>
@@ -52,7 +52,7 @@ export default function BookingConfirmedPage() {
 
   return (
     <>
-      <TopNavBar4 />
+      <Header />
       <main className="py-5 min-vh-100">
         <Container>
           <div className="text-center mb-5">
