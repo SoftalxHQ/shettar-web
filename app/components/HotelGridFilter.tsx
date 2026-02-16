@@ -14,36 +14,110 @@ import * as yup from 'yup';
 import SelectFormInput from './form/SelectFormInput';
 import TextFormInput from './form/TextFormInput';
 
-const amenities = [
-  'Air Conditioning',
-  'Room Services',
-  'Dining',
-  'Caretaker',
-  'Free Internet',
-  'Business Service',
-  'Bonfire',
-  'Mask',
-  'Spa',
-  'Swimming pool',
-  'Fitness Centre',
-  'Bar',
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
+
+const filterAmenities = [
+  { label: 'Air Conditioning', value: 'ac' },
+  { label: 'WiFi', value: 'wifi' },
+  { label: 'Swimming Pool', value: 'swimming_pool' },
+  { label: 'Gym', value: 'gym' },
+  { label: 'Restaurant', value: 'restaurant' },
+  { label: 'Bar', value: 'bar' },
+  { label: 'Spa', value: 'spa' },
+  { label: 'Parking', value: 'parking' },
+  { label: 'Breakfast', value: 'breakfast' },
+  { label: 'Room Service', value: 'room_service' },
 ];
 
 const HotelGridFilter = () => {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+
   const { isOpen, toggle } = useToggle();
-  const [priceRange, setPriceRange] = useState<string[]>(['700', '1500']);
+  const [priceRange, setPriceRange] = useState<string[]>(['0', '100000']);
+  const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
+  const [minRating, setMinRating] = useState<number>(0);
+  const [sortBy, setSortBy] = useState<string>('-1');
+
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
-  }, []);
+    // Sync with URL after mounting to avoid hydration mismatch
+    setPriceRange([
+      searchParams.get('min_price') || '0',
+      searchParams.get('max_price') || '500000'
+    ]);
+    setSelectedAmenities(searchParams.get('amenities')?.split(',') || []);
+    setMinRating(parseFloat(searchParams.get('min_rating') || '0'));
+    setSortBy(searchParams.get('sort_by') || '-1');
+  }, [searchParams]);
 
   const filterSchema = yup.object({
-    hotelName: yup.string().required('Please enter hotel name'),
+    hotelName: yup.string(),
   });
-  const { control, handleSubmit } = useForm({
+
+  const { control, handleSubmit, setValue } = useForm({
     resolver: yupResolver(filterSchema),
+    defaultValues: {
+      hotelName: '',
+    }
   });
+
+  // Sync hotelName specifically after mount
+  useEffect(() => {
+    if (mounted) {
+      setValue('hotelName', searchParams.get('name') || '');
+    }
+  }, [mounted, searchParams, setValue]);
+
+  const onApplyFilter = (data: any) => {
+    const params = new URLSearchParams(searchParams.toString());
+
+    if (data.hotelName) params.set('name', data.hotelName);
+    else params.delete('name');
+
+    params.set('min_price', priceRange[0]);
+    params.set('max_price', priceRange[1]);
+
+    if (selectedAmenities.length > 0) params.set('amenities', selectedAmenities.join(','));
+    else params.delete('amenities');
+
+    if (minRating > 0) params.set('min_rating', minRating.toString());
+    else params.delete('min_rating');
+
+    if (sortBy !== '-1') params.set('sort_by', sortBy);
+    else params.delete('sort_by');
+
+    router.push(`${pathname}?${params.toString()}`);
+  };
+
+  const handleAmenityChange = (value: string) => {
+    if (selectedAmenities.includes(value)) {
+      setSelectedAmenities(selectedAmenities.filter(a => a !== value));
+    } else {
+      setSelectedAmenities([...selectedAmenities, value]);
+    }
+  };
+
+  const clearAll = () => {
+    const params = new URLSearchParams();
+    // Preserve core search params if any (like start_date, end_date, rooms, location)
+    const preserve = ['start_date', 'end_date', 'rooms', 'location'];
+    preserve.forEach(key => {
+      const val = searchParams.get(key);
+      if (val) params.set(key, val);
+    });
+
+    setPriceRange(['0', '100000']);
+    setSelectedAmenities([]);
+    setMinRating(0);
+    setSortBy('-1');
+    setValue('hotelName', '');
+
+    router.push(`${pathname}?${params.toString()}`);
+  };
 
   if (!mounted) {
     return (
@@ -52,7 +126,7 @@ const HotelGridFilter = () => {
           <Row>
             <Col xs={12}>
               <div className="d-flex justify-content-between">
-                <input type="checkbox" className="btn-check" id="btn-check-soft" />
+                <input type="checkbox" className="btn-check" id="btn-check-soft" key="skeleton-check" readOnly />
                 <label className="btn btn-primary-soft btn-primary-check mb-0 items-center" htmlFor="btn-check-soft">
                   <BsSliders className=" fa-fe me-2" />
                   Show Filters
@@ -70,170 +144,187 @@ const HotelGridFilter = () => {
       <Container className="position-relative">
         <Row>
           <Col xs={12}>
-            <div className="d-flex justify-content-between">
-              <input type="checkbox" className="btn-check" id="btn-check-soft" />
+            <div className="d-flex justify-content-between gap-2 flex-wrap">
+              <input type="checkbox" className="btn-check" id="btn-check-soft" key="actual-check" checked={isOpen} readOnly />
               <label
                 onClick={toggle}
                 className="btn btn-primary-soft btn-primary-check mb-0 items-center"
                 htmlFor="btn-check-soft"
-                data-bs-toggle="collapse"
-                data-bs-target="#collapseFilter"
-                aria-controls="collapseFilter"
               >
                 <BsSliders className=" fa-fe me-2" />
-                Show Filters
+                {isOpen ? 'Hide Filters' : 'Show Filters'}
               </label>
-              <ul className="nav nav-pills nav-pills-dark" id="tour-pills-tab" role="tablist">
-                <li className="nav-item">
-                  <Link className="nav-link rounded-start rounded-0 mb-0" href="/hotel/list" passHref>
-                    <BsListUl size={16} className=" fa-fw" />
-                  </Link>
-                </li>
-                <li className="nav-item">
-                  <Link className="nav-link rounded-end rounded-0 mb-0 active" href="/hotel/grid" passHref>
-                    <BsGridFill size={16} className=" fa-fw" />
-                  </Link>
-                </li>
-              </ul>
+
+              <div className="d-flex gap-2 align-items-center">
+                <ul className="nav nav nav-pills nav-pills-dark" id="tour-pills-tab" role="tablist">
+                  <li className="nav-item">
+                    <Link className={`nav-link rounded-start rounded-0 mb-0 ${pathname.includes('/hotel/list') ? 'active' : ''}`} href={`/hotel/list?${searchParams.toString()}`} passHref>
+                      <BsListUl size={16} className=" fa-fw" />
+                    </Link>
+                  </li>
+                  <li className="nav-item">
+                    <Link className={`nav-link rounded-end rounded-0 mb-0 ${pathname.includes('/hotel/grid') ? 'active' : ''}`} href={`/hotel/grid?${searchParams.toString()}`} passHref>
+                      <BsGridFill size={16} className=" fa-fw" />
+                    </Link>
+                  </li>
+                </ul>
+              </div>
             </div>
           </Col>
         </Row>
         <Collapse in={isOpen}>
-          <Card className="bg-body-tertiary p-4 mt-4 z-index-9 border-0 shadow-sm border">
-            <CardBody className="p-0">
-              <form onSubmit={handleSubmit(() => { })} className="row g-4">
-                <Col md={6} lg={4}>
-                  <TextFormInput
-                    name="hotelName"
-                    className="form-control-lg"
-                    control={control}
-                    label="Enter Hotel Name"
-                    containerClass="form-control-borderless"
-                  />
-                </Col>
-                <Col md={6} lg={4}>
-                  <div className="form-control-borderless">
-                    <label className="form-label">Price Range</label>
-                    <div className="position-relative">
-                      <div className="noui-wrapper">
-                        <div className="d-flex justify-content-between flex-wrap">
-                          <input type="text" className="text-body input-with-range-min" value={priceRange[0].split('.')[0]} readOnly />
-                          <input type="text" className="text-body input-with-range-max" value={priceRange[1].split('.')[0]} readOnly />
+          <div>
+            <Card className="bg-light p-4 mt-4 z-index-9 border-0">
+              <CardBody className="p-0">
+                <form onSubmit={handleSubmit(onApplyFilter)} className="row g-4">
+                  {/* Hotel Name */}
+                  <Col md={6} lg={4}>
+                    <TextFormInput
+                      name="hotelName"
+                      className="form-control-lg"
+                      control={control as any}
+                      label="Hotel Name"
+                      placeholder="e.g. Black Tower"
+                      containerClass="form-control-borderless"
+                    />
+                  </Col>
+
+                  {/* Price Range */}
+                  <Col md={6} lg={4}>
+                    <div className="form-control-borderless">
+                      <label className="form-label">Price Range (₦)</label>
+                      <div className="position-relative">
+                        <div className="noui-wrapper">
+                          <div className="d-flex justify-content-between flex-wrap mb-2">
+                            <input type="text" className="text-body input-with-range-min" value={`₦${parseInt(priceRange[0]).toLocaleString()}`} readOnly />
+                            <input type="text" className="text-body input-with-range-max text-end" value={`₦${parseInt(priceRange[1]).toLocaleString()}`} readOnly />
+                          </div>
+                          <Nouislider
+                            start={[parseInt(priceRange[0]), parseInt(priceRange[1])]}
+                            range={{
+                              min: 0,
+                              max: 500000,
+                            }}
+                            step={1000}
+                            onUpdate={(val) => setPriceRange(val as string[])}
+                            className="noui-slider-range mt-2"
+                            connect
+                          />
                         </div>
-                        <Nouislider
-                          start={priceRange}
-                          range={{
-                            min: 500,
-                            max: 2000,
-                          }}
-                          step={1}
-                          onChange={(val) => setPriceRange(val as string[])}
-                          className="noui-slider-range mt-2"
-                          connect
-                        />
                       </div>
                     </div>
+                  </Col>
+
+                  {/* Popular Filters / Sort By */}
+                  <Col md={6} lg={4}>
+                    <div className="form-size-lg form-control-borderless">
+                      <label className="form-label">Popular Filters</label>
+                      <SelectFormInput
+                        className="form-select border-0 bg-transparent"
+                        value={sortBy}
+                        onChange={(val) => setSortBy(val)}
+                      >
+                        <option value="-1">Select Option</option>
+                        <option value="price_asc">Price Low to High</option>
+                        <option value="price_desc">Price High to Low</option>
+                        <option value="rating_desc">Top Rated</option>
+                      </SelectFormInput>
+                    </div>
+                  </Col>
+
+                  {/* Customer Rating */}
+                  <Col md={6} lg={4}>
+                    <div className="form-control-borderless">
+                      <label className="form-label">Customer Rating</label>
+                      <ul className="list-inline mb-0 g-3 hstack gap-2">
+                        {[3, 3.5, 4, 4.5].map((rating) => (
+                          <li className="list-inline-item m-0" key={rating}>
+                            <input
+                              type="checkbox"
+                              className="btn-check"
+                              id={`rating-${rating}`}
+                              checked={minRating === rating}
+                              onChange={() => setMinRating(minRating === rating ? 0 : rating)}
+                            />
+                            <label className="btn btn-white btn-primary-soft-check mb-0 py-2" htmlFor={`rating-${rating}`}>
+                              {rating}+
+                            </label>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </Col>
+
+                  {/* Star Rating */}
+                  <Col md={6} lg={4}>
+                    <div className="form-control-borderless">
+                      <label className="form-label">Star Rating</label>
+                      <ul className="list-inline mb-0 g-3 hstack gap-2">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <li className="list-inline-item m-0" key={star}>
+                            <input type="checkbox" className="btn-check" id={`star-${star}`} />
+                            <label className="btn btn-white btn-primary-soft-check mb-0 py-2 d-flex align-items-center" htmlFor={`star-${star}`}>
+                              {star} <BsStarFill className="ms-1" />
+                            </label>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </Col>
+
+                  {/* Hotel Type */}
+                  <Col md={6} lg={4}>
+                    <div className="form-size-lg form-control-borderless">
+                      <label className="form-label">Hotel Type</label>
+                      <SelectFormInput className="form-select border-0 bg-transparent">
+                        <option value="-1">Select Option</option>
+                        <option>Hotel</option>
+                        <option>Apartment</option>
+                        <option>Resort</option>
+                        <option>Villa</option>
+                      </SelectFormInput>
+                    </div>
+                  </Col>
+
+                  {/* Amenities */}
+                  <Col xs={12}>
+                    <div className="form-control-borderless">
+                      <label className="form-label">Amenities</label>
+                      <Row className="g-3">
+                        {filterAmenities.map((item, idx) => {
+                          return (
+                            <Col key={idx} sm={6} md={4} lg={3} xl={2}>
+                              <FormCheck className="mb-0">
+                                <FormCheckInput
+                                  type="checkbox"
+                                  id={`amenity-${item.value}`}
+                                  checked={selectedAmenities.includes(item.value)}
+                                  onChange={() => handleAmenityChange(item.value)}
+                                />
+                                <FormCheckLabel className="h6 fw-light mb-0" htmlFor={`amenity-${item.value}`}>
+                                  {item.label}
+                                </FormCheckLabel>
+                              </FormCheck>
+                            </Col>
+                          );
+                        })}
+                      </Row>
+                    </div>
+                  </Col>
+
+                  {/* Buttons */}
+                  <div className="text-end align-items-center">
+                    <Button onClick={clearAll} variant="link" className="p-0 mb-0 me-1 text-primary-hover text-decoration-none">
+                      Clear all
+                    </Button>
+                    <Button type="submit" variant="dark" className="mb-0 ms-3">
+                      Apply filter
+                    </Button>
                   </div>
-                </Col>
-                <Col md={6} lg={4}>
-                  <div className="form-size-lg form-control-borderless">
-                    <label className="form-label">Popular Filters</label>
-                    <SelectFormInput className="form-select js-choice border-0">
-                      <option value={-1}>Select Option</option>
-                      <option>Recently search</option>
-                      <option>Most popular</option>
-                      <option>Top rated</option>
-                    </SelectFormInput>
-                  </div>
-                </Col>
-                <Col md={6} lg={4}>
-                  <div className="form-control-borderless">
-                    <label className="form-label">Customer Rating</label>
-                    <ul className="list-inline mb-0 g-3">
-                      <li className="list-inline-item">
-                        <input type="checkbox" className="btn-check" id="btn-check-1" />
-                        <label className="btn btn-light btn-primary-soft-check" htmlFor="btn-check-1">
-                          3+
-                        </label>
-                      </li>
-                      <li className="list-inline-item">
-                        <input type="checkbox" className="btn-check" id="btn-check-2" />
-                        <label className="btn btn-light btn-primary-soft-check" htmlFor="btn-check-2">
-                          3.5+
-                        </label>
-                      </li>
-                      <li className="list-inline-item">
-                        <input type="checkbox" className="btn-check" id="btn-check-3" />
-                        <label className="btn btn-light btn-primary-soft-check" htmlFor="btn-check-3">
-                          4+
-                        </label>
-                      </li>
-                      <li className="list-inline-item">
-                        <input type="checkbox" className="btn-check" id="btn-check-4" />
-                        <label className="btn btn-light btn-primary-soft-check" htmlFor="btn-check-4">
-                          4.5+
-                        </label>
-                      </li>
-                    </ul>
-                  </div>
-                </Col>
-                <div className="col-md-6 col-lg-4">
-                  <div className="form-control-borderless">
-                    <label className="form-label">Star Rating</label>
-                    <ul className="list-inline mb-0 g-3">
-                      {Array.from(new Array(5)).map((_val, idx) => (
-                        <li className="list-inline-item" key={idx}>
-                          <input type="checkbox" className="btn-check" id={`btn-check2-${idx}`} />
-                          <label className="btn btn-light btn-primary-soft-check items-center" htmlFor={`btn-check2-${idx}`}>
-                            {idx + 1}
-                            <BsStarFill className="ms-1" />
-                          </label>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-                <Col md={6} lg={4}>
-                  <div className="form-size-lg form-control-borderless">
-                    <label className="form-label">Hotel Type</label>
-                    <SelectFormInput className="form-select js-choice border-0">
-                      <option value={-1}>Select Option</option>
-                      <option>Free Cancellation Available</option>
-                      <option>Pay At Hotel Available</option>
-                      <option>Free Breakfast Included</option>
-                    </SelectFormInput>
-                  </div>
-                </Col>
-                <Col xs={12}>
-                  <div className="form-control-borderless">
-                    <label className="form-label">Amenities</label>
-                    <Row className="g-3">
-                      {amenities.map((item, idx) => {
-                        return (
-                          <Col key={idx} sm={6} md={4} lg={3} xl={2}>
-                            <FormCheck className="mb-0">
-                              <FormCheckInput type="checkbox" id={`flexCheckDefault-amenities${idx}`} />
-                              <FormCheckLabel className="h6 fw-light mb-0" htmlFor={`flexCheckDefault-amenities${idx}`}>
-                                {item}
-                              </FormCheckLabel>
-                            </FormCheck>
-                          </Col>
-                        );
-                      })}
-                    </Row>
-                  </div>
-                </Col>
-                <div className="text-end align-items-center">
-                  <Button variant="link" className="p-0 mb-0 me-1 text-primary-hover">
-                    Clear all
-                  </Button>
-                  <Button type="submit" variant="dark" className="mb-0 ms-3">
-                    Apply filter
-                  </Button>
-                </div>
-              </form>
-            </CardBody>
-          </Card>
+                </form>
+              </CardBody>
+            </Card>
+          </div>
         </Collapse>
       </Container>
     </section>

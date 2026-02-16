@@ -7,14 +7,17 @@
 .noUi-connect {
   background:var(--#{$prefix}primary) !important;
 }
+
 .noUi-target {
   background: rgba(var(--#{$prefix}primary-rgb), 0.1) !important;
   border-radius: 4px !important;
   border: none !important;
   box-shadow: none !important;
 }
+
 .noUi-horizontal {
   height: 5px !important;
+
   .noUi-handle {
     width: 20px !important;
     height: 20px !important;
@@ -26,28 +29,30 @@
     background: var(--#{$prefix}primary) !important;
     box-shadow: 0px 0px 0px 1px rgb(var(--#{$prefix}primary-rgb)) !important;
 
-    &:before, &:after {
+    &:before,
+    &:after {
       display: none !important;
     }
   }
 }
+
 .noui-wrapper input[class*='input-with-'] {
   background-color: transparent !important;
   border: none !important;
-  color: var(--#{$prefix}primary) !important;
-  width: 70px !important;
+  width: auto !important;
+  max-width: 120px !important;
 }
 
-.noUi-origin {
-  height: 10% !important;
-  width: 10% !important;
-}
+// .noUi-origin {
+//   height: 10% !important;
+//   width: 10% !important;
+// }
 
 // Input style for price range width
-.noui-wrapper input[class*='input-with-']{
+.noui-wrapper input[class*='input-with-'] {
   width: 100px !important;
 }
 
-.input-with-range-max{
+.input-with-range-max {
   text-align: right !important;
 }

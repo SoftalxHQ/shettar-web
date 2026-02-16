@@ -1,19 +1,62 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { useToggle } from '@/app/hooks';
 import { currency } from '@/app/states';
 import { Card, CardBody, Col, Collapse } from 'react-bootstrap';
 import { BsStarFill } from 'react-icons/bs';
 import { FaAngleDown } from 'react-icons/fa6';
-import Link from 'next/link';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 
 const HotelListFilter = () => {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+
   const { isOpen: hotelTypeIsOpen, toggle: hotelTypeToggle } = useToggle();
   const { isOpen: hotelAmenitiesIsOpen, toggle: hotelAmenitiesToggle } = useToggle();
+  const [hotelName, setHotelName] = useState(searchParams.get('name') || '');
+
+  useEffect(() => {
+    setHotelName(searchParams.get('name') || '');
+  }, [searchParams]);
+
+  const updateFilter = (key: string, value: string | null) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (value) params.set(key, value);
+    else params.delete(key);
+    router.push(`${pathname}?${params.toString()}`);
+  };
+
+  const handleNameSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    updateFilter('name', hotelName);
+  };
+
 
   return (
-    <form className="rounded-3 shadow">
+    <div className="rounded-3 shadow">
+      {/* Hotel Name Search */}
       <Card className="rounded-0 rounded-top p-4 border-0">
+        <h6 className="mb-2">Hotel Name</h6>
+        <form onSubmit={handleNameSearch} className="form-control-borderless">
+          <div className="input-group">
+            <input
+              type="text"
+              className="form-control"
+              placeholder="Search by name..."
+              value={hotelName}
+              onChange={(e) => setHotelName(e.target.value)}
+            />
+            <button className="btn btn-primary" type="submit">
+              Search
+            </button>
+          </div>
+        </form>
+      </Card>
+      <hr className="my-0" />
+
+      <Card className="rounded-0 p-4 border-0">
         <h6 className="mb-2">Hotel Type</h6>
         <Col xs={12}>
           <div className="form-check">
@@ -99,31 +142,31 @@ const HotelListFilter = () => {
           <div className="form-check">
             <input className="form-check-input" type="checkbox" id="priceRange1" />
             <label className="form-check-label" htmlFor="priceRange1">
-              Up to {currency}500
+              Up to ₦20,000
             </label>
           </div>
           <div className="form-check">
             <input className="form-check-input" type="checkbox" id="priceRange2" />
             <label className="form-check-label" htmlFor="priceRange2">
-              {currency}500 - {currency}1000
+              ₦20,000 - ₦50,000
             </label>
           </div>
           <div className="form-check">
             <input className="form-check-input" type="checkbox" id="priceRange3" />
             <label className="form-check-label" htmlFor="priceRange3">
-              {currency}1000 - {currency}1500
+              ₦50,000 - ₦100,000
             </label>
           </div>
           <div className="form-check">
             <input className="form-check-input" type="checkbox" id="priceRange4" />
             <label className="form-check-label" htmlFor="priceRange4">
-              {currency}1500 - {currency}2000
+              ₦100,000 - ₦200,000
             </label>
           </div>
           <div className="form-check">
             <input className="form-check-input" type="checkbox" id="priceRange5" />
             <label className="form-check-label" htmlFor="priceRange5">
-              {currency}2000+
+              ₦200,000+
             </label>
           </div>
         </div>
@@ -298,7 +341,7 @@ const HotelListFilter = () => {
           </button>
         </div>
       </Card>
-    </form>
+    </div>
   )
 }
 

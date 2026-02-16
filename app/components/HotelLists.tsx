@@ -32,15 +32,13 @@ const HotelLists = () => {
       const API_URL = rawUrl.endsWith('/') ? rawUrl.slice(0, -1) : rawUrl;
 
       const query = new URLSearchParams();
-      const start_date = searchParams.get('start_date');
-      const end_date = searchParams.get('end_date');
-      const rooms = searchParams.get('rooms');
-      const location = searchParams.get('location');
-
-      if (start_date) query.append('start_date', start_date);
-      if (end_date) query.append('end_date', end_date);
-      if (rooms) query.append('number_of_rooms', rooms);
-      if (location) query.append('location', location);
+      searchParams.forEach((value, key) => {
+        if (key === 'rooms') {
+          query.append('number_of_rooms', value);
+        } else {
+          query.append(key, value);
+        }
+      });
 
       const response = await fetch(`${API_URL}/api/v1/businesses?${query.toString()}`);
 
