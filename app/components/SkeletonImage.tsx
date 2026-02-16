@@ -6,13 +6,15 @@ import Skeleton from './Skeleton';
 interface SkeletonImageProps {
   src: string;
   alt: string;
-  className?: string;
+  className?: string; // Class for the img tag
+  containerClassName?: string; // Class for the wrapper div
   height?: string | number;
   style?: React.CSSProperties;
+  objectPosition?: string;
   children?: React.ReactNode;
 }
 
-const SkeletonImage: React.FC<SkeletonImageProps> = ({ src, alt, className, height, style, children }) => {
+const SkeletonImage: React.FC<SkeletonImageProps> = ({ src, alt, className, containerClassName, height, style, objectPosition, children }) => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [hasError, setHasError] = useState(false);
   const imgRef = useRef<HTMLImageElement>(null);
@@ -29,9 +31,9 @@ const SkeletonImage: React.FC<SkeletonImageProps> = ({ src, alt, className, heig
 
   return (
     <div
-      className="position-relative w-100 h-100 overflow-hidden bg-body-tertiary"
+      className={`position-relative w-100 ${!height ? 'h-100' : ''} overflow-hidden bg-body-tertiary ${containerClassName || ''}`}
       style={{
-        height: height || '200px',
+        ...(height ? { height } : {}),
         ...style
       }}
     >
@@ -49,6 +51,7 @@ const SkeletonImage: React.FC<SkeletonImageProps> = ({ src, alt, className, heig
         style={{
           transition: 'opacity 0.4s ease-in-out',
           objectFit: 'cover',
+          objectPosition: objectPosition || 'center',
           display: 'block'
         }}
       />

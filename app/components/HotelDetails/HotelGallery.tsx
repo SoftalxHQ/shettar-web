@@ -128,7 +128,8 @@ const HotelGallery = ({ hotel }: { hotel: any }) => {
                   src={mainImage}
                   alt={hotel.name}
                   height="400px"
-                  className="card-grid-lg card-element-hover card-overlay-hover overflow-hidden shadow-sm rounded-3"
+                  objectPosition="bottom"
+                  containerClassName="card card-grid-lg card-element-hover card-overlay-hover overflow-hidden shadow-sm rounded-3"
                 >
                   <div className="hover-element position-absolute w-100 h-100">
                     <BsFullscreen
@@ -147,7 +148,8 @@ const HotelGallery = ({ hotel }: { hotel: any }) => {
                       src={subImages[0] || mainImage}
                       alt={hotel.name}
                       height="200px"
-                      className="card-grid-sm card-element-hover card-overlay-hover overflow-hidden shadow-sm rounded-3"
+                      objectPosition="bottom"
+                      containerClassName="card card-grid-sm card-element-hover card-overlay-hover overflow-hidden shadow-sm rounded-3"
                     >
                       <div className="hover-element position-absolute w-100 h-100">
                         <BsFullscreen
@@ -164,12 +166,13 @@ const HotelGallery = ({ hotel }: { hotel: any }) => {
                       src={subImages[1] || mainImage}
                       alt={hotel.name}
                       height="200px"
-                      className="card-grid-sm card-element-hover card-overlay-hover overflow-hidden shadow-sm rounded-3"
+                      objectPosition="bottom"
+                      containerClassName="card card-grid-sm card-element-hover card-overlay-hover overflow-hidden shadow-sm rounded-3"
                     >
                       <div className="hover-element position-absolute w-100 h-100">
                         <BsFullscreen
                           size={28}
-                          className="bifs-6 text-white position-absolute top-50 start-50 translate-middle bg-dark rounded-1 p-2 lh-1"
+                          className=" fs-6 text-white position-absolute top-50 start-50 translate-middle bg-dark rounded-1 p-2 lh-1"
                         />
                       </div>
                     </SkeletonImage>
@@ -180,7 +183,8 @@ const HotelGallery = ({ hotel }: { hotel: any }) => {
                     src={subImages[2] || mainImage}
                     alt={hotel.name}
                     height="200px"
-                    className="card-grid-sm overflow-hidden shadow-sm rounded-3"
+                    objectPosition="bottom"
+                    containerClassName="card card-grid-sm overflow-hidden shadow-sm rounded-3"
                   >
                     <div className="bg-overlay bg-dark opacity-7" />
                     <GlightBox image={subImages[2] || mainImage} data-glightbox="" data-gallery="hotel-gallery" className="stretched-link z-index-9" />
@@ -188,7 +192,7 @@ const HotelGallery = ({ hotel }: { hotel: any }) => {
                       <GlightBox key={i} image={img} data-glightbox="" data-gallery="hotel-gallery" />
                     ))}
                     <div className="card-img-overlay d-flex h-100 w-100">
-                      <h6 className="card-title m-auto fw-light text-decoration-underline">
+                      <h6 className="card-title m-auto fw-light">
                         <Link href="#" onClick={(e) => e.preventDefault()} className="text-white">
                           View all
                         </Link>

@@ -23,12 +23,12 @@ const PriceOverView = ({ hotel }: { hotel: any }) => {
   return (
     <Sticky
       disabled={width <= 1199}
-      topOffset={100}
+      topOffset={180}
       bottomOffset={0}
       boundaryElement="aside"
       hideOnBoundaryHit={false}
       stickyStyle={{ transition: '0.2s all linear' }}>
-      <Card as={CardBody} className="border shadow-sm">
+      <Card as={CardBody} className="border shadow-sm mt-xl-5">
         <div className="d-sm-flex justify-content-sm-between align-items-center mb-3">
           <div>
             <span>Price Start at</span>

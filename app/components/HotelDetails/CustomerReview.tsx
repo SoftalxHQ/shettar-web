@@ -10,8 +10,19 @@ import { BsArrowRight } from 'react-icons/bs';
 import { FaStarHalfAlt } from 'react-icons/fa';
 import { FaStar } from 'react-icons/fa6';
 import * as yup from 'yup';
+import Link from 'next/link';
 
-const CustomerReview = ({ reviews, averageRating }: { reviews: any[], averageRating: number }) => {
+interface Review {
+  id: number;
+  reviewer: string;
+  rating: number;
+  content: string;
+  created_at: string;
+}
+
+const CustomerReview = ({ reviews, averageRating }: { reviews: Review[], averageRating: number }) => {
+  const isAuthenticated = false; // Set to true to see the form, false to see the sign-in card
+
   const reviewSchema = yup.object({
     review: yup.string().required('Please enter your review'),
   });
@@ -106,23 +117,41 @@ const CustomerReview = ({ reviews, averageRating }: { reviews: any[], averageRat
           )}
         </div>
 
-        <form onSubmit={handleSubmit(() => { })} className="mb-5 mt-5">
-          <h5 className="mb-3">Leave a Review</h5>
-          <div className="mb-3">
-            <SelectFormInput className="form-select js-choice">
-              <option value="5">★★★★★ (5/5)</option>
-              <option value="4">★★★★☆ (4/5)</option>
-              <option value="3">★★★☆☆ (3/5)</option>
-              <option value="2">★★☆☆☆ (2/5)</option>
-              <option value="1">★☆☆☆☆ (1/5)</option>
-            </SelectFormInput>
-          </div>
-          <TextAreaFormInput name="review" containerClass="form-control-bg-light mb-3" control={control} rows={3} placeholder="Share your experience..." />
+        {/* Review Form or Sign In Card */}
+        {isAuthenticated ? (
+          <form onSubmit={handleSubmit(() => { })} className="mb-5 mt-5">
+            <h5 className="mb-3">Leave a Review</h5>
+            <div className="mb-3">
+              <SelectFormInput className="form-select js-choice">
+                <option value="5">★★★★★ (5/5)</option>
+                <option value="4">★★★★☆ (4/5)</option>
+                <option value="3">★★★☆☆ (3/5)</option>
+                <option value="2">★★☆☆☆ (2/5)</option>
+                <option value="1">★☆☆☆☆ (1/5)</option>
+              </SelectFormInput>
+            </div>
+            <TextAreaFormInput name="review" containerClass="form-control-bg-light mb-3" control={control} rows={3} placeholder="Share your experience..." />
 
-          <Button type="submit" variant="primary" size="lg" className="mb-0 items-center">
-            Post review <BsArrowRight className="ms-2" />
-          </Button>
-        </form>
+            <Button type="submit" variant="primary" size="lg" className="mb-0 items-center">
+              Post review <BsArrowRight className="ms-2" />
+            </Button>
+          </form>
+        ) : (
+          <Card className="bg-primary bg-opacity-10 border border-primary border-opacity-25 p-4 p-sm-5 text-center mt-5 mb-5 rounded-4">
+            <h4 className="mb-2">Share Your Experience</h4>
+            <p className="mb-4 text-secondary mx-auto" style={{ maxWidth: '400px' }}>
+              You must be signed in to leave a review. Join our community to share your feedback with other travelers.
+            </p>
+            <div className="d-flex flex-column flex-sm-row justify-content-center gap-3">
+              <Link href="/auth/sign-in" className="btn btn-primary px-4 py-2 flex-centered">
+                Sign In
+              </Link>
+              <Link href="/auth/sign-up" className="btn btn-outline-primary px-4 py-2 flex-centered">
+                Create Account
+              </Link>
+            </div>
+          </Card>
+        )}
       </CardBody>
     </Card>
   );

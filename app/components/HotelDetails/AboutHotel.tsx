@@ -30,7 +30,7 @@ const AboutHotel = ({ hotel }: { hotel: any }) => {
     .map(([key]) => key.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' '));
 
   return (
-    <section className="pt-0">
+    <section className="pt-5 pt-lg-10">
       <Container data-sticky-container>
         <Row className="g-4 g-xl-5">
           <Col xl={7} className="order-1">

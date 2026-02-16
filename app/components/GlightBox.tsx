@@ -66,11 +66,13 @@ const GlightBox = ({
   return (
     <a
       ref={ref}
-      href={image}
       {...other}
-      className={clsx('glightbox', other.className)}
+      className={clsx('glightbox cursor-pointer', other.className)}
       data-glightbox={dataGlightbox}
       data-gallery={dataGallery}
+      data-href={image}
+      data-type="image"
+      style={{ cursor: 'pointer', ...other.style }}
     >
       {children}
     </a>
