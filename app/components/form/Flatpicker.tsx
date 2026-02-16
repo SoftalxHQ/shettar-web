@@ -14,6 +14,12 @@ type FlatpickerProps = {
 const Flatpicker = ({ className, options, placeholder, value, getValue }: FlatpickerProps) => {
   const element = useRef<HTMLInputElement | null>(null);
   const instanceRef = useRef<any>(null);
+  const getValueRef = useRef(getValue);
+
+  // Keep ref up to date
+  useEffect(() => {
+    getValueRef.current = getValue;
+  }, [getValue]);
 
   const handleDateChange = useCallback(
     (selectedDates: Date[]) => {
@@ -21,9 +27,9 @@ const Flatpicker = ({ className, options, placeholder, value, getValue }: Flatpi
       // Only collapse to a single date if NOT in range mode and only one date is present
       const isRange = options?.mode === 'range';
       const newDate = (!isRange && selectedDates.length === 1) ? selectedDates[0] : selectedDates;
-      getValue?.(newDate);
+      getValueRef.current?.(newDate);
     },
-    [getValue, options?.mode],
+    [options?.mode],
   );
 
   useEffect(() => {
@@ -60,7 +66,9 @@ const Flatpicker = ({ className, options, placeholder, value, getValue }: Flatpi
       instance?.destroy();
       instanceRef.current = null;
     };
-  }, [JSON.stringify(options), handleDateChange]);
+    // Only re-init if specific critical options change, or if we really need to.
+    // Adding options?.mode and options?.closeOnSelect specifically.
+  }, [options?.mode, options?.closeOnSelect, handleDateChange]);
 
   useEffect(() => {
     if (instanceRef.current && value) {

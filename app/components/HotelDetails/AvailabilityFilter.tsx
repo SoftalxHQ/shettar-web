@@ -90,6 +90,7 @@ const AvailabilityFilter = ({ hotel, onSearch, isLoading }: { hotel: any, onSear
   const flatpickrOptions = useMemo(() => ({
     mode: 'range' as const,
     dateFormat: 'd M',
+    minDate: 'today',
   }), []);
 
   return (

@@ -133,13 +133,14 @@ const AvailabilityFilter = () => {
   const flatpickrOptions = useMemo(() => ({
     mode: 'range' as const,
     dateFormat: 'd M',
+    minDate: 'today',
   }), []);
 
   return (
     <form className="bg-mode shadow rounded-3 position-relative p-4 pe-md-5 pb-5 pb-md-4 mb-4" onSubmit={handleSubmit}>
       <Row className="g-4 align-items-center">
         <Col lg={4}>
-          <div className="form-control-border form-control-transparent form-fs-md flex-centered gap-2">
+          <div className="form-control-border form-control-transparent form-fs-md items-center gap-2">
             <BsGeoAlt size={37} />
 
             <div className="flex-grow-1">
@@ -160,7 +161,7 @@ const AvailabilityFilter = () => {
         </Col>
 
         <Col lg={4}>
-          <div className="form-control-border form-control-transparent form-fs-md flex-centered gap-2">
+          <div className="form-control-border form-control-transparent form-fs-md items-center gap-2">
             <BsCalendar size={37} />
 
             <div className="flex-grow-1">
@@ -176,7 +177,7 @@ const AvailabilityFilter = () => {
         </Col>
 
         <Col lg={4}>
-          <div className="form-control-border form-control-transparent form-fs-md flex-centered gap-2">
+          <div className="form-control-border form-control-transparent form-fs-md items-center gap-2">
             <BsPerson size={37} />
 
             <div className="flex-grow-1">
