@@ -5,6 +5,7 @@ export type HotelRoomType = {
   sqfeet: number;
   price: number;
   images: string[];
+  amenities?: any;
 };
 
 export type NotificationType = {

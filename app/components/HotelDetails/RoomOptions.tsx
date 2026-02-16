@@ -26,10 +26,25 @@ const RoomOptions = ({ availableRoomTypes, hotel }: { availableRoomTypes: any[],
       <CardBody className="pt-4 p-0">
         <div className="vstack gap-4">
           {availableRoomTypes.map((room_type, idx) => {
+            // Extract amenities from the boolean flags sent by backend
+            const activeAmenities = Object.entries(room_type.amenities || {})
+              .filter(([_, value]) => value === true)
+              .map(([key]) => key.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' '));
+
+            // Logic to show 4 features and "+more" if there are more
+            const featuresToDisplay = activeAmenities.slice(0, 3);
+            if (activeAmenities.length > 3) {
+              featuresToDisplay.push(`+${activeAmenities.length - 3} more`);
+            }
+
+            // If no amenities are found, use a default fallback
+            const finalFeatures = featuresToDisplay.length > 0 ? featuresToDisplay : ['Standard Amenities'];
+
             return (
               <RoomCard
                 key={idx}
-                features={['Air Conditioning', 'Wifi', 'Kitchen', 'pool']} // Fallback features until API provides them per room type
+                features={finalFeatures}
+                allAmenities={activeAmenities}
                 images={room_type.images_url || ['/images/category/hotel/4by3/04.jpg']}
                 id={room_type.id}
                 slug={room_type.slug}

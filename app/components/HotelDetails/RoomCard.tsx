@@ -24,7 +24,7 @@ const splitArray = <T,>(array: T[], size: number): T[][] => {
   return result;
 };
 
-const RoomCard = ({ id, slug, features, images, name, price, sale, schemes, hotelSlug }: HotelsRoomType & { hotelSlug?: string }) => {
+const RoomCard = ({ id, slug, features, images, name, price, sale, schemes, hotelSlug, allAmenities }: HotelsRoomType & { hotelSlug?: string, allAmenities?: string[] }) => {
   const { isOpen, toggle } = useToggle();
 
   const roomSliderSettings: TinySliderSettings = useMemo(() => ({
@@ -42,7 +42,8 @@ const RoomCard = ({ id, slug, features, images, name, price, sale, schemes, hote
   }), []);
 
   const chunk_size = 2;
-  const amenitiesChunks = splitArray(amenities, chunk_size);
+  const amenitiesToShow = allAmenities && allAmenities.length > 0 ? allAmenities : amenities;
+  const amenitiesChunks = splitArray(amenitiesToShow, chunk_size);
   const formattedPrice = typeof price === 'number' ? price : parseFloat(price || '0');
 
   // Build the link based on hotelSlug
@@ -106,6 +107,13 @@ const RoomCard = ({ id, slug, features, images, name, price, sale, schemes, hote
                 ) : (
                   <p className="text-danger mb-1 small text-uppercase">Non Refundable</p>
                 )}
+              </div>
+
+              <div className="mb-3">
+                <Button variant="link" className="p-0 mb-0 text-decoration-underline items-center small fw-bold" onClick={toggle}>
+                  <BsEyeFill className="me-1" />
+                  View more details
+                </Button>
               </div>
 
               <div className="d-flex justify-content-between align-items-center">

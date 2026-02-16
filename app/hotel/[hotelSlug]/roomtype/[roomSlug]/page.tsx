@@ -83,8 +83,7 @@ export default function RoomDetailPage() {
     <>
       <TopNavBar4 />
       <main>
-        <RoomGallery room={roomType} />
-        <RoomSelection room={roomType} hotel={roomType.business} />
+        <RoomGallery room={roomType} hotel={roomType.business} />
       </main>
       <Footer />
     </>

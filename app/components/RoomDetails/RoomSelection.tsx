@@ -3,7 +3,6 @@
 import SelectFormInput from '../form/SelectFormInput';
 import { Card, CardBody, CardHeader, Col, Container, Row } from 'react-bootstrap';
 import { roomDetails } from '@/app/data/room-details';
-import PriceSummary from './PriceSummary';
 import RoomCard from './RoomCard';
 
 const RoomSelection = ({ room, hotel }: { room: any, hotel: any }) => {
@@ -11,7 +10,7 @@ const RoomSelection = ({ room, hotel }: { room: any, hotel: any }) => {
     <section className="pt-0">
       <Container>
         <Row>
-          <Col xl={7}>
+          <Col xl={8}>
             <Card className="bg-transparent p-0 border-0">
               <CardHeader className="bg-transparent border-bottom d-sm-flex justify-content-sm-between align-items-center p-0 pb-3">
                 <h4 className="mb-2 mb-sm-0">Confirm Selection</h4>
@@ -25,6 +24,7 @@ const RoomSelection = ({ room, hotel }: { room: any, hotel: any }) => {
                     price={room.price}
                     images={room.images_url || []}
                     sqfeet={room.sqfeet || 250}
+                    amenities={room.amenities}
                     isSelected={true}
                   />
 
@@ -41,6 +41,7 @@ const RoomSelection = ({ room, hotel }: { room: any, hotel: any }) => {
                             price={otherRoom.price}
                             images={otherRoom.images_url || []}
                             sqfeet={otherRoom.sqfeet || 250}
+                            amenities={otherRoom.amenities}
                             hotelSlug={hotel?.slug}
                           />
                         ))}
@@ -51,8 +52,6 @@ const RoomSelection = ({ room, hotel }: { room: any, hotel: any }) => {
               </CardBody>
             </Card>
           </Col>
-
-          <PriceSummary room={room} hotel={hotel} />
         </Row>
       </Container>
     </section>
