@@ -20,8 +20,9 @@ const HotelGridLayout = () => {
   const fetchHotels = useCallback(async () => {
     setIsLoading(true);
     try {
-      const rawUrl = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:3000";
-      const API_URL = rawUrl.endsWith('/') ? rawUrl.slice(0, -1) : rawUrl;
+      const rawUrl = process.env.NEXT_PUBLIC_API_URL;
+      const baseUrl = (rawUrl && rawUrl !== 'undefined') ? rawUrl : "http://127.0.0.1:3000";
+      const API_URL = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
 
       const query = new URLSearchParams();
       searchParams.forEach((value, key) => {

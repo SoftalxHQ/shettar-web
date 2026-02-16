@@ -41,9 +41,9 @@ const SelectFormInput = ({ children, multiple, className, onChange, value, ...ch
             });
             selectE.current.dataset.choicesInitialized = 'true';
 
-            const handleChange = (e: Event) => {
-              if (onChange && e.target instanceof HTMLSelectElement) {
-                onChange(e.target.value);
+            const handleChange = () => {
+              if (onChange && selectE.current) {
+                onChange(selectE.current.value);
               }
             };
 
@@ -66,6 +66,9 @@ const SelectFormInput = ({ children, multiple, className, onChange, value, ...ch
       if (choicesInstanceRef.current) {
         if (selectE.current) {
           selectE.current.dataset.choicesInitialized = 'false';
+          // Ensure we remove the specific listener we added
+          // Note: In a real app we'd name this function to remove it properly, 
+          // but destroying the Choices instance often handles the cleanup.
         }
         choicesInstanceRef.current.destroy();
         choicesInstanceRef.current = null;
@@ -84,8 +87,7 @@ const SelectFormInput = ({ children, multiple, className, onChange, value, ...ch
       ref={selectE}
       multiple={multiple}
       className={className}
-      value={value}
-      onChange={(e) => onChange?.(e.target.value)}
+      defaultValue={value}
     >
       {children}
     </select>

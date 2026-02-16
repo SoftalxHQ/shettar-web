@@ -4,9 +4,10 @@ import { useState, useEffect } from 'react';
 import { useToggle } from '@/app/hooks';
 import { currency } from '@/app/states';
 import { Card, CardBody, Col, Collapse } from 'react-bootstrap';
-import { BsStarFill } from 'react-icons/bs';
+import { BsStarFill, BsSearch } from 'react-icons/bs';
 import { FaAngleDown } from 'react-icons/fa6';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
+import Nouislider from 'nouislider-react';
 
 const HotelListFilter = () => {
   const router = useRouter();
@@ -18,14 +19,41 @@ const HotelListFilter = () => {
   const [hotelName, setHotelName] = useState(searchParams.get('name') || '');
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
   const [selectedStars, setSelectedStars] = useState<number[]>([]);
+  const [selectedHotelTypes, setSelectedHotelTypes] = useState<number[]>([]);
+  const [categories, setCategories] = useState<{ id: number, name: string }[]>([]);
   const [minRating, setMinRating] = useState<number>(0);
+  const [priceRange, setPriceRange] = useState<string[]>(['0', '500000']);
 
   useEffect(() => {
     setHotelName(searchParams.get('name') || '');
     setSelectedAmenities(searchParams.get('amenities')?.split(',') || []);
     setSelectedStars(searchParams.get('stars')?.split(',').filter(Boolean).map(s => parseInt(s)) || []);
+    setSelectedHotelTypes(searchParams.get('hotel_types')?.split(',').filter(Boolean).map(s => parseInt(s)) || []);
     setMinRating(parseFloat(searchParams.get('min_rating') || '0'));
+    setPriceRange([
+      searchParams.get('min_price') || '0',
+      searchParams.get('max_price') || '500000'
+    ]);
   }, [searchParams]);
+
+  useEffect(() => {
+    // Fetch categories dynamically once on mount
+    const fetchCategories = async () => {
+      try {
+        const rawUrl = process.env.NEXT_PUBLIC_API_URL;
+        const baseUrl = (rawUrl && rawUrl !== 'undefined') ? rawUrl : "http://127.0.0.1:3000";
+        const API_URL = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+        const res = await fetch(`${API_URL}/api/v1/businesses/categories`);
+        if (res.ok) {
+          const data = await res.json();
+          setCategories(data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch categories:', error);
+      }
+    };
+    fetchCategories();
+  }, []);
 
   const updateFilter = (key: string, value: string | null) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -49,6 +77,16 @@ const HotelListFilter = () => {
     updateFilter('stars', newStars.length > 0 ? newStars.join(',') : null);
   };
 
+  const handleHotelTypeToggle = (id: number) => {
+    let newTypes: number[];
+    if (selectedHotelTypes.includes(id)) {
+      newTypes = selectedHotelTypes.filter(t => t !== id);
+    } else {
+      newTypes = [...selectedHotelTypes, id];
+    }
+    updateFilter('hotel_types', newTypes.length > 0 ? newTypes.join(',') : null);
+  };
+
   const handleAmenityToggle = (amenity: string) => {
     let newAmenities: string[];
     if (selectedAmenities.includes(amenity)) {
@@ -62,6 +100,13 @@ const HotelListFilter = () => {
   const handleNameSearch = (e: React.FormEvent) => {
     e.preventDefault();
     updateFilter('name', hotelName);
+  };
+
+  const handlePriceChange = (value: number[]) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('min_price', value[0].toString());
+    params.set('max_price', value[1].toString());
+    router.push(`${pathname}?${params.toString()}`);
   };
 
   const clearAll = () => {
@@ -91,7 +136,7 @@ const HotelListFilter = () => {
               onChange={(e) => setHotelName(e.target.value)}
             />
             <button className="btn btn-primary" type="submit">
-              Search
+              <BsSearch />
             </button>
           </div>
         </form>
@@ -101,76 +146,46 @@ const HotelListFilter = () => {
       <Card className="rounded-0 p-4 border-0">
         <h6 className="mb-2">Hotel Type</h6>
         <Col xs={12}>
-          <div className="form-check">
-            <input className="form-check-input" type="checkbox" id="hotelType1" />
-            <label className="form-check-label" htmlFor="hotelType1">
-              All
-            </label>
-          </div>
-          <div className="form-check">
-            <input className="form-check-input" type="checkbox" id="hotelType2" />
-            <label className="form-check-label" htmlFor="hotelType2">
-              Hotel
-            </label>
-          </div>
-          <div className="form-check">
-            <input className="form-check-input" type="checkbox" id="hotelType3" />
-            <label className="form-check-label" htmlFor="hotelType3">
-              Apartment
-            </label>
-          </div>
-          <div className="form-check">
-            <input className="form-check-input" type="checkbox" id="hotelType4" />
-            <label className="form-check-label" htmlFor="hotelType4">
-              Resort
-            </label>
-          </div>
-          <div className="form-check">
-            <input className="form-check-input" type="checkbox" id="hotelType5" />
-            <label className="form-check-label" htmlFor="hotelType5">
-              Villa
-            </label>
-          </div>
-          <div className="form-check">
-            <input className="form-check-input" type="checkbox" id="hotelType6" />
-            <label className="form-check-label" htmlFor="hotelType6">
-              Lodge
-            </label>
-          </div>
+          {categories.slice(0, 4).map((type) => (
+            <div className="form-check" key={type.id}>
+              <input
+                className="form-check-input"
+                type="checkbox"
+                id={`hotelType-${type.id}`}
+                checked={selectedHotelTypes.includes(type.id)}
+                onChange={() => handleHotelTypeToggle(type.id)}
+              />
+              <label className="form-check-label" htmlFor={`hotelType-${type.id}`}>
+                {type.name}
+              </label>
+            </div>
+          ))}
+
           <Collapse in={hotelTypeIsOpen}>
-            <div className="multi-collapse" id="hotelType">
-              <div className="form-check">
-                <input className="form-check-input" type="checkbox" id="hotelType7" />
-                <label className="form-check-label" htmlFor="hotelType7">
-                  Guest House
-                </label>
-              </div>
-              <div className="form-check">
-                <input className="form-check-input" type="checkbox" id="hotelType10" />
-                <label className="form-check-label" htmlFor="hotelType10">
-                  Cottage
-                </label>
-              </div>
-              <div className="form-check">
-                <input className="form-check-input" type="checkbox" id="hotelType8" />
-                <label className="form-check-label" htmlFor="hotelType8">
-                  Beach Hut
-                </label>
-              </div>
-              <div className="form-check">
-                <input className="form-check-input" type="checkbox" id="hotelType9" />
-                <label className="form-check-label" htmlFor="hotelType9">
-                  Farm house
-                </label>
-              </div>
+            <div id="hotelTypeCollapse">
+              {categories.slice(4).map((type) => (
+                <div className="form-check" key={type.id}>
+                  <input
+                    className="form-check-input"
+                    type="checkbox"
+                    id={`hotelTypeMore-${type.id}`}
+                    checked={selectedHotelTypes.includes(type.id)}
+                    onChange={() => handleHotelTypeToggle(type.id)}
+                  />
+                  <label className="form-check-label" htmlFor={`hotelTypeMore-${type.id}`}>
+                    {type.name}
+                  </label>
+                </div>
+              ))}
             </div>
           </Collapse>
+
           <button
             onClick={hotelTypeToggle}
             className="btn btn-link p-0 mb-0 mt-2 btn-more d-flex align-items-center collapsed text-decoration-none"
             type="button"
             aria-expanded={hotelTypeIsOpen}
-            aria-controls="hotelType"
+            aria-controls="hotelTypeCollapse"
           >
             See <span className="ms-1">{hotelTypeIsOpen ? 'less' : 'more'}</span>
             <FaAngleDown className="ms-2" />
@@ -180,36 +195,23 @@ const HotelListFilter = () => {
       <hr className="my-0" />
       <Card className="rounded-0 p-4 border-0">
         <h6 className="mb-2">Price range</h6>
-        <div className="col-12">
-          <div className="form-check">
-            <input className="form-check-input" type="checkbox" id="priceRange1" />
-            <label className="form-check-label" htmlFor="priceRange1">
-              Up to ₦20,000
-            </label>
-          </div>
-          <div className="form-check">
-            <input className="form-check-input" type="checkbox" id="priceRange2" />
-            <label className="form-check-label" htmlFor="priceRange2">
-              ₦20,000 - ₦50,000
-            </label>
-          </div>
-          <div className="form-check">
-            <input className="form-check-input" type="checkbox" id="priceRange3" />
-            <label className="form-check-label" htmlFor="priceRange3">
-              ₦50,000 - ₦100,000
-            </label>
-          </div>
-          <div className="form-check">
-            <input className="form-check-input" type="checkbox" id="priceRange4" />
-            <label className="form-check-label" htmlFor="priceRange4">
-              ₦100,000 - ₦200,000
-            </label>
-          </div>
-          <div className="form-check">
-            <input className="form-check-input" type="checkbox" id="priceRange5" />
-            <label className="form-check-label" htmlFor="priceRange5">
-              ₦200,000+
-            </label>
+        <div className="col-12 mt-3">
+          <div className="noui-wrapper">
+            <div className="d-flex justify-content-between flex-wrap mb-2">
+              <span className="fw-bold">{currency}{parseInt(priceRange[0]).toLocaleString()}</span>
+              <span className="fw-bold">{currency}{parseInt(priceRange[1]).toLocaleString()}</span>
+            </div>
+            <Nouislider
+              start={[parseInt(priceRange[0]), parseInt(priceRange[1])]}
+              range={{
+                min: 0,
+                max: 500000,
+              }}
+              connect
+              step={1000}
+              onSlide={(value) => setPriceRange([value[0].toString(), value[1].toString()])}
+              onChange={handlePriceChange}
+            />
           </div>
         </div>
       </Card>

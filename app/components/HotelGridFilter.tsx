@@ -35,9 +35,11 @@ const HotelGridFilter = () => {
   const pathname = usePathname();
 
   const { isOpen, toggle } = useToggle();
-  const [priceRange, setPriceRange] = useState<string[]>(['0', '100000']);
+  const [priceRange, setPriceRange] = useState<string[]>(['0', '500000']);
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
   const [selectedStars, setSelectedStars] = useState<number[]>([]);
+  const [selectedHotelType, setSelectedHotelType] = useState<string>('-1');
+  const [categories, setCategories] = useState<{ id: number, name: string }[]>([]);
   const [minRating, setMinRating] = useState<number>(0);
   const [sortBy, setSortBy] = useState<string>('-1');
 
@@ -52,9 +54,29 @@ const HotelGridFilter = () => {
     ]);
     setSelectedAmenities(searchParams.get('amenities')?.split(',') || []);
     setSelectedStars(searchParams.get('stars')?.split(',').filter(Boolean).map(s => parseInt(s)) || []);
+    setSelectedHotelType(searchParams.get('hotel_types') || '-1');
     setMinRating(parseFloat(searchParams.get('min_rating') || '0'));
     setSortBy(searchParams.get('sort_by') || '-1');
   }, [searchParams]);
+
+  useEffect(() => {
+    // Fetch categories dynamically once on mount
+    const fetchCategories = async () => {
+      try {
+        const rawUrl = process.env.NEXT_PUBLIC_API_URL;
+        const baseUrl = (rawUrl && rawUrl !== 'undefined') ? rawUrl : "http://127.0.0.1:3000";
+        const API_URL = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+        const res = await fetch(`${API_URL}/api/v1/businesses/categories`);
+        if (res.ok) {
+          const data = await res.json();
+          setCategories(data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch categories:', error);
+      }
+    };
+    fetchCategories();
+  }, []);
 
   const filterSchema = yup.object({
     hotelName: yup.string(),
@@ -89,6 +111,9 @@ const HotelGridFilter = () => {
     if (selectedStars.length > 0) params.set('stars', selectedStars.join(','));
     else params.delete('stars');
 
+    if (selectedHotelType !== '-1') params.set('hotel_types', selectedHotelType);
+    else params.delete('hotel_types');
+
     if (minRating > 0) params.set('min_rating', minRating.toString());
     else params.delete('min_rating');
 
@@ -114,6 +139,10 @@ const HotelGridFilter = () => {
     }
   };
 
+  const handleHotelTypeChange = (value: string) => {
+    setSelectedHotelType(value);
+  };
+
   const clearAll = () => {
     const params = new URLSearchParams();
     // Preserve core search params if any (like start_date, end_date, rooms, location)
@@ -123,9 +152,10 @@ const HotelGridFilter = () => {
       if (val) params.set(key, val);
     });
 
-    setPriceRange(['0', '100000']);
+    setPriceRange(['0', '500000']);
     setSelectedAmenities([]);
     setSelectedStars([]);
+    setSelectedHotelType('-1');
     setMinRating(0);
     setSortBy('-1');
     setValue('hotelName', '');
@@ -297,12 +327,15 @@ const HotelGridFilter = () => {
                   <Col md={6} lg={4}>
                     <div className="form-size-lg form-control-borderless">
                       <label className="form-label">Hotel Type</label>
-                      <SelectFormInput className="form-select border-0 bg-transparent">
+                      <SelectFormInput
+                        className="form-select border-0 bg-transparent"
+                        value={selectedHotelType}
+                        onChange={(val) => handleHotelTypeChange(val)}
+                      >
                         <option value="-1">Select Option</option>
-                        <option>Hotel</option>
-                        <option>Apartment</option>
-                        <option>Resort</option>
-                        <option>Villa</option>
+                        {categories.map((type) => (
+                          <option key={type.id} value={type.id}>{type.name}</option>
+                        ))}
                       </SelectFormInput>
                     </div>
                   </Col>
