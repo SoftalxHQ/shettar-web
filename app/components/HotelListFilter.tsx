@@ -17,11 +17,13 @@ const HotelListFilter = () => {
   const { isOpen: hotelAmenitiesIsOpen, toggle: hotelAmenitiesToggle } = useToggle();
   const [hotelName, setHotelName] = useState(searchParams.get('name') || '');
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
+  const [selectedStars, setSelectedStars] = useState<number[]>([]);
   const [minRating, setMinRating] = useState<number>(0);
 
   useEffect(() => {
     setHotelName(searchParams.get('name') || '');
     setSelectedAmenities(searchParams.get('amenities')?.split(',') || []);
+    setSelectedStars(searchParams.get('stars')?.split(',').filter(Boolean).map(s => parseInt(s)) || []);
     setMinRating(parseFloat(searchParams.get('min_rating') || '0'));
   }, [searchParams]);
 
@@ -35,6 +37,16 @@ const HotelListFilter = () => {
   const handleRatingToggle = (rating: number) => {
     const newValue = minRating === rating ? null : rating.toString();
     updateFilter('min_rating', newValue);
+  };
+
+  const handleStarToggle = (star: number) => {
+    let newStars: number[];
+    if (selectedStars.includes(star)) {
+      newStars = selectedStars.filter(s => s !== star);
+    } else {
+      newStars = [...selectedStars, star];
+    }
+    updateFilter('stars', newStars.length > 0 ? newStars.join(',') : null);
   };
 
   const handleAmenityToggle = (amenity: string) => {
@@ -267,36 +279,20 @@ const HotelListFilter = () => {
       <Card className="rounded-0 p-4 border-0">
         <h6 className="mb-2">Rating Star</h6>
         <ul className="list-inline mb-0 g-3">
-          <li className="list-inline-item mb-0">
-            <input type="checkbox" className="btn-check" id="btn-check-6" />
-            <label className="btn btn-sm btn-light btn-primary-soft-check d-flex align-items-center" htmlFor="btn-check-6">
-              1<BsStarFill className="ms-1" />
-            </label>
-          </li>
-          <li className="list-inline-item mb-0">
-            <input type="checkbox" className="btn-check" id="btn-check-7" />
-            <label className="btn btn-sm btn-light btn-primary-soft-check d-flex align-items-center" htmlFor="btn-check-7">
-              2<BsStarFill className="ms-1" />
-            </label>
-          </li>
-          <li className="list-inline-item mb-0">
-            <input type="checkbox" className="btn-check" id="btn-check-8" />
-            <label className="btn btn-sm btn-light btn-primary-soft-check d-flex align-items-center" htmlFor="btn-check-8">
-              3<BsStarFill className="ms-1" />
-            </label>
-          </li>
-          <li className="list-inline-item mb-0">
-            <input type="checkbox" className="btn-check" id="btn-check-15" />
-            <label className="btn btn-sm btn-light btn-primary-soft-check d-flex align-items-center" htmlFor="btn-check-15">
-              4<BsStarFill className="ms-1" />
-            </label>
-          </li>
-          <li className="list-inline-item mb-0">
-            <input type="checkbox" className="btn-check" id="btn-check-16" />
-            <label className="btn btn-sm btn-light btn-primary-soft-check d-flex align-items-center" htmlFor="btn-check-16">
-              5<BsStarFill className="ms-1" />
-            </label>
-          </li>
+          {[1, 2, 3, 4, 5].map((star) => (
+            <li className="list-inline-item mb-0" key={star}>
+              <input
+                type="checkbox"
+                className="btn-check"
+                id={`btn-check-s-${star}`}
+                checked={selectedStars.includes(star)}
+                onChange={() => handleStarToggle(star)}
+              />
+              <label className="btn btn-sm btn-light btn-primary-soft-check d-flex align-items-center" htmlFor={`btn-check-s-${star}`}>
+                {star}<BsStarFill className="ms-1" />
+              </label>
+            </li>
+          ))}
         </ul>
       </Card>
       <hr className="my-0" />

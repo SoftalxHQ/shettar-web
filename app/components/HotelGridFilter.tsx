@@ -37,6 +37,7 @@ const HotelGridFilter = () => {
   const { isOpen, toggle } = useToggle();
   const [priceRange, setPriceRange] = useState<string[]>(['0', '100000']);
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
+  const [selectedStars, setSelectedStars] = useState<number[]>([]);
   const [minRating, setMinRating] = useState<number>(0);
   const [sortBy, setSortBy] = useState<string>('-1');
 
@@ -50,6 +51,7 @@ const HotelGridFilter = () => {
       searchParams.get('max_price') || '500000'
     ]);
     setSelectedAmenities(searchParams.get('amenities')?.split(',') || []);
+    setSelectedStars(searchParams.get('stars')?.split(',').filter(Boolean).map(s => parseInt(s)) || []);
     setMinRating(parseFloat(searchParams.get('min_rating') || '0'));
     setSortBy(searchParams.get('sort_by') || '-1');
   }, [searchParams]);
@@ -84,6 +86,9 @@ const HotelGridFilter = () => {
     if (selectedAmenities.length > 0) params.set('amenities', selectedAmenities.join(','));
     else params.delete('amenities');
 
+    if (selectedStars.length > 0) params.set('stars', selectedStars.join(','));
+    else params.delete('stars');
+
     if (minRating > 0) params.set('min_rating', minRating.toString());
     else params.delete('min_rating');
 
@@ -101,6 +106,14 @@ const HotelGridFilter = () => {
     }
   };
 
+  const handleStarChange = (value: number) => {
+    if (selectedStars.includes(value)) {
+      setSelectedStars(selectedStars.filter(s => s !== value));
+    } else {
+      setSelectedStars([...selectedStars, value]);
+    }
+  };
+
   const clearAll = () => {
     const params = new URLSearchParams();
     // Preserve core search params if any (like start_date, end_date, rooms, location)
@@ -112,6 +125,7 @@ const HotelGridFilter = () => {
 
     setPriceRange(['0', '100000']);
     setSelectedAmenities([]);
+    setSelectedStars([]);
     setMinRating(0);
     setSortBy('-1');
     setValue('hotelName', '');
@@ -263,7 +277,13 @@ const HotelGridFilter = () => {
                       <ul className="list-inline mb-0 g-3 hstack gap-2">
                         {[1, 2, 3, 4, 5].map((star) => (
                           <li className="list-inline-item m-0" key={star}>
-                            <input type="checkbox" className="btn-check" id={`star-${star}`} />
+                            <input
+                              type="checkbox"
+                              className="btn-check"
+                              id={`star-${star}`}
+                              checked={selectedStars.includes(star)}
+                              onChange={() => handleStarChange(star)}
+                            />
                             <label className="btn btn-white btn-primary-soft-check mb-0 py-2 d-flex align-items-center" htmlFor={`star-${star}`}>
                               {star} <BsStarFill className="ms-1" />
                             </label>
