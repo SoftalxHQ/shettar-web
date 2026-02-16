@@ -128,8 +128,8 @@ const AboutHotel = ({ hotel }: { hotel: any }) => {
                     <Col sm={12}>
                       <div className="d-flex flex-wrap gap-2">
                         {activeAmenities.map((amenity, idx) => (
-                          <div key={idx} className="badge bg-body-secondary text-inherit border p-2 px-3 fw-normal">
-                            <FaCheckCircle className="text-success me-2" />
+                          <div key={idx} className="badge bg-body-tertiary text-body border p-2 px-3 fw-normal shadow-sm items-center">
+                            <FaCheckCircle className="text-success me-2" size={14} />
                             {amenity}
                           </div>
                         ))}

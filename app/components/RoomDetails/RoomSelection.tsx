@@ -25,6 +25,7 @@ const RoomSelection = ({ room, hotel }: { room: any, hotel: any }) => {
                     images={room.images_url || []}
                     sqfeet={room.sqfeet || 250}
                     amenities={room.amenities}
+                    available_rooms={room.available_rooms}
                     isSelected={true}
                   />
 
@@ -42,6 +43,7 @@ const RoomSelection = ({ room, hotel }: { room: any, hotel: any }) => {
                             images={otherRoom.images_url || []}
                             sqfeet={otherRoom.sqfeet || 250}
                             amenities={otherRoom.amenities}
+                            available_rooms={otherRoom.available_rooms}
                             hotelSlug={hotel?.slug}
                           />
                         ))}

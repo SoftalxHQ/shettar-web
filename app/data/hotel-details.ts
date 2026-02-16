@@ -10,6 +10,7 @@ export type HotelsRoomType = {
   features: string[];
   price: number;
   schemes?: string[];
+  available_rooms?: number;
 };
 
 export type NotificationType = {

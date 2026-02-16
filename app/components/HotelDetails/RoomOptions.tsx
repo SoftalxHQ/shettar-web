@@ -51,6 +51,7 @@ const RoomOptions = ({ availableRoomTypes, hotel }: { availableRoomTypes: any[],
                 hotelSlug={hotel?.slug}
                 name={room_type.name}
                 price={room_type.price}
+                available_rooms={room_type.available_rooms}
                 sale={room_type.old_price ? `${Math.round(((room_type.old_price - room_type.price) / room_type.old_price) * 100)}% Off` : undefined}
                 schemes={['Free Cancellation', 'Free Breakfast']}
               />

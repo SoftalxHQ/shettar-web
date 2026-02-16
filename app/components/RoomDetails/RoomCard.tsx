@@ -12,7 +12,7 @@ import { type TinySliderSettings } from 'tiny-slider';
 
 const currency = '₦';
 
-const RoomCard = ({ id, slug, images, name, price, sqfeet, hotelSlug, isSelected, amenities }: HotelRoomType & { hotelSlug?: string, isSelected?: boolean }) => {
+const RoomCard = ({ id, slug, images, name, price, sqfeet, hotelSlug, isSelected, amenities, available_rooms }: HotelRoomType & { hotelSlug?: string, isSelected?: boolean }) => {
   const roomLink = hotelSlug
     ? `/hotel/${hotelSlug}/roomtype/${slug || id}`
     : `/hotel/booking?room_type=${slug || id}`;
@@ -59,7 +59,7 @@ const RoomCard = ({ id, slug, images, name, price, sqfeet, hotelSlug, isSelected
           <CardBody className="d-flex flex-column h-100 p-3 p-md-4">
             <h5 className="card-title mb-1">{name}</h5>
 
-            <ul className="nav nav-divider small mb-3">
+            <ul className="nav nav-divider small mb-2">
               <li className="nav-item mb-0 items-center">
                 <FaSquare className="me-1 opacity-50" size={12} />
                 {sqfeet} sq.ft
@@ -70,6 +70,12 @@ const RoomCard = ({ id, slug, images, name, price, sqfeet, hotelSlug, isSelected
                 </li>
               ))}
             </ul>
+
+            <div className="mb-3">
+              <p className="mb-0 small fw-bold text-primary">
+                {available_rooms || 0} rooms available
+              </p>
+            </div>
 
             <div className="d-flex justify-content-between align-items-center mt-auto">
               <div className="d-flex align-items-center">
@@ -85,7 +91,7 @@ const RoomCard = ({ id, slug, images, name, price, sqfeet, hotelSlug, isSelected
               ) : (
                 <Link href={roomLink}>
                   <Button size="sm" variant="dark" className="mb-0 px-3 shadow-sm rounded-2">
-                    {hotelSlug ? 'View Details' : 'Select Room'}
+                    Select Room
                   </Button>
                 </Link>
               )}
