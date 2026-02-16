@@ -160,12 +160,10 @@ const AvailabilityFilter = () => {
         </Col>
 
         <Col lg={4}>
-          <div className="flex-centered">
-            <div>
-              <BsCalendar size={37} className=" me-2" />
-            </div>
+          <div className="form-control-border form-control-transparent form-fs-md flex-centered gap-2">
+            <BsCalendar size={37} />
 
-            <div className="form-control-border form-control-transparent form-fs-md w-100">
+            <div className="flex-grow-1">
               <FormLabel className="form-label">Check in - out</FormLabel>
               <Flatpicker
                 value={formValue.stayFor}
@@ -178,12 +176,10 @@ const AvailabilityFilter = () => {
         </Col>
 
         <Col lg={4}>
-          <div className="form-control-border form-control-transparent form-fs-md flex-centered">
-            <div>
-              <BsPerson size={37} className=" me-2" />
-            </div>
+          <div className="form-control-border form-control-transparent form-fs-md flex-centered gap-2">
+            <BsPerson size={37} />
 
-            <div className="w-100">
+            <div className="flex-grow-1">
               <label className="form-label">Guests &amp; rooms</label>
               <Dropdown className="guest-selector me-2">
                 <DropdownToggle

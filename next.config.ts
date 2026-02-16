@@ -11,6 +11,10 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  sassOptions: {
+    quietDeps: true,
+    silenceDeprecations: ['import', 'global-builtin', 'color-functions', 'if-function'],
+  },
 };
 
 export default nextConfig;
