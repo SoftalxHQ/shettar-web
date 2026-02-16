@@ -33,7 +33,7 @@ const AboutHotel = ({ hotel }: { hotel: any }) => {
     <section className="pt-5 pt-lg-10">
       <Container data-sticky-container>
         <Row className="g-4 g-xl-5">
-          <Col xl={7} className="order-1">
+          <Col lg={7} className="order-1">
             <div className="vstack gap-5">
               <Card className="bg-transparent border-0">
                 <CardHeader className="border-bottom bg-transparent px-0 pt-0">
@@ -147,7 +147,7 @@ const AboutHotel = ({ hotel }: { hotel: any }) => {
               <HotelPolicies checkIn={hotel.check_in} checkOut={hotel.check_out} />
             </div>
           </Col>
-          <Col as={'aside'} xl={5} className="order-xl-2">
+          <Col as={'aside'} lg={5} className="order-lg-2">
             <PriceOverView hotel={hotel} />
           </Col>
         </Row>

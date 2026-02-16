@@ -5,14 +5,10 @@ import { BsArrowRight } from 'react-icons/bs';
 import { FaStarHalfAlt } from 'react-icons/fa';
 import { FaStar } from 'react-icons/fa6';
 import Link from 'next/link';
-import Sticky from 'react-sticky-el';
-import useViewPort from '@/app/hooks/useViewPort';
 
 const currency = '₦';
 
 const PriceOverView = ({ hotel }: { hotel: any }) => {
-  const { width } = useViewPort();
-
   if (!hotel) return null;
 
   const averageRating = hotel.average_rating || 0;
@@ -21,14 +17,8 @@ const PriceOverView = ({ hotel }: { hotel: any }) => {
   const oldPrice = typeof hotel.old_price === 'number' ? hotel.old_price : parseFloat(hotel.old_price || '0');
 
   return (
-    <Sticky
-      disabled={width <= 1199}
-      topOffset={180}
-      bottomOffset={0}
-      boundaryElement="aside"
-      hideOnBoundaryHit={false}
-      stickyStyle={{ transition: '0.2s all linear' }}>
-      <Card as={CardBody} className="border shadow-sm mt-xl-5">
+    <div className="sticky-top" style={{ top: '100px', zIndex: 1 }}>
+      <Card as={CardBody} className="border shadow-sm mt-3 mt-xl-0">
         <div className="d-sm-flex justify-content-sm-between align-items-center mb-3">
           <div>
             <span>Price Start at</span>
@@ -72,7 +62,7 @@ const PriceOverView = ({ hotel }: { hotel: any }) => {
           </a>
         </div>
       </Card>
-    </Sticky>
+    </div>
   );
 };
 

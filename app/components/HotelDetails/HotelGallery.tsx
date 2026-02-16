@@ -1,20 +1,26 @@
 'use client';
 
 import { useToggle } from '@/app/hooks';
-import { Alert, Button, Card, Col, Container, Dropdown, DropdownItem, DropdownMenu, DropdownToggle, Modal, ModalHeader, Row } from 'react-bootstrap';
+import { Alert, Button, Card, Col, Container, Dropdown, DropdownItem, DropdownMenu, DropdownToggle, Modal, ModalHeader, Row, Spinner } from 'react-bootstrap';
 import { BsExclamationOctagonFill, BsEyeFill, BsFullscreen, BsGeoAlt, BsPinMapFill, BsXLg } from 'react-icons/bs';
 import { FaFacebookSquare, FaShareAlt, FaTwitterSquare } from 'react-icons/fa';
 import { FaCopy, FaHeart, FaLinkedin } from 'react-icons/fa6';
 import Link from 'next/link';
 import GlightBox from '../GlightBox';
 import { Skeleton, SkeletonImage } from '../';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'react-hot-toast';
 
 const HotelGallery = ({ hotel }: { hotel: any }) => {
   const { isOpen, toggle } = useToggle();
   const { isOpen: alertVisible, hide: hideAlert } = useToggle(true);
   const [isMapLoading, setIsMapLoading] = useState(true);
+
+  useEffect(() => {
+    if (isOpen) {
+      setIsMapLoading(true);
+    }
+  }, [isOpen]);
 
   if (!hotel) return null;
 
@@ -214,8 +220,10 @@ const HotelGallery = ({ hotel }: { hotel: any }) => {
         </ModalHeader>
         <div className="modal-body p-0 position-relative" style={{ height: '400px' }}>
           {isMapLoading && (
-            <div className="position-absolute top-0 start-0 w-100 h-100 bg-body z-index-1">
-              <Skeleton height="100%" width="100%" />
+            <div className="position-absolute top-0 start-0 w-100 h-100 bg-body z-index-1 d-flex align-items-center justify-content-center">
+              <Spinner animation="border" variant="primary">
+                <span className="visually-hidden">Loading...</span>
+              </Spinner>
             </div>
           )}
           <iframe
