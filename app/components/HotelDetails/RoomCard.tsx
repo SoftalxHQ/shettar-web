@@ -11,6 +11,7 @@ import Link from 'next/link';
 import { type TinySliderSettings } from 'tiny-slider';
 import { type HotelsRoomType } from '@/app/data/hotel-details';
 import { SkeletonImage } from '../';
+import { useSearchParams } from 'next/navigation';
 
 const currency = '₦';
 
@@ -25,6 +26,9 @@ const splitArray = <T,>(array: T[], size: number): T[][] => {
 };
 
 const RoomCard = ({ id, slug, features, images, name, price, sale, schemes, hotelSlug, allAmenities, available_rooms }: HotelsRoomType & { hotelSlug?: string, allAmenities?: string[] }) => {
+  const searchParams = useSearchParams();
+  const searchQuery = searchParams.toString();
+
   const roomSliderSettings: TinySliderSettings = useMemo(() => ({
     autoplay: false,
     controls: true,
@@ -43,9 +47,14 @@ const RoomCard = ({ id, slug, features, images, name, price, sale, schemes, hote
 
   // Build the link based on hotelSlug
   const roomIdentifier = slug && slug !== "" ? slug : id;
-  const roomLink = hotelSlug
+  const baseRoomLink = hotelSlug
     ? `/hotel/${hotelSlug}/roomtype/${roomIdentifier}`
-    : `/hotel/room/${roomIdentifier}`; // Fallback if no hotelSlug
+    : `/hotel/room/${roomIdentifier}`;
+  const roomLink = `${baseRoomLink}${searchQuery ? `?${searchQuery}` : ''}`;
+
+  const requestedRooms = parseInt(searchParams.get('rooms') || '1');
+  const actualAvailableRooms = available_rooms ?? 0;
+  const isAvailable = actualAvailableRooms >= requestedRooms;
 
   return (
     <Card className="card-hover-shadow border-0 overflow-hidden mb-4 shadow-sm">
@@ -104,8 +113,9 @@ const RoomCard = ({ id, slug, features, images, name, price, sale, schemes, hote
             </div>
 
             <div className="mb-3">
-              <p className="mb-0 small fw-bold text-primary">
-                {available_rooms || 0} rooms available
+              <p className={`mb-0 small fw-bold ${isAvailable ? 'text-primary' : 'text-danger'}`}>
+                {actualAvailableRooms} rooms available
+                {!isAvailable && <span className="ms-2">(Insufficient for your search)</span>}
               </p>
             </div>
 
@@ -116,9 +126,15 @@ const RoomCard = ({ id, slug, features, images, name, price, sale, schemes, hote
                 </h3>
                 <span className="ms-1 small opacity-50">/night</span>
               </div>
-              <Link href={roomLink} className="btn btn-primary mb-0 px-4 shadow-sm">
-                View Room
-              </Link>
+              {isAvailable ? (
+                <Link href={roomLink} className="btn btn-primary mb-0 px-4 shadow-sm">
+                  View Room
+                </Link>
+              ) : (
+                <Button variant="secondary" className="mb-0 px-4 shadow-sm" disabled>
+                  Sold Out
+                </Button>
+              )}
             </div>
           </div>
         </Col>

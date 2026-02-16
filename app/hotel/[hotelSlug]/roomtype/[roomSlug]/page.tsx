@@ -8,6 +8,13 @@ import Footer from '@/app/components/Footer';
 import { Skeleton } from '@/app/components';
 import AvailabilityFilter from '@/app/components/HotelDetails/AvailabilityFilter';
 
+const formatDateToLocalISO = (date: Date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 export default function RoomDetailPage() {
   const params = useParams();
   const hotelSlug = params.hotelSlug as string;
@@ -64,8 +71,8 @@ export default function RoomDetailPage() {
     const query = new URLSearchParams(searchParams.toString());
 
     if (searchData.stayFor && Array.isArray(searchData.stayFor) && searchData.stayFor.length === 2) {
-      query.set('start_date', searchData.stayFor[0].toISOString().split('T')[0]);
-      query.set('end_date', searchData.stayFor[1].toISOString().split('T')[0]);
+      query.set('start_date', formatDateToLocalISO(searchData.stayFor[0]));
+      query.set('end_date', formatDateToLocalISO(searchData.stayFor[1]));
     }
 
     if (searchData.guests && searchData.guests.rooms) {

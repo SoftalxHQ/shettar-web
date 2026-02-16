@@ -9,6 +9,7 @@ import { BsArrowLeft, BsArrowRight, BsHeart, BsHeartFill, BsStarFill } from 'rea
 import Link from 'next/link';
 import { useMemo } from 'react';
 import { type TinySliderSettings } from 'tiny-slider';
+import { useSearchParams } from 'next/navigation';
 
 import 'tiny-slider/dist/tiny-slider.css';
 
@@ -17,6 +18,11 @@ import { HotelsGridType } from '@/app/types/hotel';
 const HotelGridCard = ({ id, slug, feature, images, name, price, rating, sale }: HotelsGridType) => {
   const { isOpen, toggle } = useToggle();
   const { dir } = useLayoutContext();
+  const searchParams = useSearchParams();
+
+  // Create the search query string once
+  const searchQuery = searchParams.toString();
+  const hotelDetailLink = `/hotel/${slug || id}${searchQuery ? `?${searchQuery}` : ''}`;
 
   const gridSliderSettings: TinySliderSettings = useMemo(() => ({
     mouseDrag: true,
@@ -75,7 +81,7 @@ const HotelGridCard = ({ id, slug, feature, images, name, price, rating, sale }:
           </Link>
         </div>
         <h5 className="card-title">
-          <Link href={`/hotel/${slug || id}`} className="text-inherit">{name}</Link>
+          <Link href={hotelDetailLink} className="text-inherit">{name}</Link>
         </h5>
         <ul className="nav nav-divider mb-2 mb-sm-3">
           {feature.map((feat, idx) => (
@@ -97,7 +103,7 @@ const HotelGridCard = ({ id, slug, feature, images, name, price, rating, sale }:
             {sale && <span className="text-decoration-line-through small opacity-50">{currency}{((price || 0) * 1.25).toLocaleString()}</span>}
           </div>
           <div className="mt-2 mt-sm-0">
-            <Link href={`/hotel/${slug || id}`} className="btn btn-sm btn-primary-soft mb-0 w-100 items-center shadow-sm">
+            <Link href={hotelDetailLink} className="btn btn-sm btn-primary-soft mb-0 w-100 items-center shadow-sm">
               View Detail
               <BsArrowRight className=" ms-2" />
             </Link>

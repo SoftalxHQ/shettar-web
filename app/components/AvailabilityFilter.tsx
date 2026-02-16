@@ -19,6 +19,18 @@ type AvailabilityFormType = {
 
 let locationsCache: any[] | null = null;
 
+const formatDateToLocalISO = (date: Date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const parseDateFromLocalISO = (dateStr: string) => {
+  const [year, month, day] = dateStr.split('-').map(Number);
+  return new Date(year, month - 1, day);
+};
+
 const AvailabilityFilter = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -33,8 +45,8 @@ const AvailabilityFilter = () => {
     let stayFor: Date | Array<Date> = [new Date(), new Date(Date.now() + 24 * 60 * 60 * 1000)];
 
     if (start_date_str && end_date_str) {
-      const s = new Date(start_date_str);
-      const e = new Date(end_date_str);
+      const s = parseDateFromLocalISO(start_date_str);
+      const e = parseDateFromLocalISO(end_date_str);
       if (!isNaN(s.getTime()) && !isNaN(e.getTime())) {
         stayFor = [s, e];
       }
@@ -86,8 +98,8 @@ const AvailabilityFilter = () => {
     const query = new URLSearchParams();
 
     if (Array.isArray(formValue.stayFor) && formValue.stayFor.length === 2) {
-      query.set('start_date', formValue.stayFor[0].toISOString().split('T')[0]);
-      query.set('end_date', formValue.stayFor[1].toISOString().split('T')[0]);
+      query.set('start_date', formatDateToLocalISO(formValue.stayFor[0]));
+      query.set('end_date', formatDateToLocalISO(formValue.stayFor[1]));
     }
 
     if (formValue.guests.rooms) {

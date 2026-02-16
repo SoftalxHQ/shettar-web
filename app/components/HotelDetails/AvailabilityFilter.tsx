@@ -8,6 +8,18 @@ import { useSearchParams } from 'next/navigation';
 import { Button, Col, Container, Dropdown, DropdownDivider, DropdownMenu, DropdownToggle, Offcanvas, OffcanvasHeader } from 'react-bootstrap';
 import { BsDashCircle, BsPencilSquare, BsPlusCircle, BsSearch } from 'react-icons/bs';
 
+const formatDateToLocalISO = (date: Date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const parseDateFromLocalISO = (dateStr: string) => {
+  const [year, month, day] = dateStr.split('-').map(Number);
+  return new Date(year, month - 1, day);
+};
+
 type AvailabilityFormType = {
   location: string;
   stayFor: Date | Array<Date>;
@@ -30,8 +42,8 @@ const AvailabilityFilter = ({ hotel, onSearch, isLoading }: { hotel: any, onSear
     let stayFor: Date | Array<Date> = [new Date(), new Date(Date.now() + 24 * 60 * 60 * 1000)];
 
     if (start_date_str && end_date_str) {
-      const s = new Date(start_date_str);
-      const e = new Date(end_date_str);
+      const s = parseDateFromLocalISO(start_date_str);
+      const e = parseDateFromLocalISO(end_date_str);
       if (!isNaN(s.getTime()) && !isNaN(e.getTime())) {
         stayFor = [s, e];
       }
