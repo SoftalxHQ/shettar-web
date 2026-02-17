@@ -34,6 +34,7 @@ export default function RootLayout({
             `,
           }}
         />
+        <script src="https://js.paystack.co/v2/inline.js" async></script>
       </head>
       <body className="antialiased">
         <Toaster

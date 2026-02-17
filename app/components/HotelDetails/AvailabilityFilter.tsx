@@ -38,6 +38,8 @@ const AvailabilityFilter = ({ hotel, onSearch, isLoading }: { hotel: any, onSear
     const start_date_str = searchParams.get('start_date');
     const end_date_str = searchParams.get('end_date');
     const rooms_str = searchParams.get('rooms');
+    const adults_str = searchParams.get('adults');
+    const children_str = searchParams.get('children');
 
     let stayFor: Date | Array<Date> = [new Date(), new Date(Date.now() + 24 * 60 * 60 * 1000)];
 
@@ -53,9 +55,9 @@ const AvailabilityFilter = ({ hotel, onSearch, isLoading }: { hotel: any, onSear
       location: hotel ? `${hotel.city}, ${hotel.state}` : 'City/Town, State',
       stayFor: stayFor,
       guests: {
-        adults: 2,
+        adults: Math.max(1, adults_str ? parseInt(adults_str) : 2), // At least 1 adult required
+        children: children_str ? parseInt(children_str) : 0,
         rooms: rooms_str ? parseInt(rooms_str) : 1,
-        children: 0,
       },
     };
   };
@@ -75,11 +77,21 @@ const AvailabilityFilter = ({ hotel, onSearch, isLoading }: { hotel: any, onSear
 
   const updateGuests = (type: keyof AvailabilityFormType['guests'], increase: boolean = true) => {
     const val = formValue.guests[type];
+    let newVal: number;
+
+    if (increase) {
+      newVal = val + 1;
+    } else {
+      // Adults must be at least 1, others can go to 0
+      const minValue = type === 'adults' ? 1 : 0;
+      newVal = val > minValue ? val - 1 : minValue;
+    }
+
     setFormValue({
       ...formValue,
       guests: {
         ...formValue.guests,
-        [type]: increase ? val + 1 : val > 1 ? val - 1 : 0,
+        [type]: newVal,
       },
     });
   };

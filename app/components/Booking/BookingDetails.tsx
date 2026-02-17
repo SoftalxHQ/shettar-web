@@ -1,6 +1,5 @@
-'use client';
-
 import { Col, Container, Row } from 'react-bootstrap';
+import { useForm } from 'react-hook-form';
 import GuestDetails from './GuestDetails';
 import HotelInformation from './HotelInformation';
 import LoginAdvantages from './LoginAdvantages';
@@ -21,6 +20,20 @@ const BookingDetails = ({
   endDate: string | null,
   roomsCount: string | null
 }) => {
+  const { control, handleSubmit, setValue, watch } = useForm({
+    defaultValues: {
+      first_name: '',
+      last_name: '',
+      email_address: '',
+      phone_number: '',
+      emer_first_name: '',
+      emer_last_name: '',
+      emer_phone_number: '',
+      payment_method: 'card',
+      option: 'self'
+    }
+  });
+
   return (
     <section className="pt-4">
       <Container>
@@ -35,9 +48,16 @@ const BookingDetails = ({
                 roomsCount={roomsCount}
               />
 
-              <GuestDetails />
+              <GuestDetails control={control} />
 
-              <PaymentOptions room={room} hotel={hotel} />
+              <PaymentOptions
+                room={room}
+                hotel={hotel}
+                control={control}
+                handleSubmit={handleSubmit}
+                watch={watch}
+                setValue={setValue}
+              />
             </div>
           </Col>
           <Col as="aside" xl={4}>

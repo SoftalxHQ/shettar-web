@@ -29,7 +29,7 @@ const PriceSummary = ({
   const nights = calculateNights();
   const roomCharges = price * nights;
   const discount = 0;
-  const taxes = roomCharges * 0.05; // 5% tax example
+  const taxes = 0; // No tax applied
   const total = roomCharges - discount + taxes;
 
   return (

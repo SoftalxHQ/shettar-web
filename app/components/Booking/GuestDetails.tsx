@@ -1,17 +1,10 @@
-'use client';
-
 import { CheckFormInput, SelectFormInput, TextFormInput } from '@/app/components';
 import { Alert, Button, Card, CardBody, CardHeader, Col } from 'react-bootstrap';
-import { useForm } from 'react-hook-form';
 import { BsPeopleFill } from 'react-icons/bs';
-import { FaPlus } from 'react-icons/fa6';
 import Link from 'next/link';
 import { useLayoutContext } from '@/app/states';
 
-const SpecialRequest = ['Smoking room', 'Late check-in', 'Early check-in', 'Room on a high floor', 'Large bed', 'Airport transfer', 'Twin beds'];
-
-const GuestDetails = () => {
-  const { control } = useForm();
+const GuestDetails = ({ control }: { control: any }) => {
   const { isAuthenticated } = useLayoutContext();
   return (
     <Card className="shadow">
@@ -30,7 +23,7 @@ const GuestDetails = () => {
           </Col>
 
           <TextFormInput
-            name="firstName"
+            name="first_name"
             type="text"
             label="First Name"
             control={control}
@@ -39,7 +32,7 @@ const GuestDetails = () => {
             containerClass="col-md-6"
           />
           <TextFormInput
-            name="lastName"
+            name="last_name"
             label="Last Name"
             type="text"
             control={control}
@@ -48,7 +41,7 @@ const GuestDetails = () => {
             containerClass="col-md-6"
           />
           <TextFormInput
-            name="email"
+            name="email_address"
             label="Email Address"
             type="email"
             control={control}
@@ -57,7 +50,7 @@ const GuestDetails = () => {
             containerClass="col-md-6"
           />
           <TextFormInput
-            name="mobileNo"
+            name="phone_number"
             label="Phone Number"
             type="text"
             control={control}
@@ -73,7 +66,7 @@ const GuestDetails = () => {
           </Col>
 
           <TextFormInput
-            name="emerFirstName"
+            name="emer_first_name"
             type="text"
             label="First Name"
             control={control}
@@ -82,7 +75,7 @@ const GuestDetails = () => {
             containerClass="col-md-6"
           />
           <TextFormInput
-            name="emerLastName"
+            name="emer_last_name"
             label="Last Name"
             type="text"
             control={control}
@@ -91,7 +84,7 @@ const GuestDetails = () => {
             containerClass="col-md-6"
           />
           <TextFormInput
-            name="emerPhone"
+            name="emer_phone_number"
             label="Phone Number"
             type="text"
             control={control}

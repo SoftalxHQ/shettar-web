@@ -14,8 +14,19 @@ function BookingPageContent() {
   const roomSlug = params.roomSlug as string;
   const searchParams = useSearchParams();
 
-  const startDate = searchParams.get('start_date');
-  const endDate = searchParams.get('end_date');
+  const getDefaultStartDate = () => {
+    const today = new Date();
+    return today.toISOString().split('T')[0];
+  };
+
+  const getDefaultEndDate = () => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    return tomorrow.toISOString().split('T')[0];
+  };
+
+  const startDate = searchParams.get('start_date') || getDefaultStartDate();
+  const endDate = searchParams.get('end_date') || getDefaultEndDate();
   const rooms = searchParams.get('rooms');
 
   const [roomType, setRoomType] = useState<any>(null);

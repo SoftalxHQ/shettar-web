@@ -26,7 +26,11 @@ export default function BookingConfirmedPage() {
   });
 
   const [roomType, setRoomType] = useState<any>(null);
+  const [booking, setBooking] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const bookingId = searchParams.get('booking_id');
 
   const formatDate = (dateStr: string | null, defaultDate: string) => {
     if (!dateStr) return defaultDate;
@@ -39,17 +43,17 @@ export default function BookingConfirmedPage() {
   };
 
   const calculateNights = () => {
-    if (!startDate || !endDate) return 1;
-    const start = new Date(startDate);
-    const end = new Date(endDate);
+    if (!booking) return 1;
+    const start = new Date(booking.start_date);
+    const end = new Date(booking.end_date);
     const diffTime = Math.abs(end.getTime() - start.getTime());
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return diffDays > 0 ? diffDays : 1;
   };
 
   const nights = calculateNights();
-  const displayCheckIn = formatDate(startDate, '4 March 2026');
-  const displayCheckOut = formatDate(endDate, '8 March 2026');
+  const displayCheckIn = formatDate(booking?.start_date, '4 March 2026');
+  const displayCheckOut = formatDate(booking?.end_date, '8 March 2026');
 
   const formatTime = (timeStr: string | null, defaultTime: string) => {
     if (!timeStr) return defaultTime;
@@ -66,23 +70,45 @@ export default function BookingConfirmedPage() {
   };
 
   useEffect(() => {
-    const fetchRoomDetail = async () => {
-      if (!hotelSlug || !roomSlug) return;
+    const fetchBookingDetails = async () => {
+      if (!bookingId) {
+        setError('No booking ID provided');
+        setIsLoading(false);
+        return;
+      }
+
       try {
         const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
-        const response = await fetch(`${API_URL}/api/v1/businesses/${hotelSlug}/room_types/${roomSlug}`);
-        if (response.ok) {
-          const data = await response.json();
-          setRoomType(data);
+        const token = localStorage.getItem('token');
+
+        // Fetch booking details
+        const bookingResponse = await fetch(`${API_URL}/api/v1/reservations/${bookingId}`, {
+          headers: {
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+          }
+        });
+
+        if (!bookingResponse.ok) {
+          throw new Error('Failed to fetch booking details');
+        }
+
+        const bookingData = await bookingResponse.json();
+        setBooking(bookingData);
+
+        // Fetch room type details if needed (data should already be in booking.room.room_type)
+        if (bookingData.room?.room_type) {
+          setRoomType(bookingData.room.room_type);
         }
       } catch (err) {
-        console.error('Error fetching details:', err);
+        console.error('Error fetching booking:', err);
+        setError('Unable to load booking details');
       } finally {
         setIsLoading(false);
       }
     };
-    fetchRoomDetail();
-  }, [hotelSlug, roomSlug]);
+
+    fetchBookingDetails();
+  }, [bookingId]);
 
   useEffect(() => {
     if (!isLoading && roomType) {
@@ -119,7 +145,26 @@ export default function BookingConfirmedPage() {
     );
   }
 
-  const bookingId = "ABR-" + Math.random().toString(36).substring(2, 8).toUpperCase();
+  if (error || !booking) {
+    return (
+      <>
+        <Header />
+        <Container className="py-5 text-center">
+          <Card className="border-0 shadow-lg rounded-4 p-5">
+            <h3 className="text-danger">Booking Not Found</h3>
+            <p className="text-body-secondary">{error || 'Unable to load booking details'}</p>
+            <Link href="/">
+              <Button variant="primary">Back to Home</Button>
+            </Link>
+          </Card>
+        </Container>
+        <Footer />
+      </>
+    );
+  }
+
+  const displayBookingId = booking.booking_id || bookingId;
+  const totalAmount = booking.total_amount || (roomType?.price * nights);
 
   return (
     <>
@@ -147,7 +192,7 @@ export default function BookingConfirmedPage() {
                   <Row className="align-items-center">
                     <Col>
                       <span className="text-white-50 small text-uppercase fw-bold ls-1">Reservation Number</span>
-                      <h3 className="mb-0 text-white font-monospace">{bookingId}</h3>
+                      <h3 className="mb-0 text-white font-monospace">{displayBookingId}</h3>
                     </Col>
                     <Col xs="auto" className="d-flex gap-2 no-print">
                       <Button
@@ -219,14 +264,20 @@ export default function BookingConfirmedPage() {
                       <span className="text-body fw-semibold small">₦{roomType?.price?.toLocaleString()} / night</span>
                     </div>
                     <div className="d-flex justify-content-between align-items-center mb-2">
-                      <span className="text-body-secondary fw-medium small">Service Charge & Tax (5%)</span>
-                      <span className="text-body fw-semibold small">₦{(roomType?.price * 0.05 * nights).toLocaleString()}</span>
+                      <span className="text-body-secondary fw-medium small">Number of Rooms</span>
+                      <span className="text-body fw-semibold small">×{booking.room ? 1 : 'N/A'}</span>
+                    </div>
+                    <div className="d-flex justify-content-between align-items-center mb-2">
+                      <span className="text-body-secondary fw-medium small">Guests</span>
+                      <span className="text-body fw-semibold small">{booking.guests || 0} Adults{booking.children > 0 ? `, ${booking.children} Children` : ''}</span>
                     </div>
                     <div className="d-flex justify-content-between align-items-center mt-3 pt-3 border-top border-secondary border-opacity-25">
-                      <h5 className="mb-0 text-body-emphasis fw-bold">Total Amount</h5>
-                      <h4 className="mb-0 text-primary fw-bold">₦{(roomType?.price * 1.05 * nights).toLocaleString()}</h4>
+                      <h5 className="mb-0 text-body-emphasis fw-bold">Total Amount Paid</h5>
+                      <h4 className="mb-0 text-primary fw-bold">₦{totalAmount?.toLocaleString()}</h4>
                     </div>
-                    <p className="text-end small text-body-secondary mt-2 font-italic">Paid securely via Card Payment</p>
+                    <p className="text-end small text-body-secondary mt-2 font-italic">
+                      {booking.payment_method === 0 ? 'Paid via Card Payment' : 'Payment Method Recorded'}
+                    </p>
                   </div>
 
                   {/* Amenities Quick View */}
@@ -283,7 +334,7 @@ export default function BookingConfirmedPage() {
                       <div className="bg-primary bg-opacity-25 text-primary rounded-circle flex-centered small fw-bold" style={{ width: '32px', height: '32px', minWidth: '32px' }}>3</div>
                       <div className="ms-3 flex-grow-1">
                         <h6 className="mb-1 text-body-emphasis fw-bold">Keep ID Accessible</h6>
-                        <p className="small text-body-secondary mb-0">Your Booking ID is <strong>{bookingId}</strong>. We recommend taking a screenshot for offline use.</p>
+                        <p className="small text-body-secondary mb-0">Your Booking ID is <strong>{displayBookingId}</strong>. We recommend taking a screenshot for offline use.</p>
                       </div>
                     </li>
                   </ul>

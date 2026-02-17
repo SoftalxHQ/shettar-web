@@ -1,5 +1,3 @@
-'use client';
-
 import {
   Accordion,
   AccordionBody,
@@ -19,34 +17,68 @@ import { BsCreditCard, BsGlobe2, BsPaypal, BsWalletFill } from 'react-icons/bs';
 import Link from 'next/link';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { FaPlus } from 'react-icons/fa6';
-import { useForm } from 'react-hook-form';
-import * as yup from 'yup';
-import { yupResolver } from '@hookform/resolvers/yup';
-import { SelectFormInput, TextFormInput } from '@/app/components';
-import { useToggle } from '@/app/hooks';
-
+import { useState } from 'react';
 import { useLayoutContext } from '@/app/states';
 
 const currency = '₦';
 
-const paymentCards = [
-  '/images/element/visa.svg',
-  '/images/element/mastercard.svg',
-  '/images/element/expresscard.svg'
-];
+declare global {
+  interface Window {
+    PaystackPop: any;
+  }
+}
 
-const PaymentOptions = ({ room, hotel }: { room: any, hotel: any }) => {
+const PaymentOptions = ({
+  room,
+  hotel,
+  control,
+  handleSubmit,
+  watch,
+  setValue
+}: {
+  room: any,
+  hotel: any,
+  control: any,
+  handleSubmit: any,
+  watch: any,
+  setValue: any
+}) => {
   const params = useParams();
   const searchParams = useSearchParams();
   const hotelSlug = params.hotelSlug as string;
   const roomSlug = params.roomSlug as string;
   const { isAuthenticated } = useLayoutContext();
+  const router = useRouter();
 
-  const startDate = searchParams.get('start_date');
-  const endDate = searchParams.get('end_date');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Use dates from URL or default to today and tomorrow
+  const startDateParam = searchParams.get('start_date');
+  const endDateParam = searchParams.get('end_date');
+
+  const getDefaultStartDate = () => {
+    const today = new Date();
+    return today.toISOString().split('T')[0]; // YYYY-MM-DD
+  };
+
+  const getDefaultEndDate = () => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    return tomorrow.toISOString().split('T')[0]; // YYYY-MM-DD
+  };
+
+  const startDate = startDateParam || getDefaultStartDate();
+  const endDate = endDateParam || getDefaultEndDate();
+  const roomsCount = searchParams.get('rooms') || '1';
+
+  // Get guest counts from URL or use defaults (at least 1 adult required)
+  const adults = Math.max(1, parseInt(searchParams.get('adults') || '2'));
+  const children = parseInt(searchParams.get('children') || '0');
+
+  const paymentMethod = watch('payment_method');
 
   const calculateNights = () => {
-    if (!startDate || !endDate) return 1;
     const start = new Date(startDate);
     const end = new Date(endDate);
     const diffTime = Math.abs(end.getTime() - start.getTime());
@@ -56,25 +88,154 @@ const PaymentOptions = ({ room, hotel }: { room: any, hotel: any }) => {
 
   const price = room?.price || 0;
   const nights = calculateNights();
-  const total = (price * nights) * 1.05; // Matching PriceSummary taxes
+  const total = price * nights * parseInt(roomsCount); // No tax applied
 
-  const paymentSchema = yup.object({
-    cardNo: yup.string().required('Please enter your card number'),
-    expiryMonth: yup.string().required('Please enter your card expiration month'),
-    expiryYear: yup.string().required('Please enter your card expiration year'),
-    cvv: yup.string().required('Please enter your card CVV number'),
-    cardHolderName: yup.string().required('Please enter card holder name'),
-  });
+  const createReservation = async (data: any, paystackReference?: string) => {
+    const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
+    const token = localStorage.getItem('token');
 
-  const { control, handleSubmit } = useForm({
-    resolver: yupResolver(paymentSchema),
-  });
+    // Map form fields to correct database schema
+    const reservationData: any = {
+      start_date: startDate,
+      end_date: endDate,
+      guests: adults,  // Use adults count from URL
+      children: children,  // Use children count from URL
+      number_of_room: roomsCount,
+      payment_method: data.payment_method,
+      option: data.option,
+      paystack_reference: paystackReference,
+    };
 
-  const router = useRouter();
-  const { isOpen, toggle } = useToggle(true);
+    if (isAuthenticated) {
+      // For authenticated users, use first_name/last_name and emer_* for emergency
+      reservationData.first_name = data.first_name;
+      reservationData.last_name = data.last_name;
+      reservationData.phone_number = data.phone_number;
+      reservationData.emer_first_name = data.emer_first_name;
+      reservationData.emer_last_name = data.emer_last_name;
+      reservationData.emer_phone_number = data.emer_phone_number;
+    } else {
+      // For guests (unauthenticated), use other_* for guest details and emer_* for emergency
+      reservationData.other_first_name = data.first_name;
+      reservationData.other_last_name = data.last_name;
+      reservationData.other_phone_number = data.phone_number;
+      reservationData.other_email_address = data.email_address;
+      reservationData.emer_first_name = data.emer_first_name;
+      reservationData.emer_last_name = data.emer_last_name;
+      reservationData.emer_phone_number = data.emer_phone_number;
+    }
 
-  const onSubmit = () => {
-    router.push(`/hotel/${hotelSlug}/roomtype/${roomSlug}/booking-confirmed`);
+    const payload = {
+      reservation: reservationData
+    };
+
+    const response = await fetch(`${API_URL}/api/v1/businesses/${hotel.id}/room_types/${room.id}/reservations`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      console.error('Backend error response:', result);
+      throw new Error(result.error?.[0]?.message || result.errors || 'Failed to create booking');
+    }
+
+    return result;
+  };
+
+  const onSubmit = async (data: any) => {
+    setIsSubmitting(true);
+    setError(null);
+
+    try {
+      const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
+      const token = localStorage.getItem('token');
+
+      if (data.payment_method === 'card') {
+        // Get user email
+        const userJson = localStorage.getItem('user');
+        const user = userJson ? JSON.parse(userJson) : null;
+        const email = user?.email || data.email_address || 'guest@abri.com';
+
+        // Generate custom Paystack reference: BKN{timestamp}{random}
+        const generateReference = () => {
+          const timestamp = Date.now().toString(36); // Base36 encoded timestamp
+          const random = Math.random().toString(36).substring(2, 10); // Random string
+          return `BKN${timestamp}${random}`;
+        };
+        const customReference = generateReference();
+
+        // Initialize payment through backend to get access_code
+        const initResponse = await fetch(`${API_URL}/api/v1/payment_initializations`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+          },
+          body: JSON.stringify({
+            initialization: {
+              email: email,
+              amount: total,
+              reference: customReference, // Use our custom reference
+              metadata: {
+                booking_data: {
+                  start_date: startDate,
+                  end_date: endDate,
+                  guests: adults,
+                  children: children,
+                  number_of_room: roomsCount,
+                  hotel_id: hotel.id,
+                  room_type_id: room.id
+                }
+              }
+            }
+          })
+        });
+
+        const initResult = await initResponse.json();
+
+        if (!initResponse.ok || !initResult.success) {
+          throw new Error(initResult.message || 'Failed to initialize payment');
+        }
+
+        // Open inline Paystack popup with access_code from backend
+        const paystack = new window.PaystackPop();
+        paystack.newTransaction({
+          key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY,
+          email: email,
+          amount: Math.round(total * 100),
+          ref: initResult.reference, // Use reference from backend
+          onSuccess: (transaction: any) => {
+            // Payment successful, create booking
+            createReservation(data, transaction.reference)
+              .then((result: any) => {
+                router.push(`/hotel/${hotelSlug}/roomtype/${roomSlug}/booking-confirmed?booking_id=${result.reservations[0].booking_id}`);
+              })
+              .catch((err: any) => {
+                setError(err.message || 'Payment successful but booking failed. Please contact support.');
+                setIsSubmitting(false);
+              });
+          },
+          onCancel: () => {
+            setError('Payment cancelled.');
+            setIsSubmitting(false);
+          }
+        });
+      } else {
+        // Wallet payment - direct backend call
+        const result = await createReservation(data);
+        router.push(`/hotel/${hotelSlug}/roomtype/${roomSlug}/booking-confirmed?booking_id=${result.reservations[0].booking_id}`);
+      }
+    } catch (err: any) {
+      console.error('Booking error:', err);
+      setError(err.message || 'An error occurred while processing your booking.');
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -86,7 +247,17 @@ const PaymentOptions = ({ room, hotel }: { room: any, hotel: any }) => {
         </h4>
       </CardHeader>
       <CardBody className="p-4">
-        <Accordion defaultActiveKey={isAuthenticated ? "1" : "2"} className="accordion-icon accordion-bg-light" id="accordioncircle">
+        {error && (
+          <Alert variant="danger" className="mb-4">
+            {error}
+          </Alert>
+        )}
+        <Accordion
+          activeKey={paymentMethod === 'wallet' ? '1' : '2'}
+          onSelect={(key) => setValue('payment_method', key === '1' ? 'wallet' : 'card')}
+          className="accordion-icon accordion-bg-light"
+          id="accordioncircle"
+        >
           {isAuthenticated && (
             <AccordionItem eventKey="1" className="mb-3">
               <AccordionHeader as="h6" id="heading-1">
@@ -103,8 +274,13 @@ const PaymentOptions = ({ room, hotel }: { room: any, hotel: any }) => {
                   </div>
                 </div>
                 <p className="small opacity-50 mb-3">Your wallet balance will be debited for this booking.</p>
-                <Button variant="primary" className="w-100 mb-0" onClick={onSubmit}>
-                  Pay {currency}{total.toLocaleString()} Now
+                <Button
+                  variant="primary"
+                  className="w-100 mb-0"
+                  onClick={handleSubmit(onSubmit)}
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? 'Processing...' : `Pay ${currency}${total.toLocaleString()} Now`}
                 </Button>
               </AccordionBody>
             </AccordionItem>
@@ -120,8 +296,13 @@ const PaymentOptions = ({ room, hotel }: { room: any, hotel: any }) => {
                 <Image src="/images/element/mastercard.svg" className="h-30px me-2" alt="mastercard" />
                 <Image src="/images/element/expresscard.svg" className="h-30px" alt="express" />
                 <p className="mt-3 mb-4 opacity-75">You will be redirected to Paystack to complete your payment securely.</p>
-                <Button variant="primary" className="w-100 mb-0" onClick={onSubmit}>
-                  Proceed to Payment
+                <Button
+                  variant="primary"
+                  className="w-100 mb-0"
+                  onClick={handleSubmit(onSubmit)}
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? 'Processing...' : 'Proceed to Payment'}
                 </Button>
               </div>
             </AccordionBody>

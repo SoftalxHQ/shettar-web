@@ -76,8 +76,16 @@ export default function HotelDetailPage() {
       query.set('end_date', formatDateToLocalISO(searchData.stayFor[1]));
     }
 
-    if (searchData.guests && searchData.guests.rooms) {
-      query.set('rooms', searchData.guests.rooms.toString());
+    if (searchData.guests) {
+      if (searchData.guests.rooms) {
+        query.set('rooms', searchData.guests.rooms.toString());
+      }
+      if (searchData.guests.adults) {
+        query.set('adults', searchData.guests.adults.toString());
+      }
+      if (searchData.guests.children !== undefined) {
+        query.set('children', searchData.guests.children.toString());
+      }
     }
 
     router.push(`${pathname}?${query.toString()}`);
