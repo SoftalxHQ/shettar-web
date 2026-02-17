@@ -5,6 +5,8 @@ import { Alert, Button, Card, Col, Container, Dropdown, DropdownItem, DropdownMe
 import { BsExclamationOctagonFill, BsEyeFill, BsFullscreen, BsGeoAlt, BsPinMapFill, BsXLg } from 'react-icons/bs';
 import { FaFacebookSquare, FaShareAlt, FaTwitterSquare } from 'react-icons/fa';
 import { FaCopy, FaHeart, FaLinkedin } from 'react-icons/fa6';
+import { useRouter } from 'next/navigation';
+import { useLayoutContext } from '@/app/states';
 import Link from 'next/link';
 import GlightBox from '../GlightBox';
 import { Skeleton, SkeletonImage } from '../';
@@ -14,6 +16,8 @@ import { toast } from 'react-hot-toast';
 const HotelGallery = ({ hotel }: { hotel: any }) => {
   const { isOpen, toggle } = useToggle();
   const { isOpen: alertVisible, hide: hideAlert } = useToggle(true);
+  const { isAuthenticated } = useLayoutContext();
+  const router = useRouter();
   const [isMapLoading, setIsMapLoading] = useState(true);
 
   useEffect(() => {
@@ -56,7 +60,17 @@ const HotelGallery = ({ hotel }: { hotel: any }) => {
                 </div>
                 <ul className="list-inline text-end">
                   <li className="list-inline-item">
-                    <Button variant="light" size="sm" className="px-2">
+                    <Button
+                      variant="light"
+                      size="sm"
+                      className="px-2"
+                      onClick={() => {
+                        if (!isAuthenticated) {
+                          router.push('/auth/sign-in');
+                          return;
+                        }
+                      }}
+                    >
                       <FaHeart className="fa-fw" />
                     </Button>
                   </li>

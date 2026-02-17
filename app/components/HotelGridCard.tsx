@@ -9,7 +9,7 @@ import { BsArrowLeft, BsArrowRight, BsHeart, BsHeartFill, BsStarFill } from 'rea
 import Link from 'next/link';
 import { useMemo } from 'react';
 import { type TinySliderSettings } from 'tiny-slider';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 import 'tiny-slider/dist/tiny-slider.css';
 
@@ -17,8 +17,9 @@ import { HotelsGridType } from '@/app/types/hotel';
 
 const HotelGridCard = ({ id, slug, feature, images, name, price, rating, sale }: HotelsGridType) => {
   const { isOpen, toggle } = useToggle();
-  const { dir } = useLayoutContext();
+  const { dir, isAuthenticated } = useLayoutContext();
   const searchParams = useSearchParams();
+  const router = useRouter();
 
   // Create the search query string once
   const searchQuery = searchParams.toString();
@@ -56,7 +57,14 @@ const HotelGridCard = ({ id, slug, feature, images, name, price, rating, sale }:
             variant="white"
             size="sm"
             className="btn-round mb-0"
-            onClick={(e: React.MouseEvent) => { e.preventDefault(); toggle(); }}
+            onClick={(e: React.MouseEvent) => {
+              e.preventDefault();
+              if (!isAuthenticated) {
+                router.push('/auth/sign-in');
+                return;
+              }
+              toggle();
+            }}
           >
             {!isOpen ? <BsHeart className="text-danger" /> : <BsHeartFill className="text-danger" />}
           </Button>

@@ -1,7 +1,7 @@
 'use client';
 
 import { TinySlider, SkeletonImage } from '@/app/components';
-import { currency } from '@/app/states';
+import { currency, useLayoutContext } from '@/app/states';
 import { Fragment, useMemo } from 'react';
 import { Button, Card, CardBody, Col, Dropdown, DropdownItem, DropdownMenu, DropdownToggle, Image, Row } from 'react-bootstrap';
 import { renderToString } from 'react-dom/server';
@@ -14,11 +14,13 @@ import { type Hotel } from '@/app/types/hotel';
 import 'tiny-slider/dist/tiny-slider.css';
 import Link from 'next/link';
 import { toast } from 'react-hot-toast';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 const HotelListCard = ({ hotel }: { hotel: Hotel }) => {
   const { address, features, images, name, price, rating, sale, schemes } = hotel;
+  const { isAuthenticated } = useLayoutContext();
   const searchParams = useSearchParams();
+  const router = useRouter();
 
   // Create the search query string once
   const searchQuery = searchParams.toString();
@@ -87,7 +89,17 @@ const HotelListCard = ({ hotel }: { hotel: Hotel }) => {
               </ul>
               <ul className="list-inline mb-0 z-index-2">
                 <li className="list-inline-item">
-                  <Button variant="light" size="sm" className="btn-round">
+                  <Button
+                    variant="light"
+                    size="sm"
+                    className="btn-round"
+                    onClick={() => {
+                      if (!isAuthenticated) {
+                        router.push('/auth/sign-in');
+                        return;
+                      }
+                    }}
+                  >
                     <FaHeart className="fa-fw" />
                   </Button>
                 </li>

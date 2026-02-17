@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { Hotel } from '../types/hotel';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+import { useLayoutContext } from '../states';
 
 interface HotelCardProps {
   hotel: Hotel;
@@ -11,6 +13,8 @@ interface HotelCardProps {
 
 export default function HotelCard({ hotel }: HotelCardProps) {
   const currency = '₦';
+  const { isAuthenticated } = useLayoutContext();
+  const router = useRouter();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isBookmarked, setIsBookmarked] = useState(false);
 
@@ -86,7 +90,13 @@ export default function HotelCard({ hotel }: HotelCardProps) {
             <span className="text-sm font-medium">{hotel.rating}</span>
           </div>
           <button
-            onClick={() => setIsBookmarked(!isBookmarked)}
+            onClick={() => {
+              if (!isAuthenticated) {
+                router.push('/auth/sign-in');
+                return;
+              }
+              setIsBookmarked(!isBookmarked);
+            }}
             className="text-xl hover:scale-110 transition-transform"
             aria-label={isBookmarked ? "Remove bookmark" : "Add bookmark"}
           >
