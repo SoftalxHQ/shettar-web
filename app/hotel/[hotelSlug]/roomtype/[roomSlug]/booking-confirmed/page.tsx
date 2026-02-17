@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Button, Card, Col, Container, Row, Image } from 'react-bootstrap';
 import { BsCheckCircleFill, BsCalendarCheck, BsHouse, BsDownload, BsPrinter } from 'react-icons/bs';
@@ -11,11 +11,52 @@ import { Skeleton } from '@/app/components';
 
 export default function BookingConfirmedPage() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const hotelSlug = params.hotelSlug as string;
   const roomSlug = params.roomSlug as string;
 
+  const startDate = searchParams.get('start_date');
+  const endDate = searchParams.get('end_date');
+
   const [roomType, setRoomType] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  const formatDate = (dateStr: string | null, defaultDate: string) => {
+    if (!dateStr) return defaultDate;
+    try {
+      const date = new Date(dateStr);
+      return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+    } catch {
+      return defaultDate;
+    }
+  };
+
+  const calculateNights = () => {
+    if (!startDate || !endDate) return 1;
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const diffTime = Math.abs(end.getTime() - start.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays > 0 ? diffDays : 1;
+  };
+
+  const nights = calculateNights();
+  const displayCheckIn = formatDate(startDate, '4 March 2026');
+  const displayCheckOut = formatDate(endDate, '8 March 2026');
+
+  const formatTime = (timeStr: string | null, defaultTime: string) => {
+    if (!timeStr) return defaultTime;
+    try {
+      if (timeStr.toLowerCase().includes('am') || timeStr.toLowerCase().includes('pm')) return timeStr;
+      const [hours, minutes] = timeStr.split(':').map(Number);
+      if (isNaN(hours) || isNaN(minutes)) return timeStr;
+      const ampm = hours >= 12 ? 'PM' : 'AM';
+      const hours12 = hours % 12 || 12;
+      return `${hours12}:${minutes.toString().padStart(2, '0')} ${ampm}`;
+    } catch {
+      return defaultTime;
+    }
+  };
 
   useEffect(() => {
     const fetchRoomDetail = async () => {
@@ -101,19 +142,19 @@ export default function BookingConfirmedPage() {
                       <Col sm={4} className="text-center border-end border-sm-0">
                         <BsCalendarCheck size={24} className="text-primary mb-2" />
                         <h6 className="fw-light small mb-1 opacity-75">Check-in</h6>
-                        <h6 className="mb-0">4 March 2026</h6>
-                        <small className="opacity-50">{roomType?.business?.check_in || '12:00 PM'}</small>
+                        <h6 className="mb-0">{displayCheckIn}</h6>
+                        <small className="opacity-50">{formatTime(roomType?.business?.check_in, '2:00 PM')}</small>
                       </Col>
                       <Col sm={4} className="text-center border-end border-sm-0">
                         <BsCalendarCheck size={24} className="text-primary mb-2" />
                         <h6 className="fw-light small mb-1 opacity-75">Check-out</h6>
-                        <h6 className="mb-0">8 March 2026</h6>
-                        <small className="opacity-50">{roomType?.business?.check_out || '11:00 AM'}</small>
+                        <h6 className="mb-0">{displayCheckOut}</h6>
+                        <small className="opacity-50">{formatTime(roomType?.business?.check_out, '11:00 AM')}</small>
                       </Col>
                       <Col sm={4} className="text-center">
                         <BsHouse size={24} className="text-primary mb-2" />
                         <h6 className="fw-light small mb-1 opacity-75">Duration</h6>
-                        <h6 className="mb-0">4 Nights</h6>
+                        <h6 className="mb-0">{nights} {nights > 1 ? 'Nights' : 'Night'}</h6>
                         <small className="opacity-50">Total Stay</small>
                       </Col>
                     </Row>
@@ -121,8 +162,8 @@ export default function BookingConfirmedPage() {
 
                   <div className="d-flex justify-content-between align-items-center border-top pt-4">
                     <div>
-                      <h4 className="mb-0 text-primary">₦{(roomType?.price * 1.05 * 4).toLocaleString()}</h4>
-                      <p className="small opacity-50 mb-0">Total amount paid via Wallet</p>
+                      <h4 className="mb-0 text-primary">₦{(roomType?.price * 1.05 * nights).toLocaleString()}</h4>
+                      <p className="small opacity-50 mb-0">Total amount paid via Card</p>
                     </div>
                     <Link href="/">
                       <Button variant="primary" className="px-4 py-2 rounded-pill shadow-sm">Back to Home</Button>

@@ -8,9 +8,51 @@ import { FaStarHalfAlt } from 'react-icons/fa';
 
 const currentYear = new Date().getFullYear();
 
-const HotelInformation = ({ room, hotel }: { room: any, hotel: any }) => {
+const HotelInformation = ({
+  room,
+  hotel,
+  startDate,
+  endDate,
+  roomsCount
+}: {
+  room: any,
+  hotel: any,
+  startDate: string | null,
+  endDate: string | null,
+  roomsCount: string | null
+}) => {
   const images = room?.images_url || [];
   const mainImage = images[0] || '/images/category/hotel/4by3/02.jpg';
+
+  const formatDate = (dateStr: string | null, defaultDate: string) => {
+    if (!dateStr) return defaultDate;
+    try {
+      const date = new Date(dateStr);
+      return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+    } catch {
+      return defaultDate;
+    }
+  };
+
+  const displayCheckIn = formatDate(startDate, `4 March ${currentYear}`);
+  const displayCheckOut = formatDate(endDate, `8 March ${currentYear}`);
+
+  const formatTime = (timeStr: string | null, defaultTime: string) => {
+    if (!timeStr) return defaultTime;
+    try {
+      // If already in 12h format with AM/PM, return it
+      if (timeStr.toLowerCase().includes('am') || timeStr.toLowerCase().includes('pm')) return timeStr;
+
+      const [hours, minutes] = timeStr.split(':').map(Number);
+      if (isNaN(hours) || isNaN(minutes)) return timeStr;
+
+      const ampm = hours >= 12 ? 'PM' : 'AM';
+      const hours12 = hours % 12 || 12;
+      return `${hours12}:${minutes.toString().padStart(2, '0')} ${ampm}`;
+    } catch {
+      return defaultTime;
+    }
+  };
 
   return (
     <Card className="shadow">
@@ -51,27 +93,27 @@ const HotelInformation = ({ room, hotel }: { room: any, hotel: any }) => {
           <Col lg={4}>
             <div className="bg-light py-3 px-4 rounded-3 h-100 border">
               <h6 className="fw-light small mb-1 opacity-50">Check-in</h6>
-              <h5 className="mb-1 h6">4 March {currentYear}</h5>
+              <h5 className="mb-1 h6">{displayCheckIn}</h5>
               <small className="items-center opacity-75">
                 <BsAlarm className=" me-1" />
-                {hotel?.check_in || '12:00 pm'}
+                {formatTime(hotel?.check_in, '2:00 PM')}
               </small>
             </div>
           </Col>
           <Col lg={4}>
             <div className="bg-light py-3 px-4 rounded-3 h-100 border">
               <h6 className="fw-light small mb-1 opacity-50">Check out</h6>
-              <h5 className="mb-1 h6">8 March {currentYear}</h5>
+              <h5 className="mb-1 h6">{displayCheckOut}</h5>
               <small className="items-center opacity-75">
                 <BsAlarm className=" me-1" />
-                {hotel?.check_out || '11:00 am'}
+                {formatTime(hotel?.check_out, '11:00 AM')}
               </small>
             </div>
           </Col>
           <Col lg={4}>
             <div className="bg-light py-3 px-4 rounded-3 h-100 border">
               <h6 className="fw-light small mb-1 opacity-50">Rooms &amp; Guests</h6>
-              <h5 className="mb-1 h6">2 Guests - 1 Room</h5>
+              <h5 className="mb-1 h6">2 Guests - {roomsCount || 1} {parseInt(roomsCount || '1') > 1 ? 'Rooms' : 'Room'}</h5>
               <small className="items-center opacity-75">
                 <BsBrightnessHigh className=" me-1" />{room?.name}
               </small>

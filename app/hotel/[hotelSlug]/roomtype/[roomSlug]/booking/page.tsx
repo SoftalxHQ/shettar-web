@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect, useState, Suspense } from 'react';
-import { useParams } from 'next/navigation';
-import TopNavBar4 from '@/app/components/TopNavBar4';
+import { useParams, useSearchParams } from 'next/navigation';
+import { Header } from '@/app/components';
 import Hero from '@/app/components/Booking/Hero';
 import BookingDetails from '@/app/components/Booking/BookingDetails';
 import Footer from '@/app/components/Footer';
@@ -12,6 +12,11 @@ function BookingPageContent() {
   const params = useParams();
   const hotelSlug = params.hotelSlug as string;
   const roomSlug = params.roomSlug as string;
+  const searchParams = useSearchParams();
+
+  const startDate = searchParams.get('start_date');
+  const endDate = searchParams.get('end_date');
+  const rooms = searchParams.get('rooms');
 
   const [roomType, setRoomType] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -76,7 +81,13 @@ function BookingPageContent() {
   return (
     <>
       <Hero room={roomType} />
-      <BookingDetails room={roomType} hotel={roomType.business} />
+      <BookingDetails
+        room={roomType}
+        hotel={roomType.business}
+        startDate={startDate}
+        endDate={endDate}
+        roomsCount={rooms}
+      />
     </>
   );
 }
@@ -84,7 +95,7 @@ function BookingPageContent() {
 export default function HotelBookingPage() {
   return (
     <>
-      <TopNavBar4 />
+      <Header />
       <main>
         <Suspense fallback={<div className="container mt-5 pt-5 text-center"><Skeleton height="500px" /></div>}>
           <BookingPageContent />

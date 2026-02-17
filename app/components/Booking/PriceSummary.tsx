@@ -4,9 +4,29 @@ import { Card, CardBody, CardFooter, CardHeader, CardTitle } from 'react-bootstr
 
 const currency = '₦';
 
-const PriceSummary = ({ room, hotel }: { room: any, hotel: any }) => {
+const PriceSummary = ({
+  room,
+  hotel,
+  startDate,
+  endDate
+}: {
+  room: any,
+  hotel: any,
+  startDate: string | null,
+  endDate: string | null
+}) => {
   const price = room?.price || 0;
-  const nights = 1; // Default for now
+
+  const calculateNights = () => {
+    if (!startDate || !endDate) return 1;
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const diffTime = Math.abs(end.getTime() - start.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays > 0 ? diffDays : 1;
+  };
+
+  const nights = calculateNights();
   const roomCharges = price * nights;
   const discount = 0;
   const taxes = roomCharges * 0.05; // 5% tax example
