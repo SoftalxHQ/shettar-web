@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Button, Card, Col, Container, Row, Image } from 'react-bootstrap';
@@ -9,6 +9,7 @@ import { Header } from '@/app/components';
 import Footer from '@/app/components/Footer';
 import { Skeleton } from '@/app/components';
 import confetti from 'canvas-confetti';
+import { useReactToPrint } from 'react-to-print';
 
 export default function BookingConfirmedPage() {
   const params = useParams();
@@ -18,6 +19,11 @@ export default function BookingConfirmedPage() {
 
   const startDate = searchParams.get('start_date');
   const endDate = searchParams.get('end_date');
+
+  const componentRef = useRef<HTMLDivElement>(null);
+  const handlePrint = useReactToPrint({
+    contentRef: componentRef,
+  });
 
   const [roomType, setRoomType] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -134,7 +140,7 @@ export default function BookingConfirmedPage() {
 
           <Row className="g-4 justify-content-center">
             {/* Main Receipt Column */}
-            <Col lg={7}>
+            <Col lg={7} className="print-card" ref={componentRef}>
               <Card className="border-0 shadow-lg rounded-4 overflow-hidden mb-4 bg-body">
                 {/* Ticket Header */}
                 <div className="bg-primary bg-gradient p-4 text-white">
@@ -143,11 +149,25 @@ export default function BookingConfirmedPage() {
                       <span className="text-white-50 small text-uppercase fw-bold ls-1">Reservation Number</span>
                       <h3 className="mb-0 text-white font-monospace">{bookingId}</h3>
                     </Col>
-                    <Col xs="auto" className="d-flex gap-2">
-                      <Button variant="white" size="sm" className="btn-light-soft bg-white bg-opacity-25 border-0 text-white rounded-circle p-2 flex-centered" title="Print Receipt" style={{ width: '40px', height: '40px' }}>
+                    <Col xs="auto" className="d-flex gap-2 no-print">
+                      <Button
+                        variant="white"
+                        size="sm"
+                        className="btn-light-soft bg-white bg-opacity-25 border-0 text-white rounded-circle p-2 flex-centered"
+                        title="Print Receipt"
+                        style={{ width: '40px', height: '40px' }}
+                        onClick={() => handlePrint()}
+                      >
                         <BsPrinter size={18} />
                       </Button>
-                      <Button variant="white" size="sm" className="btn-light-soft bg-white bg-opacity-25 border-0 text-white rounded-circle p-2 flex-centered" title="Download PDF" style={{ width: '40px', height: '40px' }}>
+                      <Button
+                        variant="white"
+                        size="sm"
+                        className="btn-light-soft bg-white bg-opacity-25 border-0 text-white rounded-circle p-2 flex-centered"
+                        title="Download PDF"
+                        style={{ width: '40px', height: '40px' }}
+                        onClick={() => handlePrint()}
+                      >
                         <BsDownload size={18} />
                       </Button>
                     </Col>
@@ -300,6 +320,54 @@ export default function BookingConfirmedPage() {
           75%, 100% { transform: scale(1.5); opacity: 0; }
         }
         .animate-ping { animation: ping 3s cubic-bezier(0, 0, 0.2, 1) infinite; }
+
+        @media print {
+          @page {
+            margin: 0.5cm;
+            size: auto;
+          }
+          /* Hide everything */
+          body * {
+            visibility: hidden !important;
+          }
+          /* Show ONLY the card and its content */
+          .print-card, .print-card * {
+            visibility: visible !important;
+          }
+          .print-card {
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+          }
+          /* Specifically hide action buttons from the printed version */
+          .no-print, .no-print * {
+            display: none !important;
+            visibility: hidden !important;
+          }
+          /* Ensure colors and cards look professional on paper */
+          .card {
+            border: 1px solid #eee !important;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1) !important;
+            margin: 0 auto !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
+          .bg-primary {
+            background-color: #4f46e5 !important;
+            background-image: linear-gradient(to bottom right, #4f46e5, #4338ca) !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
+          .perforated-edge {
+            display: none !important;
+          }
+          body {
+            background: white !important;
+          }
+        }
       `}</style>
     </>
   );

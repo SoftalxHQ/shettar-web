@@ -65,6 +65,9 @@ importers:
       react-sticky-el:
         specifier: ^2.1.1
         version: 2.1.1(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+      react-to-print:
+        specifier: ^3.2.0
+        version: 3.2.0(react@19.2.3)
       sass:
         specifier: ^1.97.3
         version: 1.97.3
@@ -1925,6 +1928,11 @@ packages:
     peerDependencies:
       react: '>=16.3.0'
       react-dom: '>=16.3.0'
+
+  react-to-print@3.2.0:
+    resolution: {integrity: sha512-IX2D0mebKMgYTBD6s5tf9B7YRL3RFWjRoevYK8JKgRwn94Rep7PFZyeOTGjCmXofKB1SKzvPSzDrAMG4I2PIwg==}
+    peerDependencies:
+      react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ~19
 
   react-transition-group@4.4.5:
     resolution: {integrity: sha512-pZcd1MCJoiKiBR2NRxeCRg13uCXbydPnmB4EOeRrY7480qNWO8IIgQG6zlDkm6uRMsURXPuKq0GWtiM59a5Q6g==}
@@ -4159,6 +4167,10 @@ snapshots:
     dependencies:
       react: 19.2.3
       react-dom: 19.2.3(react@19.2.3)
+
+  react-to-print@3.2.0(react@19.2.3):
+    dependencies:
+      react: 19.2.3
 
   react-transition-group@4.4.5(react-dom@19.2.3(react@19.2.3))(react@19.2.3):
     dependencies:
