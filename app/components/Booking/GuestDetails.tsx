@@ -4,21 +4,66 @@ import { BsPeopleFill } from 'react-icons/bs';
 import Link from 'next/link';
 import { useLayoutContext } from '@/app/states';
 
-const GuestDetails = ({ control }: { control: any }) => {
+const GuestDetails = ({
+  control,
+  watch,
+  setValue
+}: {
+  control: any,
+  watch: any,
+  setValue: any
+}) => {
   const { isAuthenticated } = useLayoutContext();
+  const option = watch('option');
+
+  const handleOptionChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const isChecked = e.target.checked;
+    const newOption = isChecked ? 'others' : 'self';
+    setValue('option', newOption);
+
+    if (isChecked) {
+      // Clear fields if booking for others
+      setValue('first_name', '');
+      setValue('last_name', '');
+      setValue('email_address', '');
+      setValue('phone_number', '');
+      // Keep emergency contact or clear too? Usually keep as it might be the booker.
+    }
+  };
+
   return (
     <Card className="shadow">
       <CardHeader className="card-header border-bottom p-4 bg-transparent">
-        <h4 className="card-title mb-0 items-center">
-          <BsPeopleFill className=" me-2" />
-          Guest Details
-        </h4>
+        <div className="d-flex justify-content-between align-items-center">
+          <h4 className="card-title mb-0 items-center">
+            <BsPeopleFill className=" me-2" />
+            Guest Details
+          </h4>
+
+          {isAuthenticated && (
+            <div className="form-check form-switch mb-0">
+              <input
+                className="form-check-input"
+                type="checkbox"
+                role="switch"
+                id="bookingForOthers"
+                checked={option === 'others'}
+                onChange={handleOptionChange}
+              />
+              <label className="form-check-label small fw-bold" htmlFor="bookingForOthers">
+                Booking for someone else?
+              </label>
+            </div>
+          )}
+        </div>
       </CardHeader>
       <CardBody className="p-4">
         <form className="row g-4">
           <Col xs={12}>
             <div className="bg-light rounded-2 px-4 py-3 border-start border-primary border-4">
-              <h6 className="mb-0">Main Guest Information</h6>
+              <h6 className="mb-0">
+                {option === 'others' ? 'Guest Information' : 'Main Guest Information'}
+              </h6>
             </div>
           </Col>
 

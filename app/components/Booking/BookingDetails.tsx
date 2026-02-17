@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Col, Container, Row } from 'react-bootstrap';
 import { useForm } from 'react-hook-form';
 import GuestDetails from './GuestDetails';
@@ -34,6 +35,28 @@ const BookingDetails = ({
     }
   });
 
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    const userJson = localStorage.getItem('user');
+    if (token && userJson) {
+      try {
+        const user = JSON.parse(userJson);
+        // Only prefill if option is 'self'
+        if (watch('option') === 'self') {
+          setValue('first_name', user.first_name || '');
+          setValue('last_name', user.last_name || '');
+          setValue('email_address', user.email || '');
+          setValue('phone_number', user.phone_number || '');
+          setValue('emer_first_name', user.emer_first_name || '');
+          setValue('emer_last_name', user.emer_last_name || '');
+          setValue('emer_phone_number', user.emer_phone_number || '');
+        }
+      } catch (e) {
+        console.error('Error parsing user data:', e);
+      }
+    }
+  }, [setValue, watch('option')]);
+
   return (
     <section className="pt-4">
       <Container>
@@ -48,7 +71,11 @@ const BookingDetails = ({
                 roomsCount={roomsCount}
               />
 
-              <GuestDetails control={control} />
+              <GuestDetails
+                control={control}
+                watch={watch}
+                setValue={setValue}
+              />
 
               <PaymentOptions
                 room={room}

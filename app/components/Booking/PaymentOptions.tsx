@@ -102,12 +102,12 @@ const PaymentOptions = ({
       children: children,  // Use children count from URL
       number_of_room: roomsCount,
       payment_method: data.payment_method,
-      option: data.option,
+      option: isAuthenticated ? data.option : 'guest', // Force 'guest' if not authenticated
       paystack_reference: paystackReference,
     };
 
-    if (isAuthenticated) {
-      // For authenticated users, use first_name/last_name and emer_* for emergency
+    if (isAuthenticated && data.option === 'self') {
+      // For authenticated users booking for themselves
       reservationData.first_name = data.first_name;
       reservationData.last_name = data.last_name;
       reservationData.phone_number = data.phone_number;
@@ -115,7 +115,7 @@ const PaymentOptions = ({
       reservationData.emer_last_name = data.emer_last_name;
       reservationData.emer_phone_number = data.emer_phone_number;
     } else {
-      // For guests (unauthenticated), use other_* for guest details and emer_* for emergency
+      // For guests (unauthenticated) OR authenticated users booking for others
       reservationData.other_first_name = data.first_name;
       reservationData.other_last_name = data.last_name;
       reservationData.other_phone_number = data.phone_number;
