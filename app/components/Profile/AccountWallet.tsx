@@ -1,10 +1,21 @@
+'use client';
+
 import { Card, CardBody, Col, Row, Button } from 'react-bootstrap';
 import { BsWallet2, BsBank, BsCopy } from 'react-icons/bs';
 import { currency } from '@/app/states';
 import Link from 'next/link';
 import { toast } from 'react-hot-toast';
+import { useLayoutContext } from '@/app/states';
 
 const AccountWallet = () => {
+  const { account: profile, isAccountLoading: isLoading } = useLayoutContext();
+
+  const balance = profile?.wallet_balance != null
+    ? Number(profile.wallet_balance).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    : '0.00';
+
+  const fullName = profile ? `${profile.first_name} ${profile.last_name}` : '';
+
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     toast.success('Copied to clipboard!');
@@ -21,13 +32,22 @@ const AccountWallet = () => {
               </div>
               <h5 className="mb-0">Wallet Balance</h5>
             </div>
-            <h2 className="mb-2">
-              {currency}12,500.00
-            </h2>
-            <p className="small mb-4">Last update: June 25, 2026</p>
+
+            {isLoading ? (
+              <div className="placeholder-glow">
+                <span className="placeholder col-5 d-block mb-2" style={{ height: 36 }} />
+                <span className="placeholder col-4 d-block mb-4" />
+              </div>
+            ) : (
+              <>
+                <h2 className="mb-1">{currency}{balance}</h2>
+                <p className="small mb-4 opacity-75">Available balance</p>
+              </>
+            )}
+
             <div className="d-flex gap-2">
               <Link href="/user/transactions" className="btn btn-sm btn-primary mb-0 flex-centered">Top Up</Link>
-              <Link href="/user/transactions" className="btn btn-sm btn-outline-primary mb-0 flex-centered">Transaction History</Link>
+              <Link href="/user/transactions" className="btn btn-sm btn-outline-primary mb-0 flex-centered">History</Link>
             </div>
           </CardBody>
         </Card>
@@ -60,7 +80,7 @@ const AccountWallet = () => {
               </Col>
               <Col xs={6}>
                 <p className="small mb-1">Account Holder</p>
-                <h6 className="text-truncate">Jacqueline Miller</h6>
+                <h6 className="text-truncate">{isLoading ? <span className="placeholder col-8" /> : (fullName || '—')}</h6>
               </Col>
             </div>
           </CardBody>

@@ -1,48 +1,69 @@
 'use client';
 
-import { BsCheckCircleFill, BsPlusCircleFill } from 'react-icons/bs';
+import { BsCheckCircleFill, BsCircle } from 'react-icons/bs';
 import Link from 'next/link';
+import { useLayoutContext } from '@/app/states';
+
+interface CheckItem {
+  label: string;
+  done: boolean;
+  href: string;
+}
 
 const ProfileProgress = () => {
+  const { account: profile, isAccountLoading: isLoading } = useLayoutContext();
+
+  const checks: CheckItem[] = [
+    { label: 'Verified Email', done: !!profile?.email_verified, href: '/user/settings' },
+    { label: 'Mobile Number', done: !!profile?.phone_number, href: '/user/settings' },
+    { label: 'Profile Photo', done: !!profile?.avatar_url, href: '/user/settings' },
+    { label: 'Date of Birth', done: !!profile?.date_of_birth, href: '/user/settings' },
+    { label: 'Gender', done: !!profile?.gender, href: '/user/settings' },
+    { label: 'Address', done: !!profile?.address, href: '/user/settings' },
+  ];
+
+  const doneCount = checks.filter((c) => c.done).length;
+  const pct = isLoading ? 0 : Math.round((doneCount / checks.length) * 100);
+
+  const barColor = pct === 100 ? 'bg-success' : pct >= 50 ? 'bg-primary' : 'bg-warning';
+
   return (
     <div className="bg-light rounded p-3">
       <div className="overflow-hidden">
-        <h6>Complete Your Profile</h6>
-        <div className="progress progress-sm bg-success bg-opacity-10">
+        <div className="d-flex justify-content-between align-items-center mb-1">
+          <h6 className="mb-0">Complete Your Profile</h6>
+          <span className="small fw-semibold">{isLoading ? '…' : `${pct}%`}</span>
+        </div>
+        <div className="progress progress-sm bg-success bg-opacity-10 mb-2">
           <div
-            className="progress-bar bg-success"
+            className={`progress-bar ${barColor}`}
             role="progressbar"
-            style={{ width: '85%' }}
-            aria-valuenow={85}
+            style={{ width: `${pct}%`, transition: 'width 0.6s ease' }}
+            aria-valuenow={pct}
             aria-valuemin={0}
             aria-valuemax={100}
-          >
-            <span className="progress-percent-simple h6 fw-light ms-auto">85%</span>
-          </div>
+          />
         </div>
-        <p className="mb-0">Get the best out of booking by adding the remaining details!</p>
+        <p className="mb-0 small text-secondary">
+          {pct === 100
+            ? 'Your profile is complete! 🎉'
+            : `${checks.length - doneCount} item${checks.length - doneCount !== 1 ? 's' : ''} left — complete your profile to get the best experience.`}
+        </p>
       </div>
 
       <div className="bg-body rounded p-3 mt-3">
-        <ul className="list-inline hstack flex-wrap gap-2 justify-content-between mb-0">
-          <li className="list-inline-item h6 fw-normal mb-0">
-            <Link href="" className="items-center d-flex">
-              <BsCheckCircleFill className=" text-success me-2" />
-              Verified Email
-            </Link>
-          </li>
-          <li className="list-inline-item h6 fw-normal mb-0">
-            <Link href="" className="items-center d-flex">
-              <BsCheckCircleFill className=" text-success me-2" />
-              Verified Mobile Number
-            </Link>
-          </li>
-          <li className="list-inline-item h6 fw-normal mb-0">
-            <Link href="" className="text-primary items-center d-flex">
-              <BsPlusCircleFill className=" me-2" />
-              Complete Basic Info
-            </Link>
-          </li>
+        <ul className="list-inline hstack flex-wrap gap-3 mb-0">
+          {checks.map((item) => (
+            <li key={item.label} className="list-inline-item h6 fw-normal mb-0">
+              <Link href={item.href} className={`items-center d-flex ${item.done ? '' : 'text-primary'}`}>
+                {item.done
+                  ? <BsCheckCircleFill className="text-success me-2 flex-shrink-0" />
+                  : <BsCircle className="text-secondary me-2 flex-shrink-0 opacity-50" />
+                }
+                {item.label}
+              </Link>
+            </li>
+          ))}
         </ul>
       </div>
     </div>

@@ -2,6 +2,7 @@
 
 import { AppMenu, LogoBox } from '@/app/components';
 import { useScrollEvent, useToggle } from '@/app/hooks';
+import { USER_PROFILE_MENU_ITEMS } from '@/app/data/menu-items';
 import { useLayoutContext } from '@/app/states';
 import clsx from 'clsx';
 import {
@@ -48,12 +49,15 @@ const themeModes: any[] = [
 ];
 
 const TopNavBar = () => {
-  const { scrollY } = useScrollEvent();
-  const { theme, updateTheme } = useLayoutContext();
+  const { theme, updateTheme, account, isAccountLoading, logout } = useLayoutContext();
   const { isOpen, toggle } = useToggle();
 
+  const fullName = account ? `${account.first_name} ${account.last_name}` : 'User';
+  const email = account?.email || 'example@gmail.com';
+  const avatar = account?.avatar_url || '/images/avatar/01.jpg';
+
   return (
-    <header className={clsx('navbar-light header-sticky', { 'header-sticky-on': scrollY >= 400 })}>
+    <header className="navbar-light header-sticky sticky-top bg-mode border-bottom">
       <Navbar expand="lg">
         <Container>
           <LogoBox />
@@ -118,7 +122,13 @@ const TopNavBar = () => {
             </Dropdown>
             <Dropdown className="nav-item ms-3 dropdown">
               <DropdownToggle as={Link} href="#" className="arrow-none avatar avatar-xs p-0" id="profileDropdown" role="button">
-                <Image className="avatar-img rounded-circle" src={avatar1.src} alt="avatar" width={24} height={24} />
+                {account?.avatar_url ? (
+                  <Image className="avatar-img rounded-3 border border-primary shadow-sm" src={avatar} alt="avatar" width={24} height={24} />
+                ) : (
+                  <div className="avatar-img rounded-3 border border-primary bg-primary-soft d-flex align-items-center justify-content-center shadow-sm" style={{ width: 24, height: 24 }}>
+                    <span className="text-primary fw-bold" style={{ fontSize: '10px' }}>{account?.first_name?.charAt(0) ?? '?'}</span>
+                  </div>
+                )}
               </DropdownToggle>
               <DropdownMenu
                 align={'end'}
@@ -129,11 +139,17 @@ const TopNavBar = () => {
                 <li className="px-3 mb-3">
                   <div className="d-flex align-items-center">
                     <div className="avatar me-3 flex-centered">
-                      <Image className="avatar-img rounded-circle shadow" src={avatar1.src} alt="avatar" width={40} height={40} />
+                      {account?.avatar_url ? (
+                        <Image className="avatar-img rounded-2 border border-2 border-primary shadow" src={avatar} alt="avatar" width={40} height={40} />
+                      ) : (
+                        <div className="avatar-img rounded-2 border border-2 border-primary bg-primary-soft d-flex align-items-center justify-content-center shadow" style={{ width: 40, height: 40 }}>
+                          <span className="text-primary fw-bold">{account?.first_name?.charAt(0) ?? '?'}</span>
+                        </div>
+                      )}
                     </div>
                     <div>
-                      <h6 className="h6 mt-2 mt-sm-0">Lori Ferguson</h6>
-                      <p className="small m-0">example@gmail.com</p>
+                      <h6 className="h6 mt-2 mt-sm-0">{isAccountLoading ? 'Loading...' : fullName}</h6>
+                      <p className="small m-0 text-truncate" style={{ maxWidth: '150px' }}>{email}</p>
                     </div>
                   </div>
                 </li>
@@ -182,10 +198,10 @@ const TopNavBar = () => {
                 </li>
 
                 <li>
-                  <Link href="/auth/sign-in" className="dropdown-item bg-danger-soft-hover text-danger">
+                  <button onClick={logout} className="dropdown-item bg-danger-soft-hover text-danger border-0 w-100 text-start">
                     <BsPower className=" me-2" />
                     Sign Out
-                  </Link>
+                  </button>
                 </li>
 
                 <DropdownDivider />

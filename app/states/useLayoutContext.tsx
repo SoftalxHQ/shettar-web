@@ -10,6 +10,8 @@ export type LayoutState = {
   hotelCount: number | null;
   hotelLocation: string | null;
   isAuthenticated: boolean;
+  account: any | null;
+  isAccountLoading: boolean;
 };
 
 type LayoutType = LayoutState & {
@@ -18,6 +20,7 @@ type LayoutType = LayoutState & {
   updateHotelStats: (count: number, location: string | null) => void;
   refreshAuth: () => void;
   logout: () => Promise<void>;
+  refreshAccount: () => Promise<void>;
 };
 
 const LayoutContext = createContext<LayoutType | undefined>(undefined);
@@ -39,6 +42,8 @@ export const LayoutProvider = ({ children }: { children: ReactNode }) => {
     hotelCount: null,
     hotelLocation: null,
     isAuthenticated: false,
+    account: null,
+    isAccountLoading: false,
   });
 
   const updateSettings = useCallback((newSettings: Partial<LayoutState>) => {
@@ -57,7 +62,28 @@ export const LayoutProvider = ({ children }: { children: ReactNode }) => {
 
   const logout = useCallback(async () => {
     await signOut(); // revokes JWT on server, then clears localStorage
-    updateSettings({ isAuthenticated: false });
+    updateSettings({ isAuthenticated: false, account: null });
+  }, [updateSettings]);
+
+  const refreshAccount = useCallback(async () => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    updateSettings({ isAccountLoading: true });
+    try {
+      const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
+      const res = await fetch(`${API_URL}/account_details`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (res.ok && data?.status?.code === 200) {
+        updateSettings({ account: data.data, isAccountLoading: false });
+      } else {
+        updateSettings({ isAccountLoading: false });
+      }
+    } catch {
+      updateSettings({ isAccountLoading: false });
+    }
   }, [updateSettings]);
 
   useEffect(() => {
@@ -81,7 +107,8 @@ export const LayoutProvider = ({ children }: { children: ReactNode }) => {
 
     setSettings(prev => ({ ...prev, theme: initialTheme }));
     refreshAuth();
-  }, [refreshAuth]);
+    refreshAccount();
+  }, [refreshAuth, refreshAccount]);
 
   const updateTheme = (newTheme: LayoutState['theme']) => {
     const preferredTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
@@ -107,6 +134,7 @@ export const LayoutProvider = ({ children }: { children: ReactNode }) => {
         updateHotelStats,
         refreshAuth,
         logout,
+        refreshAccount,
       }}
     >
       {children}

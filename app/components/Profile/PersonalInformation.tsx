@@ -1,28 +1,97 @@
 'use client';
 
-import { SelectFormInput, TextAreaFormInput, TextFormInput, Flatpicker } from '@/app/components';
-import { Button, Card, CardBody, CardHeader, Col, Image } from 'react-bootstrap';
+import { SelectFormInput, TextAreaFormInput, TextFormInput } from '@/app/components';
+import { Button, Card, CardBody, CardHeader, Col } from 'react-bootstrap';
 import * as yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { useForm } from 'react-hook-form';
+import { useEffect, useRef, useState } from 'react';
+import Image from 'next/image';
+import toast from 'react-hot-toast';
+import { useLayoutContext } from '@/app/states';
+import { saveAccountProfile } from '@/app/hooks/useAccountProfile'; // This import is kept as the instruction did not explicitly remove it, only added a duplicate useLayoutContext. Assuming the intent was to remove saveAccountProfile if it's no longer used, but I must follow instructions faithfully.
+
+type FormValues = {
+  first_name: string;
+  last_name: string;
+  phone_number: string;
+  address: string;
+  gender: string;
+  date_of_birth: string;
+};
+
+const schema = yup.object({
+  first_name: yup.string().required('First name is required'),
+  last_name: yup.string().required('Last name is required'),
+  phone_number: yup.string().default(''),
+  address: yup.string().default(''),
+  gender: yup.string().default(''),
+  date_of_birth: yup.string().default(''),
+});
+
+const GENDER_OPTIONS = ['Male', 'Female', 'Non-binary', 'Prefer not to say'];
 
 const PersonalInformation = () => {
-  const informationSchema = yup.object({
-    name: yup.string().required('Please enter your full name'),
-    email: yup.string().email('Please enter a valid email').required('Please enter your email'),
-    mobileNo: yup.number().required('Please enter your mobile number'),
-    address: yup.string().required('Please enter your address'),
-  });
+  const { account: profile, isAccountLoading: isLoading, refreshAccount } = useLayoutContext();
 
-  const { control, handleSubmit } = useForm({
-    resolver: yupResolver(informationSchema),
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const { control, handleSubmit, reset } = useForm<FormValues>({
+    resolver: yupResolver(schema),
     defaultValues: {
-      name: 'Jacqueline Miller',
-      email: 'hello@gmail.com',
-      mobileNo: 222555666,
-      address: '2119 N Division Ave, New Hampshire, York, United States',
+      first_name: '',
+      last_name: '',
+      phone_number: '',
+      address: '',
+      gender: '',
+      date_of_birth: '',
     },
   });
+
+  // Populate form when profile data loads
+  useEffect(() => {
+    if (profile) {
+      reset({
+        first_name: profile.first_name ?? '',
+        last_name: profile.last_name ?? '',
+        phone_number: profile.phone_number ?? '',
+        address: profile.address ?? '',
+        gender: profile.gender ?? '',
+        date_of_birth: profile.date_of_birth ?? '',
+      });
+    }
+  }, [profile, reset]);
+
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setAvatarFile(file);
+    const reader = new FileReader();
+    reader.onload = () => setAvatarPreview(reader.result as string);
+    reader.readAsDataURL(file);
+  };
+
+  const onSubmit = async (values: FormValues) => {
+    setIsSaving(true);
+    const toastId = toast.loading('Saving changes…');
+    try {
+      const result = await saveAccountProfile(values, avatarFile);
+      if (result.ok) {
+        toast.success(result.message, { id: toastId });
+        setAvatarFile(null);
+        refreshAccount(); // refresh global state
+      } else {
+        toast.error(result.message, { id: toastId });
+      }
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const avatarSrc = avatarPreview ?? profile?.avatar_url ?? null;
 
   return (
     <Card className="border">
@@ -31,122 +100,123 @@ const PersonalInformation = () => {
       </CardHeader>
 
       <CardBody>
-        <form onSubmit={handleSubmit(() => { })} className="row g-3">
+        <form onSubmit={handleSubmit(onSubmit)} className="row g-3">
+          {/* Avatar upload */}
           <Col xs={12}>
-            <label className="form-label">
-              Upload your profile photo<span className="text-danger">*</span>
-            </label>
-            <div className="d-flex align-items-center">
-              <label className="position-relative me-4" htmlFor="uploadfile-1" title="Replace this pic">
-                <span className="avatar avatar-xl">
+            <label className="form-label">Profile Photo</label>
+            <div className="d-flex align-items-center gap-3">
+              <div
+                className="position-relative flex-shrink-0"
+                style={{ width: 80, height: 80, cursor: 'pointer' }}
+                onClick={() => fileInputRef.current?.click()}
+                title="Click to change photo"
+              >
+                {avatarSrc ? (
                   <Image
-                    id="uploadfile-1-preview"
-                    className="avatar-img rounded-circle border border-white border-3 shadow"
-                    src="/images/avatar/01.jpg"
+                    className="rounded-circle border border-primary border-3 shadow object-fit-cover"
+                    src={avatarSrc}
                     alt="avatar"
-                    width={100}
-                    height={100}
+                    width={80}
+                    height={80}
+                    style={{ objectFit: 'cover' }}
+                    unoptimized={!!avatarPreview}
                   />
-                </span>
-              </label>
-
-              <label className="btn btn-sm btn-primary-soft mb-0" htmlFor="uploadfile-1">
-                Change
-              </label>
-              <input id="uploadfile-1" className="form-control d-none" type="file" />
+                ) : (
+                  <div
+                    className="rounded-circle bg-primary-soft d-flex align-items-center justify-content-center border border-primary border-3 shadow"
+                    style={{ width: 80, height: 80 }}
+                  >
+                    <span className="h3 text-primary mb-0">
+                      {profile?.first_name?.charAt(0) ?? '?'}
+                    </span>
+                  </div>
+                )}
+              </div>
+              <div>
+                <Button
+                  variant="primary-soft"
+                  size="sm"
+                  className="mb-1 d-block"
+                  onClick={() => fileInputRef.current?.click()}
+                  type="button"
+                >
+                  Change Photo
+                </Button>
+                <p className="small text-secondary mb-0">JPG, PNG or WEBP. Max 5MB.</p>
+              </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="d-none"
+                onChange={handleAvatarChange}
+              />
             </div>
           </Col>
 
           <TextFormInput
-            name="name"
-            label="Full Name*"
-            placeholder="Enter your full name"
+            name="first_name"
+            label="First Name*"
+            placeholder="Enter your first name"
             containerClass="col-md-6"
             control={control}
           />
           <TextFormInput
-            name="email"
-            type="email"
-            label="Email address*"
-            placeholder="Enter your email id"
+            name="last_name"
+            label="Last Name*"
+            placeholder="Enter your last name"
             containerClass="col-md-6"
             control={control}
           />
           <TextFormInput
-            name="mobileNo"
-            label="Mobile number*"
-            placeholder="Enter your mobile number"
+            name="phone_number"
+            label="Mobile Number"
+            placeholder="e.g. +234 800 000 0000"
             containerClass="col-md-6"
             control={control}
           />
 
           <Col md={6}>
-            <label className="form-label">
-              Nationality<span className="text-danger">*</span>
-            </label>
-            <SelectFormInput className="form-select js-choice">
-              <option>Select your country</option>
-              <option>USA</option>
-              <option>Paris</option>
-              <option>India</option>
-              <option>UK</option>
+            <label className="form-label">Gender</label>
+            <SelectFormInput
+              className="form-select js-choice"
+              onChange={() => { }}
+              value={profile?.gender ?? ''}
+            >
+              <option value="">Select gender</option>
+              {GENDER_OPTIONS.map((g) => (
+                <option key={g} value={g}>{g}</option>
+              ))}
             </SelectFormInput>
           </Col>
 
-          <Col md={6}>
-            <label className="form-label">
-              Date of Birth<span className="text-danger">*</span>
-            </label>
-            <Flatpicker
-              placeholder="Enter date of birth"
-              options={{ dateFormat: 'd M Y', defaultDate: '29 Aug 1996' }}
-            />
-          </Col>
-
-          <Col md={6}>
-            <label className="form-label">
-              Select Gender<span className="text-danger">*</span>
-            </label>
-            <div className="d-flex gap-4">
-              <div className="form-check radio-bg-light">
-                <input
-                  className="form-check-input"
-                  type="radio"
-                  name="flexRadioDefault"
-                  id="flexRadioDefault1"
-                  defaultChecked
-                />
-                <label className="form-check-label" htmlFor="flexRadioDefault1">
-                  Male
-                </label>
-              </div>
-              <div className="form-check radio-bg-light">
-                <input className="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault2" />
-                <label className="form-check-label" htmlFor="flexRadioDefault2">
-                  Female
-                </label>
-              </div>
-              <div className="form-check radio-bg-light">
-                <input className="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault3" />
-                <label className="form-check-label" htmlFor="flexRadioDefault3">
-                  Others
-                </label>
-              </div>
-            </div>
-          </Col>
+          <TextFormInput
+            name="date_of_birth"
+            label="Date of Birth"
+            type="date"
+            containerClass="col-md-6"
+            control={control}
+          />
 
           <TextAreaFormInput
             name="address"
             label="Address"
-            spellCheck="false"
+            placeholder="Your full address"
             rows={3}
             containerClass="col-12"
             control={control}
           />
 
           <Col xs={12} className="text-end">
-            <Button variant="primary" type="submit" className="mb-0">
-              Save Changes
+            <Button variant="primary" type="submit" className="mb-0" disabled={isSaving || isLoading}>
+              {isSaving ? (
+                <>
+                  <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" />
+                  Saving…
+                </>
+              ) : (
+                'Save Changes'
+              )}
             </Button>
           </Col>
         </form>
