@@ -11,7 +11,7 @@ import { useLayoutContext } from '@/app/states';
 
 const LeftPanel = () => {
   const pathname = usePathname();
-  const { account, isAccountLoading } = useLayoutContext();
+  const { account, isAccountLoading, logout } = useLayoutContext();
   const menuItems: any[] = USER_PROFILE_MENU_ITEMS;
 
   const fullName = account ? `${account.first_name} ${account.last_name}` : 'User';
@@ -68,10 +68,13 @@ const LeftPanel = () => {
             );
           })}
           <li role="button" className="nav-item">
-            <Link className="nav-link text-danger bg-danger-soft-hover d-flex align-items-center" href="/auth/sign-in">
+            <button
+              className="nav-link text-danger bg-danger-soft-hover d-flex align-items-center border-0 w-100 text-start"
+              onClick={logout}
+            >
               <FaSignOutAlt className="me-2" />
               Sign Out
-            </Link>
+            </button>
           </li>
         </ul>
       </CardBody>

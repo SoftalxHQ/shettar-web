@@ -21,7 +21,7 @@ type FormValues = {
 
 const SignIn = () => {
   const router = useRouter();
-  const { refreshAuth } = useLayoutContext();
+  const { refreshAuth, refreshAccount } = useLayoutContext();
   const [isLoading, setIsLoading] = useState(false);
 
   const loginSchema = yup.object({
@@ -42,7 +42,8 @@ const SignIn = () => {
 
       if (result.ok) {
         toast.success('Welcome back! 👋', { id: toastId });
-        refreshAuth();
+        await refreshAuth();
+        await refreshAccount();
         router.push('/');
       } else if (result.errorCode === 'email_not_verified') {
         toast.error('Please verify your email first.', { id: toastId });

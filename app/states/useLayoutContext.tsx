@@ -2,6 +2,7 @@
 
 import { changeHTMLAttribute } from '@/app/utils/layout';
 import { signOut } from '@/app/helpers/auth';
+import { useRouter } from 'next/navigation';
 import { type ReactNode, createContext, useContext, useState, useEffect, useCallback } from 'react';
 
 export type LayoutState = {
@@ -60,10 +61,13 @@ export const LayoutProvider = ({ children }: { children: ReactNode }) => {
     updateSettings({ isAuthenticated: !!(token && user) });
   }, [updateSettings]);
 
+  const router = useRouter();
+
   const logout = useCallback(async () => {
     await signOut(); // revokes JWT on server, then clears localStorage
     updateSettings({ isAuthenticated: false, account: null });
-  }, [updateSettings]);
+    router.push('/auth/sign-in');
+  }, [updateSettings, router]);
 
   const refreshAccount = useCallback(async () => {
     const token = localStorage.getItem('token');
@@ -79,12 +83,24 @@ export const LayoutProvider = ({ children }: { children: ReactNode }) => {
       if (res.ok && data?.status?.code === 200) {
         updateSettings({ account: data.data, isAccountLoading: false });
       } else {
-        updateSettings({ isAccountLoading: false });
+        // If unauthorized or error, clear account
+        updateSettings({ account: null, isAccountLoading: false });
       }
-    } catch {
-      updateSettings({ isAccountLoading: false });
+    } catch (err) {
+      console.error('refreshAccount error:', err);
+      updateSettings({ account: null, isAccountLoading: false });
     }
   }, [updateSettings]);
+
+  // Effect to automatically fetch account when authenticated
+  useEffect(() => {
+    if (settings.isAuthenticated && !settings.account && !settings.isAccountLoading) {
+      const token = localStorage.getItem('token');
+      if (token) refreshAccount();
+    } else if (!settings.isAuthenticated && settings.account) {
+      updateSettings({ account: null });
+    }
+  }, [settings.isAuthenticated, settings.account, settings.isAccountLoading, refreshAccount, updateSettings]);
 
   useEffect(() => {
     const foundTheme = localStorage.getItem(themeKey) as LayoutState['theme'] | null;

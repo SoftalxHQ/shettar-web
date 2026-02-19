@@ -13,6 +13,8 @@ interface CheckItem {
 const ProfileProgress = () => {
   const { account: profile, isAccountLoading: isLoading } = useLayoutContext();
 
+  if (isLoading || !profile) return null;
+
   const checks: CheckItem[] = [
     { label: 'Verified Email', done: !!profile?.email_verified, href: '/user/settings' },
     { label: 'Mobile Number', done: !!profile?.phone_number, href: '/user/settings' },

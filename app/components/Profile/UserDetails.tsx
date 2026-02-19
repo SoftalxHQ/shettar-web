@@ -20,10 +20,37 @@ const Field = ({ icon: Icon, label, value }: { icon: any; label: string; value?:
   </Col>
 );
 
+// UserDetailsSkeleton is not defined in the provided context, assuming it's a placeholder or needs to be added.
+// For now, I'll define a minimal placeholder to make the code syntactically correct.
+const UserDetailsSkeleton = () => (
+  <Card className="border">
+    <CardBody className="p-4">
+      <div className="placeholder-glow">
+        <span className="placeholder col-12 d-block mb-3" />
+        <span className="placeholder col-8 d-block" />
+      </div>
+    </CardBody>
+  </Card>
+);
+
 const UserDetails = () => {
   const { account: profile, isAccountLoading: isLoading } = useLayoutContext();
 
-  const fullName = profile ? `${profile.first_name} ${profile.last_name}` : '';
+  if (isLoading) {
+    return <UserDetailsSkeleton />;
+  }
+
+  if (!profile) {
+    return (
+      <Card className="border">
+        <CardBody className="p-4 text-center">
+          <p className="text-secondary mb-0">Please sign in to view your profile details.</p>
+        </CardBody>
+      </Card>
+    );
+  }
+
+  const fullName = `${profile.first_name} ${profile.last_name}`;
   const dob = profile?.date_of_birth
     ? new Date(profile.date_of_birth).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
     : null;
@@ -38,67 +65,42 @@ const UserDetails = () => {
       </CardHeader>
 
       <CardBody>
-        {isLoading ? (
-          <div className="d-flex gap-3 align-items-center mb-4 pb-4 border-bottom">
-            <div className="placeholder-glow">
-              <span className="placeholder rounded-circle" style={{ width: 80, height: 80, display: 'block' }} />
-            </div>
-            <div className="placeholder-glow flex-grow-1">
-              <span className="placeholder col-4 d-block mb-2" />
-              <span className="placeholder col-3 d-block" />
-            </div>
+        <div className="d-flex align-items-center mb-4 pb-4 border-bottom">
+          <div className="avatar avatar-xl me-4 flex-shrink-0">
+            {profile?.avatar_url ? (
+              <Image
+                className="avatar-img rounded-circle border border-primary border-3 shadow"
+                src={profile.avatar_url}
+                alt="avatar"
+                width={80}
+                height={80}
+              />
+            ) : (
+              <div
+                className="avatar-img rounded-circle border border-primary border-3 shadow bg-primary-soft d-flex align-items-center justify-content-center"
+                style={{ width: 80, height: 80 }}
+              >
+                <span className="h4 text-primary mb-0">
+                  {profile?.first_name?.charAt(0) ?? '?'}
+                </span>
+              </div>
+            )}
           </div>
-        ) : (
-          <div className="d-flex align-items-center mb-4 pb-4 border-bottom">
-            <div className="avatar avatar-xl me-4 flex-shrink-0">
-              {profile?.avatar_url ? (
-                <Image
-                  className="avatar-img rounded-circle border border-primary border-3 shadow"
-                  src={profile.avatar_url}
-                  alt="avatar"
-                  width={80}
-                  height={80}
-                />
-              ) : (
-                <div
-                  className="avatar-img rounded-circle border border-primary border-3 shadow bg-primary-soft d-flex align-items-center justify-content-center"
-                  style={{ width: 80, height: 80 }}
-                >
-                  <span className="h4 text-primary mb-0">
-                    {profile?.first_name?.charAt(0) ?? '?'}
-                  </span>
-                </div>
-              )}
-            </div>
-            <div>
-              <h5 className="mb-1">{fullName}</h5>
-              <span className={`badge ${profile?.email_verified ? 'bg-success bg-opacity-10 text-success' : 'bg-warning bg-opacity-10 text-warning'}`}>
-                {profile?.email_verified ? '✓ Verified Member' : '⚠ Email not verified'}
-              </span>
-            </div>
+          <div>
+            <h5 className="mb-1">{fullName}</h5>
+            <span className={`badge ${profile?.email_verified ? 'bg-success bg-opacity-10 text-success' : 'bg-warning bg-opacity-10 text-warning'}`}>
+              {profile?.email_verified ? '✓ Verified Member' : '⚠ Email not verified'}
+            </span>
           </div>
-        )}
+        </div>
 
         <Row className="g-4">
-          {isLoading ? (
-            Array.from({ length: 6 }).map((_, i) => (
-              <Col md={6} key={i}>
-                <div className="placeholder-glow">
-                  <span className="placeholder col-8 d-block mb-1" />
-                  <span className="placeholder col-5 d-block" />
-                </div>
-              </Col>
-            ))
-          ) : (
-            <>
-              <Field icon={BsEnvelope} label="Email address" value={profile?.email} />
-              <Field icon={BsPhone} label="Mobile number" value={profile?.phone_number} />
-              <Field icon={BsCalendarDate} label="Date of Birth" value={dob} />
-              <Field icon={BsGenderAmbiguous} label="Gender" value={profile?.gender} />
-              <Field icon={BsGeoAlt} label="Address" value={profile?.address} />
-              <Field icon={BsPersonBadge} label="Account ID" value={profile?.account_unique_id} />
-            </>
-          )}
+          <Field icon={BsEnvelope} label="Email address" value={profile?.email} />
+          <Field icon={BsPhone} label="Mobile number" value={profile?.phone_number} />
+          <Field icon={BsCalendarDate} label="Date of Birth" value={dob} />
+          <Field icon={BsGenderAmbiguous} label="Gender" value={profile?.gender} />
+          <Field icon={BsGeoAlt} label="Address" value={profile?.address} />
+          <Field icon={BsPersonBadge} label="Account ID" value={profile?.account_unique_id} />
         </Row>
       </CardBody>
     </Card>
