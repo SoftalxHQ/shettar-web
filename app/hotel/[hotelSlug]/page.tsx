@@ -135,7 +135,7 @@ export default function HotelDetailPage() {
         <div className={isLoading ? "opacity-50 pointer-events-none" : ""}>
           <AvailabilityFilter hotel={hotel} onSearch={handleSearch} isLoading={isLoading} />
           <HotelGallery hotel={hotel} />
-          <AboutHotel hotel={hotel} />
+          <AboutHotel hotel={hotel} onRefresh={fetchHotelDetail} />
         </div>
       </main>
 

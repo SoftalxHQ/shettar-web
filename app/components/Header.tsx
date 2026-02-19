@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Container, Navbar, Nav, Dropdown, DropdownToggle, DropdownMenu, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { useScrollEvent } from '../hooks';
 import { useLayoutContext } from '../states';
@@ -55,6 +56,8 @@ export default function Header() {
   const { theme, updateTheme, isAuthenticated, logout } = useLayoutContext();
   const headerRef = useRef<HTMLElement>(null);
   const [headerHeight, setHeaderHeight] = useState(0);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     if (headerRef.current) {
@@ -222,9 +225,23 @@ export default function Header() {
                         </li>
 
                         <li>
-                          <button onClick={logout} className="dropdown-item bg-danger-soft-hover text-danger border-0 w-100 text-start">
-                            <BsPower className="fa-fw me-2" />
-                            Sign Out
+                          <button
+                            onClick={async () => {
+                              if (isLoggingOut) return;
+                              setIsLoggingOut(true);
+                              await logout();
+                              router.push('/');
+                              setIsLoggingOut(false);
+                            }}
+                            className="dropdown-item bg-danger-soft-hover text-danger border-0 w-100 text-start d-flex align-items-center"
+                            disabled={isLoggingOut}
+                          >
+                            {isLoggingOut ? (
+                              <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" />
+                            ) : (
+                              <BsPower className="fa-fw me-2" />
+                            )}
+                            {isLoggingOut ? 'Signing out…' : 'Sign Out'}
                           </button>
                         </li>
 

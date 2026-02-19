@@ -1,6 +1,7 @@
 'use client';
 
 import { changeHTMLAttribute } from '@/app/utils/layout';
+import { signOut } from '@/app/helpers/auth';
 import { type ReactNode, createContext, useContext, useState, useEffect, useCallback } from 'react';
 
 export type LayoutState = {
@@ -16,7 +17,7 @@ type LayoutType = LayoutState & {
   updateDir: (dir: LayoutState['dir']) => void;
   updateHotelStats: (count: number, location: string | null) => void;
   refreshAuth: () => void;
-  logout: () => void;
+  logout: () => Promise<void>;
 };
 
 const LayoutContext = createContext<LayoutType | undefined>(undefined);
@@ -54,9 +55,8 @@ export const LayoutProvider = ({ children }: { children: ReactNode }) => {
     updateSettings({ isAuthenticated: !!(token && user) });
   }, [updateSettings]);
 
-  const logout = useCallback(() => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+  const logout = useCallback(async () => {
+    await signOut(); // revokes JWT on server, then clears localStorage
     updateSettings({ isAuthenticated: false });
   }, [updateSettings]);
 

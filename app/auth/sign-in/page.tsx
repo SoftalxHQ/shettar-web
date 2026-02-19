@@ -1,23 +1,59 @@
 'use client';
 
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import * as yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { Button, Card, CardBody, Col, Container, Row } from 'react-bootstrap';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { PasswordFormInput, TextFormInput } from '@/app/components';
-import { BsFacebook, BsGoogle } from 'react-icons/bs';
+import { BsGoogle } from 'react-icons/bs';
 import Image from 'next/image';
+import toast from 'react-hot-toast';
+import { signIn } from '@/app/helpers/auth';
+import { useLayoutContext } from '@/app/states';
+
+type FormValues = {
+  email: string;
+  password: string;
+};
 
 const SignIn = () => {
+  const router = useRouter();
+  const { refreshAuth } = useLayoutContext();
+  const [isLoading, setIsLoading] = useState(false);
+
   const loginSchema = yup.object({
     email: yup.string().email('Please enter a valid email').required('Please enter your email'),
     password: yup.string().required('Please enter your password'),
   });
 
-  const { control, handleSubmit } = useForm({
+  const { control, handleSubmit } = useForm<FormValues>({
     resolver: yupResolver(loginSchema),
   });
+
+  const onSubmit = async (values: FormValues) => {
+    setIsLoading(true);
+    const toastId = toast.loading('Signing in…');
+
+    try {
+      const result = await signIn({ email: values.email, password: values.password });
+
+      if (result.ok) {
+        toast.success('Welcome back! 👋', { id: toastId });
+        refreshAuth();
+        router.push('/');
+      } else if (result.errorCode === 'email_not_verified') {
+        toast.error('Please verify your email first.', { id: toastId });
+        router.push(`/auth/verify-email?email=${encodeURIComponent(values.email)}`);
+      } else {
+        toast.error(result.message, { id: toastId });
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <section className="vh-xxl-100 p-0 m-0 d-flex align-items-center bg-light">
@@ -34,7 +70,7 @@ const SignIn = () => {
                   <p className="mb-0 text-secondary">Please enter your details to sign in.</p>
                 </div>
 
-                <form onSubmit={handleSubmit(() => { })} className="mt-4 text-start">
+                <form onSubmit={handleSubmit(onSubmit)} className="mt-4 text-start">
                   <TextFormInput
                     name="email"
                     label="Email address"
@@ -65,8 +101,20 @@ const SignIn = () => {
                   </div>
 
                   <div>
-                    <Button variant="primary" type="submit" className="w-100 mb-0 shadow-sm">
-                      Sign In
+                    <Button
+                      variant="primary"
+                      type="submit"
+                      className="w-100 mb-0 shadow-sm"
+                      disabled={isLoading}
+                    >
+                      {isLoading ? (
+                        <>
+                          <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" />
+                          Signing In…
+                        </>
+                      ) : (
+                        'Sign In'
+                      )}
                     </Button>
                   </div>
 
@@ -77,7 +125,12 @@ const SignIn = () => {
                     </span>
                   </div>
 
-                  <Button variant="light" className="w-100 mb-0 border shadow-sm items-center d-flex justify-content-center py-2">
+                  <Button
+                    variant="light"
+                    className="w-100 mb-0 border shadow-sm items-center d-flex justify-content-center py-2"
+                    disabled
+                    title="Google sign-in coming soon"
+                  >
                     <BsGoogle className="text-danger me-2" /> Continue with Google
                   </Button>
                 </form>

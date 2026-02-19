@@ -14,7 +14,7 @@ import RoomOptions from './RoomOptions';
 import clsx from 'clsx';
 import { amenities } from '@/app/data/hotel-details';
 
-const AboutHotel = ({ hotel }: { hotel: any }) => {
+const AboutHotel = ({ hotel, onRefresh }: { hotel: any; onRefresh?: () => void }) => {
   const { isOpen, toggle } = useToggle();
 
   if (!hotel) return null;
@@ -142,7 +142,12 @@ const AboutHotel = ({ hotel }: { hotel: any }) => {
 
               <RoomOptions availableRoomTypes={hotel.available_room_types} hotel={hotel} />
 
-              <CustomerReview reviews={hotel.reviews} averageRating={hotel.average_rating} />
+              <CustomerReview
+                reviews={hotel.reviews}
+                averageRating={hotel.average_rating}
+                businessId={hotel.id}
+                onReviewPosted={onRefresh}
+              />
 
               <HotelPolicies checkIn={hotel.check_in} checkOut={hotel.check_out} />
             </div>
