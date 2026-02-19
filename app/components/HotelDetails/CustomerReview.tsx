@@ -20,6 +20,7 @@ interface Review {
   rating: number;
   content: string;
   created_at: string;
+  verified?: boolean;
 }
 
 type FormValues = {
@@ -212,6 +213,13 @@ const CustomerReview = ({ reviews, averageRating, businessId, onReviewPosted }: 
                         <li className="nav-item opacity-50">
                           {new Date(review.created_at).toLocaleDateString()}
                         </li>
+                        {review.verified && (
+                          <li className="nav-item">
+                            <span className="badge text-success bg-success bg-opacity-10 fw-semibold" style={{ fontSize: '0.7rem' }}>
+                              ✓ Verified Stay
+                            </span>
+                          </li>
+                        )}
                       </ul>
                     </div>
                     <div
