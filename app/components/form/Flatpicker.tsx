@@ -15,11 +15,13 @@ const Flatpicker = ({ className, options, placeholder, value, getValue }: Flatpi
   const element = useRef<HTMLInputElement | null>(null);
   const instanceRef = useRef<any>(null);
   const getValueRef = useRef(getValue);
+  const valueRef = useRef(value);
 
-  // Keep ref up to date
+  // Keep refs up to date
   useEffect(() => {
     getValueRef.current = getValue;
-  }, [getValue]);
+    valueRef.current = value;
+  }, [getValue, value]);
 
   const handleDateChange = useCallback(
     (selectedDates: Date[]) => {
@@ -58,6 +60,11 @@ const Flatpicker = ({ className, options, placeholder, value, getValue }: Flatpi
           },
         });
         instanceRef.current = instance;
+
+        // Ensure value is synced immediately after initialization with latest ref value
+        if (valueRef.current) {
+          instance.setDate(valueRef.current, false);
+        }
       }
     };
     initFlatpickr();

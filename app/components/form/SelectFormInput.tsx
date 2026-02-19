@@ -41,6 +41,10 @@ const SelectFormInput = ({ children, multiple, className, onChange, value, ...ch
             });
             selectE.current.dataset.choicesInitialized = 'true';
 
+            if (value !== undefined) {
+              choicesInstanceRef.current.setChoiceByValue(value);
+            }
+
             const handleChange = () => {
               if (onChange && selectE.current) {
                 onChange(selectE.current.value);

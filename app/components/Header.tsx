@@ -96,7 +96,7 @@ export default function Header() {
               <Nav className="navbar-nav mx-auto justify-content-center text-center align-items-center">
                 <Link href="/" className="nav-link">Home</Link>
 
-                <Dropdown className="nav-item">
+                <Dropdown className="nav-item" id="headerCompanyDropdown">
                   <DropdownToggle as={Link} href="#" className="nav-link arrow-none" id="headerCompanyMenu" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                     Company <BsChevronDown className="small ms-1" />
                   </DropdownToggle>
@@ -118,7 +118,7 @@ export default function Header() {
               <Nav className="navbar-nav align-items-center">
                 {isAuthenticated ? (
                   <ul className="nav flex-row align-items-center list-unstyled mb-0">
-                    <Dropdown className="nav-item ms-2 me-3 ms-md-3">
+                    <Dropdown className="nav-item ms-2 me-3 ms-md-3" id="headerNotificationDropdown">
                       <DropdownToggle id="notificationDropdown" className="nav-notification btn btn-light p-0 mb-0 flex-centered arrow-none">
                         <BsBell />
                       </DropdownToggle>
@@ -159,7 +159,7 @@ export default function Header() {
                       </DropdownMenu>
                     </Dropdown>
 
-                    <Dropdown className="nav-item dropdown" autoClose="outside">
+                    <Dropdown className="nav-item dropdown" autoClose="outside" id="headerProfileDropdown">
                       <DropdownToggle className="avatar avatar-sm p-0 arrow-none mb-0 border-0" id="profileDropdown" role="button">
                         <Image className="avatar-img rounded-2" src={avatar1} alt="avatar" width={40} height={40} />
                       </DropdownToggle>
@@ -274,7 +274,7 @@ export default function Header() {
                   </ul>
                 ) : (
                   <>
-                    <Dropdown className="nav-item dropdown ms-3 me-3">
+                    <Dropdown className="nav-item dropdown ms-3 me-3" id="headerThemeDropdown">
                       <DropdownToggle className="nav-link mb-0 flex-centered arrow-none bg-transparent border-0 p-0" id="themeDropdown" role="button">
                         {theme === 'light' ? <BsSun /> : theme === 'dark' ? <BsMoonStars /> : <BsCircleHalf />}
                       </DropdownToggle>

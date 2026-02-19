@@ -102,6 +102,24 @@ const UserDetails = () => {
           <Field icon={BsGeoAlt} label="Address" value={profile?.address} />
           <Field icon={BsPersonBadge} label="Account ID" value={profile?.account_unique_id} />
         </Row>
+
+        {(profile?.emer_first_name || profile?.emer_last_name || profile?.emer_phone_number) && (
+          <div className="mt-4 pt-4 border-top">
+            <h6 className="mb-3">Next of Kin Details</h6>
+            <Row className="g-4">
+              <Field
+                icon={BsPersonBadge}
+                label="Full Name"
+                value={`${profile?.emer_first_name ?? ''} ${profile?.emer_last_name ?? ''}`.trim()}
+              />
+              <Field
+                icon={BsPhone}
+                label="Phone Number"
+                value={profile?.emer_phone_number}
+              />
+            </Row>
+          </div>
+        )}
       </CardBody>
     </Card>
   );

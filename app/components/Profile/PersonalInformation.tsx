@@ -4,12 +4,13 @@ import { SelectFormInput, TextAreaFormInput, TextFormInput } from '@/app/compone
 import { Button, Card, CardBody, CardHeader, Col } from 'react-bootstrap';
 import * as yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
-import { useForm } from 'react-hook-form';
-import { useEffect, useRef, useState } from 'react';
+import { useForm, Controller } from 'react-hook-form';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import Image from 'next/image';
 import toast from 'react-hot-toast';
 import { useLayoutContext } from '@/app/states';
-import { saveAccountProfile } from '@/app/hooks/useAccountProfile'; // This import is kept as the instruction did not explicitly remove it, only added a duplicate useLayoutContext. Assuming the intent was to remove saveAccountProfile if it's no longer used, but I must follow instructions faithfully.
+import { saveAccountProfile } from '@/app/hooks/useAccountProfile';
+import { Flatpicker } from '@/app/components';
 
 type FormValues = {
   first_name: string;
@@ -18,6 +19,9 @@ type FormValues = {
   address: string;
   gender: string;
   date_of_birth: string;
+  emer_first_name: string;
+  emer_last_name: string;
+  emer_phone_number: string;
 };
 
 const schema = yup.object({
@@ -27,9 +31,12 @@ const schema = yup.object({
   address: yup.string().default(''),
   gender: yup.string().default(''),
   date_of_birth: yup.string().default(''),
+  emer_first_name: yup.string().default(''),
+  emer_last_name: yup.string().default(''),
+  emer_phone_number: yup.string().default(''),
 });
 
-const GENDER_OPTIONS = ['Male', 'Female', 'Non-binary', 'Prefer not to say'];
+const GENDER_OPTIONS = ['Male', 'Female'];
 
 const PersonalInformation = () => {
   const { account: profile, isAccountLoading: isLoading, refreshAccount } = useLayoutContext();
@@ -38,6 +45,11 @@ const PersonalInformation = () => {
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const flatpickrOptions = useMemo(() => ({
+    dateFormat: 'Y-m-d',
+    maxDate: 'today',
+  }), []);
 
   const { control, handleSubmit, reset } = useForm<FormValues>({
     resolver: yupResolver(schema),
@@ -48,6 +60,9 @@ const PersonalInformation = () => {
       address: '',
       gender: '',
       date_of_birth: '',
+      emer_first_name: '',
+      emer_last_name: '',
+      emer_phone_number: '',
     },
   });
 
@@ -55,12 +70,15 @@ const PersonalInformation = () => {
   useEffect(() => {
     if (profile) {
       reset({
-        first_name: profile.first_name ?? '',
-        last_name: profile.last_name ?? '',
-        phone_number: profile.phone_number ?? '',
-        address: profile.address ?? '',
-        gender: profile.gender ?? '',
-        date_of_birth: profile.date_of_birth ?? '',
+        first_name: profile.first_name || '',
+        last_name: profile.last_name || '',
+        phone_number: profile.phone_number || '',
+        address: profile.address || '',
+        gender: profile.gender || '',
+        date_of_birth: profile.date_of_birth || '',
+        emer_first_name: profile.emer_first_name || '',
+        emer_last_name: profile.emer_last_name || '',
+        emer_phone_number: profile.emer_phone_number || '',
       });
     }
   }, [profile, reset]);
@@ -92,6 +110,35 @@ const PersonalInformation = () => {
   };
 
   const avatarSrc = avatarPreview ?? profile?.avatar_url ?? null;
+
+  if (isLoading && !profile) {
+    return (
+      <Card className="border">
+        <CardHeader className="border-bottom">
+          <div className="placeholder-glow">
+            <span className="placeholder col-4" />
+          </div>
+        </CardHeader>
+        <CardBody>
+          <div className="placeholder-glow">
+            <div className="d-flex align-items-center mb-4">
+              <span className="placeholder rounded-circle" style={{ width: 80, height: 80 }} />
+              <div className="ms-3 w-50">
+                <span className="placeholder col-6 mb-2" />
+                <span className="placeholder col-4" />
+              </div>
+            </div>
+            <div className="row g-3">
+              <div className="col-md-6"><span className="placeholder col-12 py-3" /></div>
+              <div className="col-md-6"><span className="placeholder col-12 py-3" /></div>
+              <div className="col-md-6"><span className="placeholder col-12 py-3" /></div>
+              <div className="col-md-6"><span className="placeholder col-12 py-3" /></div>
+            </div>
+          </div>
+        </CardBody>
+      </Card>
+    );
+  }
 
   return (
     <Card className="border">
@@ -178,25 +225,53 @@ const PersonalInformation = () => {
 
           <Col md={6}>
             <label className="form-label">Gender</label>
-            <SelectFormInput
-              className="form-select js-choice"
-              onChange={() => { }}
-              value={profile?.gender ?? ''}
-            >
-              <option value="">Select gender</option>
-              {GENDER_OPTIONS.map((g) => (
-                <option key={g} value={g}>{g}</option>
-              ))}
-            </SelectFormInput>
+            <Controller
+              name="gender"
+              control={control}
+              render={({ field }) => (
+                <SelectFormInput
+                  className="form-select js-choice"
+                  {...field}
+                  onChange={(val) => field.onChange(val)}
+                  value={field.value}
+                >
+                  <option value="">Select gender</option>
+                  {GENDER_OPTIONS.map((g) => (
+                    <option key={g} value={g}>{g}</option>
+                  ))}
+                </SelectFormInput>
+              )}
+            />
           </Col>
 
-          <TextFormInput
-            name="date_of_birth"
-            label="Date of Birth"
-            type="date"
-            containerClass="col-md-6"
-            control={control}
-          />
+          <Col md={6}>
+            <label className="form-label">Date of Birth</label>
+            <Controller
+              name="date_of_birth"
+              control={control}
+              render={({ field }) => {
+                const dateValue = (field.value && !isNaN(new Date(field.value).getTime()))
+                  ? new Date(field.value)
+                  : undefined;
+                return (
+                  <Flatpicker
+                    value={dateValue}
+                    options={flatpickrOptions}
+                    placeholder="YYYY-MM-DD"
+                    className="form-control"
+                    getValue={(date) => {
+                      if (date instanceof Date && !isNaN(date.getTime())) {
+                        const year = date.getFullYear();
+                        const month = String(date.getMonth() + 1).padStart(2, '0');
+                        const day = String(date.getDate()).padStart(2, '0');
+                        field.onChange(`${year}-${month}-${day}`);
+                      }
+                    }}
+                  />
+                );
+              }}
+            />
+          </Col>
 
           <TextAreaFormInput
             name="address"
@@ -204,6 +279,33 @@ const PersonalInformation = () => {
             placeholder="Your full address"
             rows={3}
             containerClass="col-12"
+            control={control}
+          />
+
+          <Col xs={12} className="mt-4 pt-2 border-top">
+            <h5 className="mb-0">Next of Kin Details</h5>
+            <p className="small text-secondary">Person to contact in case of emergency.</p>
+          </Col>
+
+          <TextFormInput
+            name="emer_first_name"
+            label="First Name"
+            placeholder="Next of kin first name"
+            containerClass="col-md-6"
+            control={control}
+          />
+          <TextFormInput
+            name="emer_last_name"
+            label="Last Name"
+            placeholder="Next of kin last name"
+            containerClass="col-md-6"
+            control={control}
+          />
+          <TextFormInput
+            name="emer_phone_number"
+            label="Phone Number"
+            placeholder="Next of kin phone number"
+            containerClass="col-md-12"
             control={control}
           />
 
