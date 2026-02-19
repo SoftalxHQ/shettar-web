@@ -13,8 +13,10 @@ const GuestDetails = ({
   watch: any,
   setValue: any
 }) => {
-  const { isAuthenticated } = useLayoutContext();
+  const { isAuthenticated, account } = useLayoutContext();
   const option = watch('option');
+
+  const isEmergencyMissing = isAuthenticated && (!account?.emer_first_name || !account?.emer_phone_number);
 
   const handleOptionChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const isChecked = e.target.checked;
@@ -27,7 +29,12 @@ const GuestDetails = ({
       setValue('last_name', '');
       setValue('email_address', '');
       setValue('phone_number', '');
-      // Keep emergency contact or clear too? Usually keep as it might be the booker.
+    } else if (account) {
+      // Restore if booking for self
+      setValue('first_name', account.first_name || '');
+      setValue('last_name', account.last_name || '');
+      setValue('email_address', account.email || '');
+      setValue('phone_number', account.phone_number || '');
     }
   };
 
@@ -41,16 +48,17 @@ const GuestDetails = ({
           </h4>
 
           {isAuthenticated && (
-            <div className="form-check form-switch mb-0">
+            <div className="form-check form-switch mb-0 d-flex align-items-center">
               <input
-                className="form-check-input"
+                className="form-check-input me-3"
                 type="checkbox"
                 role="switch"
                 id="bookingForOthers"
+                style={{ width: '3rem', height: '1.5rem' }}
                 checked={option === 'others'}
                 onChange={handleOptionChange}
               />
-              <label className="form-check-label small fw-bold" htmlFor="bookingForOthers">
+              <label className="form-check-label small fw-bold mb-0" htmlFor="bookingForOthers">
                 Booking for someone else?
               </label>
             </div>
@@ -62,7 +70,7 @@ const GuestDetails = ({
           <Col xs={12}>
             <div className="bg-light rounded-2 px-4 py-3 border-start border-primary border-4">
               <h6 className="mb-0">
-                {option === 'others' ? 'Guest Information' : 'Main Guest Information'}
+                {option === 'others' ? 'Guest Information' : 'Personal Information'}
               </h6>
             </div>
           </Col>
@@ -104,40 +112,60 @@ const GuestDetails = ({
             containerClass="col-md-6"
           />
 
-          <Col xs={12} className="mt-5">
-            <div className="bg-light rounded-2 px-4 py-3 border-start border-danger border-4">
-              <h6 className="mb-0">Emergency Contact</h6>
-            </div>
-          </Col>
+          {!isAuthenticated ? (
+            <>
+              <Col xs={12} className="mt-5">
+                <div className="bg-light rounded-2 px-4 py-3 border-start border-danger border-4">
+                  <h6 className="mb-0">Emergency Contact</h6>
+                </div>
+              </Col>
 
-          <TextFormInput
-            name="emer_first_name"
-            type="text"
-            label="First Name"
-            control={control}
-            placeholder="Emergency contact first name"
-            className="form-control-lg"
-            containerClass="col-md-6"
-          />
-          <TextFormInput
-            name="emer_last_name"
-            label="Last Name"
-            type="text"
-            control={control}
-            placeholder="Emergency contact last name"
-            className="form-control-lg"
-            containerClass="col-md-6"
-          />
-          <TextFormInput
-            name="emer_phone_number"
-            label="Phone Number"
-            type="text"
-            control={control}
-            placeholder="Emergency contact phone"
-            className="form-control-lg"
-            containerClass="col-md-12"
-          />
+              <TextFormInput
+                name="emer_first_name"
+                type="text"
+                label="First Name"
+                control={control}
+                placeholder="Emergency contact first name"
+                className="form-control-lg"
+                containerClass="col-md-6"
+              />
+              <TextFormInput
+                name="emer_last_name"
+                label="Last Name"
+                type="text"
+                control={control}
+                placeholder="Emergency contact last name"
+                className="form-control-lg"
+                containerClass="col-md-6"
+              />
+              <TextFormInput
+                name="emer_phone_number"
+                label="Phone Number"
+                type="text"
+                control={control}
+                placeholder="Emergency contact phone"
+                className="form-control-lg"
+                containerClass="col-md-12"
+              />
+            </>
+          ) : (
+            <div style={{ display: 'none' }}>
+              <input type="hidden" {...control.register('emer_first_name')} value={account?.emer_first_name || ''} />
+              <input type="hidden" {...control.register('emer_last_name')} value={account?.emer_last_name || ''} />
+              <input type="hidden" {...control.register('emer_phone_number')} value={account?.emer_phone_number || ''} />
+            </div>
+          )}
         </form>
+
+        {isEmergencyMissing && (
+          <Alert variant="danger" className="mt-4 mb-3 border-2" role="alert">
+            <h6 className="alert-heading">Action Required: Update Profile</h6>
+            <p className="mb-0 small fw-bold text-dark">
+              You must update your <strong>Next of Kin</strong> details in your profile settings before you can proceed with a booking.
+              <Link href="/user/settings" className="ms-2 text-danger text-decoration-underline">Update Settings Now</Link>
+            </p>
+          </Alert>
+        )}
 
         {!isAuthenticated && (
           <Alert variant="warning" className="mt-4 mb-3 border-2" role="alert">
@@ -149,13 +177,15 @@ const GuestDetails = ({
           </Alert>
         )}
 
-        <Alert variant="info" className="mt-0 mb-0" role="alert">
-          Already have an account? {' '}
-          <Link href="/auth/sign-in" className="alert-heading h6 text-decoration-none">
-            Sign In
-          </Link>{' '}
-          to prefill details and earn rewards.
-        </Alert>
+        {!isAuthenticated && (
+          <Alert variant="info" className="mt-0 mb-0" role="alert">
+            Already have an account? {' '}
+            <Link href="/auth/sign-in" className="alert-heading h6 text-decoration-none">
+              Sign In
+            </Link>{' '}
+            to prefill details and earn rewards.
+          </Alert>
+        )}
       </CardBody>
     </Card>
   );

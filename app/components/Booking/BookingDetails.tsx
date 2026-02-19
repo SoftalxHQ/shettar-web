@@ -6,6 +6,7 @@ import HotelInformation from './HotelInformation';
 import LoginAdvantages from './LoginAdvantages';
 import OfferAndDiscounts from './OfferAndDiscounts';
 import PaymentOptions from './PaymentOptions';
+import { useLayoutContext } from '@/app/states';
 import PriceSummary from './PriceSummary';
 
 const BookingDetails = ({
@@ -21,6 +22,7 @@ const BookingDetails = ({
   endDate: string | null,
   roomsCount: string | null
 }) => {
+  const { account } = useLayoutContext();
   const { control, handleSubmit, setValue, watch } = useForm({
     defaultValues: {
       first_name: '',
@@ -30,32 +32,22 @@ const BookingDetails = ({
       emer_first_name: '',
       emer_last_name: '',
       emer_phone_number: '',
-      payment_method: 'card',
+      payment_method: account ? 'wallet' : 'card',
       option: 'self'
     }
   });
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    const userJson = localStorage.getItem('user');
-    if (token && userJson) {
-      try {
-        const user = JSON.parse(userJson);
-        // Only prefill if option is 'self'
-        if (watch('option') === 'self') {
-          setValue('first_name', user.first_name || '');
-          setValue('last_name', user.last_name || '');
-          setValue('email_address', user.email || '');
-          setValue('phone_number', user.phone_number || '');
-          setValue('emer_first_name', user.emer_first_name || '');
-          setValue('emer_last_name', user.emer_last_name || '');
-          setValue('emer_phone_number', user.emer_phone_number || '');
-        }
-      } catch (e) {
-        console.error('Error parsing user data:', e);
-      }
+    if (account && watch('option') === 'self') {
+      setValue('first_name', account.first_name || '');
+      setValue('last_name', account.last_name || '');
+      setValue('email_address', account.email || '');
+      setValue('phone_number', account.phone_number || '');
+      setValue('emer_first_name', account.emer_first_name || '');
+      setValue('emer_last_name', account.emer_last_name || '');
+      setValue('emer_phone_number', account.emer_phone_number || '');
     }
-  }, [setValue, watch('option')]);
+  }, [account, setValue, watch('option')]);
 
   return (
     <section className="pt-4">
@@ -84,6 +76,9 @@ const BookingDetails = ({
                 handleSubmit={handleSubmit}
                 watch={watch}
                 setValue={setValue}
+                startDate={startDate}
+                endDate={endDate}
+                roomsCount={roomsCount}
               />
             </div>
           </Col>

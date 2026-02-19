@@ -24,31 +24,50 @@ const HotelInformation = ({
   const images = room?.images_url || [];
   const mainImage = images[0] || '/images/category/hotel/4by3/02.jpg';
 
-  const formatDate = (dateStr: string | null, defaultDate: string) => {
-    if (!dateStr) return defaultDate;
+  const formatDate = (dateStr: string | null) => {
+    if (!dateStr) return null;
     try {
+      // Split YYYY-MM-DD to avoid timezone shifts
+      const [year, month, day] = dateStr.split('-').map(Number);
+      if (year && month && day) {
+        const date = new Date(year, month - 1, day);
+        return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+      }
       const date = new Date(dateStr);
-      return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+      return isNaN(date.getTime()) ? null : date.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
     } catch {
-      return defaultDate;
+      return null;
     }
   };
 
-  const displayCheckIn = formatDate(startDate, `4 March ${currentYear}`);
-  const displayCheckOut = formatDate(endDate, `8 March ${currentYear}`);
+  const today = new Date();
+  const tomorrow = new Date();
+  tomorrow.setDate(today.getDate() + 1);
+
+  const displayCheckIn = formatDate(startDate) || today.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+  const displayCheckOut = formatDate(endDate) || tomorrow.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
 
   const formatTime = (timeStr: string | null, defaultTime: string) => {
     if (!timeStr) return defaultTime;
     try {
-      // If already in 12h format with AM/PM, return it
-      if (timeStr.toLowerCase().includes('am') || timeStr.toLowerCase().includes('pm')) return timeStr;
+      // If it's a full ISO string (e.g. 2000-01-01T14:00:00Z)
+      let hours, minutes;
+      if (timeStr.includes('T')) {
+        const timePart = timeStr.split('T')[1];
+        [hours, minutes] = timePart.split(':').map(Number);
+      } else {
+        // If already in 12h format with AM/PM, return it
+        if (timeStr.toLowerCase().includes('am') || timeStr.toLowerCase().includes('pm')) return timeStr;
+        const parts = timeStr.split(':').map(Number);
+        hours = parts[0];
+        minutes = parts[1];
+      }
 
-      const [hours, minutes] = timeStr.split(':').map(Number);
-      if (isNaN(hours) || isNaN(minutes)) return timeStr;
+      if (hours === undefined || minutes === undefined || isNaN(hours) || isNaN(minutes)) return timeStr;
 
       const ampm = hours >= 12 ? 'PM' : 'AM';
       const hours12 = hours % 12 || 12;
-      return `${hours12}:${minutes.toString().padStart(2, '0')} ${ampm}`;
+      return `${hours12}:${String(minutes).padStart(2, '0')} ${ampm}`;
     } catch {
       return defaultTime;
     }

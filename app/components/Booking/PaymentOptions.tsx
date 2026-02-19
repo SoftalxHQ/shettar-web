@@ -34,51 +34,42 @@ const PaymentOptions = ({
   control,
   handleSubmit,
   watch,
-  setValue
+  setValue,
+  startDate,
+  endDate,
+  roomsCount
 }: {
   room: any,
   hotel: any,
   control: any,
   handleSubmit: any,
   watch: any,
-  setValue: any
+  setValue: any,
+  startDate: string | null,
+  endDate: string | null,
+  roomsCount: string | null
 }) => {
   const params = useParams();
   const searchParams = useSearchParams();
   const hotelSlug = params.hotelSlug as string;
   const roomSlug = params.roomSlug as string;
-  const { isAuthenticated } = useLayoutContext();
+  const { isAuthenticated, account } = useLayoutContext();
   const router = useRouter();
+
+  const isEmergencyMissing = isAuthenticated && (!account?.emer_first_name || !account?.emer_phone_number);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Use dates from URL or default to today and tomorrow
-  const startDateParam = searchParams.get('start_date');
-  const endDateParam = searchParams.get('end_date');
-
-  const getDefaultStartDate = () => {
-    const today = new Date();
-    return today.toISOString().split('T')[0]; // YYYY-MM-DD
-  };
-
-  const getDefaultEndDate = () => {
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    return tomorrow.toISOString().split('T')[0]; // YYYY-MM-DD
-  };
-
-  const startDate = startDateParam || getDefaultStartDate();
-  const endDate = endDateParam || getDefaultEndDate();
-  const roomsCount = searchParams.get('rooms') || '1';
-
-  // Get guest counts from URL or use defaults (at least 1 adult required)
+  // Calculate adults/children from search params, but use props for stay details
   const adults = Math.max(1, parseInt(searchParams.get('adults') || '2'));
   const children = parseInt(searchParams.get('children') || '0');
+  const actualRoomsCount = roomsCount || '1';
 
   const paymentMethod = watch('payment_method');
 
   const calculateNights = () => {
+    if (!startDate || !endDate) return 1;
     const start = new Date(startDate);
     const end = new Date(endDate);
     const diffTime = Math.abs(end.getTime() - start.getTime());
@@ -88,7 +79,7 @@ const PaymentOptions = ({
 
   const price = room?.price || 0;
   const nights = calculateNights();
-  const total = price * nights * parseInt(roomsCount); // No tax applied
+  const total = price * nights * parseInt(actualRoomsCount); // No tax applied
 
   const createReservation = async (data: any, paystackReference?: string) => {
     const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
@@ -100,7 +91,7 @@ const PaymentOptions = ({
       end_date: endDate,
       guests: adults,  // Use adults count from URL
       children: children,  // Use children count from URL
-      number_of_room: roomsCount,
+      number_of_room: actualRoomsCount,
       payment_method: data.payment_method,
       option: isAuthenticated ? data.option : 'guest', // Force 'guest' if not authenticated
       paystack_reference: paystackReference,
@@ -188,7 +179,7 @@ const PaymentOptions = ({
                   end_date: endDate,
                   guests: adults,
                   children: children,
-                  number_of_room: roomsCount,
+                  number_of_room: actualRoomsCount,
                   hotel_id: hotel.id,
                   room_type_id: room.id
                 }
@@ -256,31 +247,32 @@ const PaymentOptions = ({
           activeKey={paymentMethod === 'wallet' ? '1' : '2'}
           onSelect={(key) => setValue('payment_method', key === '1' ? 'wallet' : 'card')}
           className="accordion-icon accordion-bg-light"
-          id="accordioncircle"
+          id="paymentAccordion"
+          defaultActiveKey={isAuthenticated ? '1' : '2'}
         >
           {isAuthenticated && (
             <AccordionItem eventKey="1" className="mb-3">
               <AccordionHeader as="h6" id="heading-1">
                 <BsWalletFill className=" text-primary me-2" /> <span className="me-5 text-inherit">Pay with Wallet</span>
               </AccordionHeader>
-              <AccordionBody>
-                <div className="bg-light p-3 rounded-3 mb-3 border">
+              <AccordionBody className="p-4">
+                <div className="bg-primary-soft p-4 rounded-3 mb-4 border border-primary border-opacity-10">
                   <div className="d-flex justify-content-between align-items-center">
                     <div>
-                      <h6 className="mb-1 opacity-75">Available Balance</h6>
-                      <h5 className="mb-0 text-primary">{currency}0.00</h5>
+                      <h6 className="mb-1 fw-normal text-primary opacity-75">Available Balance</h6>
+                      <h3 className="mb-0 text-primary fw-bold">{currency}{account?.wallet_balance?.toLocaleString() ?? '0.00'}</h3>
                     </div>
-                    <Button variant="outline-primary" size="sm">Add Funds</Button>
+                    <Button variant="primary" size="sm" className="px-3">Add Funds</Button>
                   </div>
                 </div>
-                <p className="small opacity-50 mb-3">Your wallet balance will be debited for this booking.</p>
+                <p className="small text-secondary mb-4">Your wallet balance will be debited for this booking.</p>
                 <Button
                   variant="primary"
                   className="w-100 mb-0"
                   onClick={handleSubmit(onSubmit)}
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || isEmergencyMissing}
                 >
-                  {isSubmitting ? 'Processing...' : `Pay ${currency}${total.toLocaleString()} Now`}
+                  {isSubmitting ? 'Processing...' : isEmergencyMissing ? 'Update Profile to Book' : `Pay ${currency}${total.toLocaleString()} Now`}
                 </Button>
               </AccordionBody>
             </AccordionItem>
@@ -300,9 +292,9 @@ const PaymentOptions = ({
                   variant="primary"
                   className="w-100 mb-0"
                   onClick={handleSubmit(onSubmit)}
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || isEmergencyMissing}
                 >
-                  {isSubmitting ? 'Processing...' : 'Proceed to Payment'}
+                  {isSubmitting ? 'Processing...' : isEmergencyMissing ? 'Update Profile to Book' : 'Proceed to Payment'}
                 </Button>
               </div>
             </AccordionBody>
