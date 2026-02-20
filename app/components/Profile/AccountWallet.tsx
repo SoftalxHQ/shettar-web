@@ -1,19 +1,88 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardBody, Col, Row, Button, Modal, Form, InputGroup } from 'react-bootstrap';
-import { BsWallet2, BsBank, BsCopy, BsPlusCircle, BsLightningCharge } from 'react-icons/bs';
+import { BsWallet2, BsBank, BsCopy, BsPlusCircle, BsLightningCharge, BsArrowClockwise } from 'react-icons/bs';
 import { currency } from '@/app/states';
 import Link from 'next/link';
 import { toast } from 'react-hot-toast';
 import { useLayoutContext } from '@/app/states';
 import { getStoredToken } from '@/app/helpers/auth';
 
+import { createConsumer } from '@rails/actioncable';
+
 const AccountWallet = () => {
   const { account: profile, isAccountLoading: isLoading, refreshAccount } = useLayoutContext();
   const [showTopUp, setShowTopUp] = useState(false);
   const [amount, setAmount] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [dvaDetails, setDvaDetails] = useState<{ account_number: string; bank_name: string; account_name: string } | null>(null);
+  const [isDvaLoading, setIsDvaLoading] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const fetchDvaDetails = async () => {
+    setIsDvaLoading(true);
+    try {
+      const token = getStoredToken();
+      const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
+      const response = await fetch(`${API_URL}/api/v1/wallet/dva_details`, {
+        headers: { 'Authorization': token ? `Bearer ${token}` : '' }
+      });
+      const data = await response.json();
+      if (response.ok) {
+        setDvaDetails(data);
+      }
+    } catch (error) {
+      console.error('Error fetching DVA details:', error);
+    } finally {
+      setIsDvaLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (profile) {
+      fetchDvaDetails();
+    }
+  }, [profile]);
+
+  // Handle Real-time updates via ActionCable (WebSocket)
+  useEffect(() => {
+    if (!profile) return;
+
+    const token = getStoredToken();
+    if (!token) return;
+
+    const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
+    const wsUrl = API_URL.replace(/^http/, 'ws') + '/cable';
+
+    // Pass token in URL params for ActionCable auth
+    const consumer = createConsumer(`${wsUrl}?token=${token}`);
+
+    const subscription = consumer.subscriptions.create(
+      { channel: 'WalletChannel' },
+      {
+        received: (data: any) => {
+          if (data.event === 'balance_updated') {
+            toast.success(`Success! Wallet credited with ${currency}${data.amount}`);
+            refreshAccount?.();
+          }
+        },
+        connected: () => console.log('Connected to WalletChannel'),
+        disconnected: () => console.log('Disconnected from WalletChannel')
+      }
+    );
+
+    return () => {
+      subscription.unsubscribe();
+      consumer.disconnect();
+    };
+  }, [profile, refreshAccount]);
+
+  const handleManualRefresh = async () => {
+    setIsRefreshing(true);
+    await refreshAccount?.();
+    setTimeout(() => setIsRefreshing(false), 1000);
+  };
 
   const balance = profile?.wallet_balance != null
     ? Number(profile.wallet_balance).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -22,6 +91,7 @@ const AccountWallet = () => {
   const fullName = profile ? `${profile.first_name} ${profile.last_name}` : '';
 
   const copyToClipboard = (text: string) => {
+    if (!text) return;
     navigator.clipboard.writeText(text);
     toast.success('Copied to clipboard!');
   };
@@ -113,11 +183,22 @@ const AccountWallet = () => {
         <Col md={6}>
           <Card className="bg-primary bg-opacity-10 border border-primary border-opacity-25 h-100 shadow-sm">
             <CardBody className="p-4">
-              <div className="d-flex align-items-center mb-3">
-                <div className="icon-md bg-primary text-white rounded-circle me-3 flex-centered">
-                  <BsWallet2 size={20} />
+              <div className="d-flex align-items-center justify-content-between mb-3">
+                <div className="d-flex align-items-center">
+                  <div className="icon-md bg-primary text-white rounded-circle me-3 flex-centered">
+                    <BsWallet2 size={20} />
+                  </div>
+                  <h5 className="mb-0">Wallet Balance</h5>
                 </div>
-                <h5 className="mb-0">Wallet Balance</h5>
+                <Button
+                  variant="link"
+                  className={`p-0 text-primary ${isRefreshing ? 'opacity-50' : ''}`}
+                  onClick={handleManualRefresh}
+                  disabled={isRefreshing || isLoading}
+                  title="Refresh balance"
+                >
+                  <BsArrowClockwise size={18} className={isRefreshing ? 'spin' : ''} />
+                </Button>
               </div>
 
               {isLoading ? (
@@ -127,7 +208,7 @@ const AccountWallet = () => {
                 </div>
               ) : (
                 <>
-                  <h2 className="mb-1">{currency}{balance}</h2>
+                  <h3 className="mb-1">{currency}{balance}</h3>
                   <p className="small mb-4 opacity-75">Available balance</p>
                 </>
               )}
@@ -160,26 +241,48 @@ const AccountWallet = () => {
                 <h5 className="mb-0">Virtual Account</h5>
               </div>
 
-              <div className="bg-mode p-3 rounded border mb-3">
-                <p className="small mb-1 text-secondary">Account Number</p>
-                <div className="d-flex justify-content-between align-items-center">
-                  <h5 className="mb-0 text-primary">0012 3456 7890</h5>
-                  <Button variant="link" className="p-0 text-primary" onClick={() => copyToClipboard('001234567890')}>
-                    <BsCopy size={16} />
+              {isDvaLoading && !dvaDetails ? (
+                <div className="placeholder-glow">
+                  <div className="bg-mode p-3 rounded border mb-3">
+                    <span className="placeholder col-4 d-block mb-2" />
+                    <span className="placeholder col-8 d-block" />
+                  </div>
+                  <div className="row g-2">
+                    <Col xs={6}><span className="placeholder col-6 d-block mb-1" /><span className="placeholder col-10 d-block" /></Col>
+                    <Col xs={6}><span className="placeholder col-6 d-block mb-1" /><span className="placeholder col-10 d-block" /></Col>
+                  </div>
+                </div>
+              ) : dvaDetails ? (
+                <>
+                  <div className="bg-mode p-3 rounded border mb-3">
+                    <p className="small mb-1 text-secondary">Account Number</p>
+                    <div className="d-flex justify-content-between align-items-center">
+                      <h5 className="mb-0 text-primary tracking-wider">{dvaDetails.account_number.match(/.{1,4}/g)?.join(' ') || dvaDetails.account_number}</h5>
+                      <Button variant="link" className="p-0 text-primary" onClick={() => copyToClipboard(dvaDetails.account_number)}>
+                        <BsCopy size={16} />
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="row g-2">
+                    <Col xs={6}>
+                      <p className="small mb-1 text-secondary">Bank Name</p>
+                      <h6 className="mb-0">{dvaDetails.bank_name}</h6>
+                    </Col>
+                    <Col xs={6}>
+                      <p className="small mb-1 text-secondary">Account Holder</p>
+                      <h6 className="text-truncate mb-0">{dvaDetails.account_name}</h6>
+                    </Col>
+                  </div>
+                </>
+              ) : (
+                <div className="text-center py-4">
+                  <p className="small text-muted mb-3">No bank account assigned yet.</p>
+                  <Button variant="outline-dark" size="sm" onClick={fetchDvaDetails} disabled={isDvaLoading}>
+                    {isDvaLoading ? 'Generating...' : 'Generate Bank Account'}
                   </Button>
                 </div>
-              </div>
-
-              <div className="row g-2">
-                <Col xs={6}>
-                  <p className="small mb-1 text-secondary">Bank Name</p>
-                  <h6 className="mb-0">Abri Global Bank</h6>
-                </Col>
-                <Col xs={6}>
-                  <p className="small mb-1 text-secondary">Account Holder</p>
-                  <h6 className="text-truncate mb-0">{isLoading ? <span className="placeholder col-8" /> : (fullName || '—')}</h6>
-                </Col>
-              </div>
+              )}
             </CardBody>
           </Card>
         </Col>

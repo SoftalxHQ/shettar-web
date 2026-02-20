@@ -27,6 +27,8 @@ const footerLinks = [
   },
 ];
 
+const currentYear = new Date().getFullYear();
+
 export default function FooterWithLinks() {
   return (
     <footer className="bg-dark pt-5">
@@ -43,7 +45,7 @@ export default function FooterWithLinks() {
               />
             </Link>
             <p className="my-3 text-body-secondary">
-              Abri is your ultimate companion for finding the perfect stay. From luxury resorts to cozy local hotels, we make booking your next room effortless and rewarding.
+              Shettar is your ultimate companion for finding the perfect stay. From luxury resorts to cozy local hotels, we make booking your next room effortless and rewarding.
             </p>
             <div className="vstack gap-2 mt-4">
               <Link href="#" className="text-body-secondary text-primary-hover d-flex align-items-center mb-0">
@@ -135,9 +137,9 @@ export default function FooterWithLinks() {
           <Container>
             <div className="d-lg-flex justify-content-between align-items-center py-3 text-center text-lg-start">
               <div className="text-body-secondary text-primary-hover">
-                Copyrights ©2024 Abri. Build by{' '}
+                Copyrights ©{currentYear} Shettar. Build by{' '}
                 <a href="#" className="text-body-secondary">
-                  Abri Team
+                  Softalx Solution
                 </a>.
               </div>
               <Nav className="nav mt-2 mt-lg-0">

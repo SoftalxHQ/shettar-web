@@ -11,6 +11,7 @@
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
     "@popperjs/core": "^2.11.8",
+    "@rails/actioncable": "^8.1.200",
     "bootstrap": "^5.3.8",
     "bootstrap-icons": "^1.13.1",
     "canvas-confetti": "^1.9.4",
@@ -37,6 +38,7 @@
     "@tailwindcss/postcss": "^4",
     "@types/canvas-confetti": "^1.9.0",
     "@types/node": "^20",
+    "@types/rails__actioncable": "^8.0.3",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
