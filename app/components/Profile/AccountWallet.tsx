@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Card, CardBody, Col, Row, Button, Modal, Form, InputGroup } from 'react-bootstrap';
-import { BsWallet2, BsBank, BsCopy, BsPlusCircle } from 'react-icons/bs';
+import { BsWallet2, BsBank, BsCopy, BsPlusCircle, BsLightningCharge } from 'react-icons/bs';
 import { currency } from '@/app/states';
 import Link from 'next/link';
 import { toast } from 'react-hot-toast';
@@ -142,6 +142,9 @@ const AccountWallet = () => {
                   <BsPlusCircle className="me-2" /> Top Up
                 </Button>
                 <Link href="/user/transactions" className="btn btn-sm btn-outline-primary mb-0 flex-centered">History</Link>
+                <Link href="/user/utility" className="btn btn-sm btn-light mb-0 flex-centered">
+                  <BsLightningCharge className="me-2" /> Utilities
+                </Link>
               </div>
             </CardBody>
           </Card>

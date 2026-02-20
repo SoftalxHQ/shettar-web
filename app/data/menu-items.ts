@@ -6,6 +6,7 @@ import {
   BsTrash,
   BsListUl,
   BsStar,
+  BsLightningCharge,
 } from 'react-icons/bs';
 import { type IconType } from 'react-icons';
 
@@ -55,6 +56,13 @@ export const USER_PROFILE_MENU_ITEMS: MenuItemType[] = [
     url: '/user/reviews',
     parentKey: 'acc-user',
     icon: BsStar,
+  },
+  {
+    key: 'acc-user-utility',
+    label: 'Utility',
+    url: '/user/utility',
+    parentKey: 'acc-user',
+    icon: BsLightningCharge,
   },
   {
     key: 'acc-user-settings',

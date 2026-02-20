@@ -40,4 +40,5 @@ export { default as UserDetails } from './Profile/UserDetails';
 export { default as AccountWallet } from './Profile/AccountWallet';
 export { default as Transactions } from './Profile/Transactions';
 export { default as Reviews } from './Profile/Reviews';
+export { default as UtilityPurchase } from './Profile/UtilityPurchase';
 export { default as FavoriteButton } from './FavoriteButton';
