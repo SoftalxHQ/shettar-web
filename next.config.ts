@@ -9,6 +9,12 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'abri-dreams.s3.eu-west-2.amazonaws.com',
+        port: '',
+        pathname: '/**',
+      },
     ],
   },
   sassOptions: {

@@ -53,7 +53,7 @@ const themeModes: ThemeModeType[] = [
 
 export default function Header() {
   const { scrollY } = useScrollEvent();
-  const { theme, updateTheme, isAuthenticated, logout } = useLayoutContext();
+  const { theme, updateTheme, isAuthenticated, logout, account, isAccountLoading } = useLayoutContext();
   const headerRef = useRef<HTMLElement>(null);
   const [headerHeight, setHeaderHeight] = useState(0);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -64,6 +64,10 @@ export default function Header() {
       setHeaderHeight(headerRef.current.offsetHeight);
     }
   }, []);
+
+  const fullName = account ? `${account.first_name} ${account.last_name}` : 'User';
+  const email = account?.email || 'example@gmail.com';
+  const avatar = account?.avatar_url || '/images/avatar/01.jpg';
 
   return (
     <div style={{ height: scrollY >= 400 ? headerHeight : 'auto' }}>
@@ -160,8 +164,14 @@ export default function Header() {
                     </Dropdown>
 
                     <Dropdown className="nav-item dropdown" autoClose="outside" id="headerProfileDropdown">
-                      <DropdownToggle className="avatar avatar-sm p-0 arrow-none mb-0 border-0" id="profileDropdown" role="button">
-                        <Image className="avatar-img rounded-2" src={avatar1} alt="avatar" width={40} height={40} />
+                      <DropdownToggle className="avatar avatar-sm p-0 arrow-none mb-0 border-0 shadow-none" id="profileDropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                        {account?.avatar_url ? (
+                          <Image className="avatar-img rounded-2" src={avatar} alt="avatar" width={40} height={40} />
+                        ) : (
+                          <div className="avatar-img rounded-2 border border-primary bg-primary-soft d-flex align-items-center justify-content-center shadow-sm" style={{ width: 40, height: 40 }}>
+                            <span className="text-primary fw-bold" style={{ fontSize: '14px' }}>{account?.first_name?.charAt(0) ?? '?'}</span>
+                          </div>
+                        )}
                       </DropdownToggle>
                       <DropdownMenu
                         align={'end'}
@@ -171,12 +181,18 @@ export default function Header() {
                       >
                         <li className="px-3 mb-3">
                           <div className="d-flex align-items-center">
-                            <div className="avatar me-3">
-                              <Image className="avatar-img rounded-circle shadow" src={avatar1} alt="avatar" width={50} height={50} />
+                            <div className="avatar me-3 flex-centered">
+                              {account?.avatar_url ? (
+                                <Image className="avatar-img rounded-circle shadow" src={avatar} alt="avatar" width={50} height={50} />
+                              ) : (
+                                <div className="avatar-img rounded-circle border border-primary bg-primary-soft d-flex align-items-center justify-content-center shadow-sm" style={{ width: 50, height: 50 }}>
+                                  <span className="text-primary fw-bold h5 mb-0">{account?.first_name?.charAt(0) ?? '?'}</span>
+                                </div>
+                              )}
                             </div>
                             <div>
-                              <h6 className="h6 mt-2 mt-sm-0">Lori Ferguson</h6>
-                              <p className="small m-0">example@gmail.com</p>
+                              <h6 className="h6 mt-2 mt-sm-0">{isAccountLoading ? 'Loading...' : fullName}</h6>
+                              <p className="small m-0 text-truncate" style={{ maxWidth: '150px' }}>{email}</p>
                             </div>
                           </div>
                         </li>
