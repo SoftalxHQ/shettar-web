@@ -84,10 +84,10 @@ export function AccountProfileProvider({ children }: { children: ReactNode }) {
   useEffect(() => { fetchProfile(); }, [fetchProfile]);
 
   return (
-    <AccountProfileContext.Provider value= {{ profile, isLoading, error, refetch: fetchProfile }
-}>
-  { children }
-  </AccountProfileContext.Provider>
+    <AccountProfileContext.Provider value={{ profile, isLoading, error, refetch: fetchProfile }
+    }>
+      {children}
+    </AccountProfileContext.Provider>
   );
 }
 
@@ -153,3 +153,47 @@ export async function saveAccountProfile(
     return { ok: false, message: 'Unable to connect to server.' };
   }
 }
+
+/**
+ * Changes password via PUT /accounts/change_password
+ */
+export async function changeAccountPassword(
+  currentPassword: string,
+  newPassword: string,
+  confirmPassword: string,
+): Promise<{ ok: boolean; message: string }> {
+  const token = getStoredToken();
+  if (!token) return { ok: false, message: 'Not authenticated.' };
+
+  try {
+    const res = await fetch(`${API_URL}/accounts/change_password`, {
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        account: {
+          current_password: currentPassword,
+          password: newPassword,
+          password_confirmation: confirmPassword,
+        },
+      }),
+    });
+
+    const data = await res.json();
+
+    if (res.ok) {
+      return { ok: true, message: data?.status?.message ?? 'Password updated successfully.' };
+    }
+
+    const errors: string[] = Array.isArray(data?.errors) ? data.errors : [];
+    return {
+      ok: false,
+      message: errors[0] ?? data?.error?.[0]?.message ?? 'Failed to update password. Please check your current password.',
+    };
+  } catch {
+    return { ok: false, message: 'Unable to connect to server.' };
+  }
+}
+

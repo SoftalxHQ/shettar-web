@@ -25,7 +25,6 @@ export { default as PasswordFormInput } from './form/PasswordFormInput';
 export { default as Flatpicker } from './form/Flatpicker';
 export { default as PersonalInformation } from './Profile/PersonalInformation';
 export { default as ProfileProgress } from './Profile/ProfileProgress';
-export { default as UpdateEmail } from './Profile/UpdateEmail';
 export { default as UpdatePassword } from './Profile/UpdatePassword';
 export { default as DeleteProfile } from './Profile/DeleteProfile';
 export { default as BookingCard } from './Profile/Bookings/BookingCard';

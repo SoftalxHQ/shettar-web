@@ -20,8 +20,9 @@ const SecuritySettings = () => {
 
   return (
     <Card className="border">
-      <CardHeader className="border-bottom">
-        <h4 className="card-header-title">Security settings</h4>
+      <CardHeader className="border-bottom d-flex justify-content-between align-items-center">
+        <h4 className="card-header-title mb-0">Security settings</h4>
+        <span className="badge bg-warning text-dark">Coming Soon</span>
       </CardHeader>
 
       <CardBody>

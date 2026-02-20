@@ -3,21 +3,63 @@
 import { PasswordFormInput } from '@/app/components';
 import { Button, Card, CardHeader, CardBody } from 'react-bootstrap';
 import { useForm } from 'react-hook-form';
+import * as yup from 'yup';
+import { yupResolver } from '@hookform/resolvers/yup';
+import { changeAccountPassword } from '@/app/hooks/useAccountProfile';
+import { useLayoutContext } from '@/app/states';
+import { useState } from 'react';
+import toast from 'react-hot-toast';
+
+const schema = yup.object({
+  currentPassword: yup.string().required('Current password is required'),
+  newPassword: yup.string().min(8, 'Password must be at least 8 characters').required('New password is required'),
+  confirmPassword: yup.string()
+    .oneOf([yup.ref('newPassword')], 'Passwords must match')
+    .required('Please confirm your password'),
+});
+
+type FormValues = yup.InferType<typeof schema>;
 
 const UpdatePassword = () => {
-  const { control, handleSubmit } = useForm();
+  const { account: profile } = useLayoutContext();
+  const [isLoading, setIsLoading] = useState(false);
+
+  const { control, handleSubmit, reset } = useForm<FormValues>({
+    resolver: yupResolver(schema),
+  });
+
+  const onSubmit = async (values: FormValues) => {
+    setIsLoading(true);
+    const toastId = toast.loading('Updating password...');
+    try {
+      const result = await changeAccountPassword(
+        values.currentPassword,
+        values.newPassword,
+        values.confirmPassword
+      );
+
+      if (result.ok) {
+        toast.success(result.message, { id: toastId });
+        reset();
+      } else {
+        toast.error(result.message, { id: toastId });
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
-    <Card className="border">
-      <CardHeader className="border-bottom">
-        <h4 className="card-header-title">Update Password</h4>
-        <p className="mb-0">
-          Your current email address is <span className="text-primary">example@gmail.com</span>
+    <Card className="border shadow-sm">
+      <CardHeader className="border-bottom bg-transparent">
+        <h4 className="card-header-title mb-1">Update Password</h4>
+        <p className="mb-0 small text-secondary">
+          Your current email address is <span className="text-primary fw-bold">{profile?.email || '...'}</span>
         </p>
       </CardHeader>
 
-      <CardBody>
-        <form onSubmit={handleSubmit(() => { })}>
+      <CardBody className="p-4">
+        <form onSubmit={handleSubmit(onSubmit)}>
           <PasswordFormInput
             name="currentPassword"
             label="Current password"
@@ -28,7 +70,7 @@ const UpdatePassword = () => {
 
           <PasswordFormInput
             name="newPassword"
-            label="Enter new password"
+            label="New password"
             placeholder="Enter new password"
             containerClass="mb-3"
             control={control}
@@ -38,13 +80,20 @@ const UpdatePassword = () => {
             name="confirmPassword"
             label="Confirm new password"
             placeholder="Confirm new password"
-            containerClass="mb-3"
+            containerClass="mb-4"
             control={control}
           />
 
           <div className="text-end">
-            <Button type="submit" variant="primary" className="mb-0">
-              Change Password
+            <Button type="submit" variant="primary" className="mb-0 px-4" disabled={isLoading}>
+              {isLoading ? (
+                <>
+                  <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" />
+                  Updating...
+                </>
+              ) : (
+                'Change Password'
+              )}
             </Button>
           </div>
         </form>
@@ -54,3 +103,4 @@ const UpdatePassword = () => {
 };
 
 export default UpdatePassword;
+
