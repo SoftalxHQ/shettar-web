@@ -13,6 +13,7 @@ interface Transaction {
   status: string;
   description: string;
   metadata: any;
+  payment_method: string;
   created_at: string;
 }
 
@@ -80,6 +81,7 @@ const Transactions = () => {
             <thead className="table-light">
               <tr>
                 <th className="py-3 px-4">Transaction Details</th>
+                <th className="py-3">Method</th>
                 <th className="py-3">Type</th>
                 <th className="py-3">Date</th>
                 <th className="py-3 text-end">Amount</th>
@@ -91,6 +93,7 @@ const Transactions = () => {
                 Array.from({ length: 5 }).map((_, i) => (
                   <tr key={i}>
                     <td className="px-4"><Skeleton height="20px" width="200px" /></td>
+                    <td><Skeleton height="20px" width="70px" /></td>
                     <td><Skeleton height="20px" width="80px" /></td>
                     <td><Skeleton height="20px" width="120px" /></td>
                     <td className="text-end"><Skeleton height="20px" width="80px" className="ms-auto" /></td>
@@ -99,7 +102,7 @@ const Transactions = () => {
                 ))
               ) : transactions.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="text-center py-5">
+                  <td colSpan={6} className="text-center py-5">
                     <div className="opacity-50 mb-2 h5">No history yet</div>
                     <p className="small text-secondary mb-0">Your financial activities will appear here.</p>
                   </td>
@@ -111,6 +114,15 @@ const Transactions = () => {
                     <tr key={txn.id}>
                       <td className="px-4">
                         <div className="fw-bold text-dark">{txn.description}</div>
+                      </td>
+                      <td>
+                        {txn.payment_method ? (
+                          <Badge bg="light" className="text-secondary border text-capitalize fw-normal">
+                            {txn.payment_method}
+                          </Badge>
+                        ) : (
+                          <span className="text-muted small">—</span>
+                        )}
                       </td>
                       <td>
                         <span className="text-capitalize small fw-bold text-secondary">
