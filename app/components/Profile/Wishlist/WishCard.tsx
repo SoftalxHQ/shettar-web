@@ -1,13 +1,18 @@
 'use client';
 
-import { Card, CardBody, Col, Dropdown, DropdownItem, DropdownMenu, DropdownToggle, Image, Row } from 'react-bootstrap';
+import { Button, Card, CardBody, Col, Dropdown, DropdownItem, DropdownMenu, DropdownToggle, Image, Row } from 'react-bootstrap';
 import { BsGeoAlt } from 'react-icons/bs';
 import { FaCopy, FaFacebookSquare, FaHeart, FaLinkedin, FaShareAlt, FaStar, FaStarHalfAlt, FaTwitterSquare } from 'react-icons/fa';
 import Link from 'next/link';
 import { type WishCardType } from '@/app/data/wishlist';
 import { currency } from '@/app/states';
 
-const WishCard = ({ wishCard }: { wishCard: WishCardType }) => {
+interface WishCardProps {
+  wishCard: WishCardType & { id?: number; slug?: string };
+  onRemove?: () => void;
+}
+
+const WishCard = ({ wishCard, onRemove }: WishCardProps) => {
   const { address, image, name, price, rating } = wishCard;
 
   return (
@@ -39,9 +44,16 @@ const WishCard = ({ wishCard }: { wishCard: WishCardType }) => {
               </ul>
               <ul className="list-inline mb-0 items-center gap-1 d-flex">
                 <li className="list-inline-item">
-                  <Link href="" className="btn btn-sm btn-round btn-danger mb-0 flex-centered">
+                  <Button
+                    size="sm"
+                    className="btn-round btn-danger mb-0 flex-centered"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      onRemove?.();
+                    }}
+                  >
                     <FaHeart size={10} className="fa-fw" />
-                  </Link>
+                  </Button>
                 </li>
                 <Dropdown className="list-inline-item">
                   <DropdownToggle as={Link} href="" className="arrow-none btn btn-sm btn-round btn-light mb-0 flex-centered">

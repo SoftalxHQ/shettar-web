@@ -1,6 +1,6 @@
 'use client';
 
-import { TinySlider, SkeletonImage } from '@/app/components';
+import { TinySlider, SkeletonImage, FavoriteButton } from '@/app/components';
 import { currency, useLayoutContext } from '@/app/states';
 import { Fragment, useMemo } from 'react';
 import { Button, Card, CardBody, Col, Dropdown, DropdownItem, DropdownMenu, DropdownToggle, Image, Row } from 'react-bootstrap';
@@ -89,19 +89,7 @@ const HotelListCard = ({ hotel }: { hotel: Hotel }) => {
               </ul>
               <ul className="list-inline mb-0 z-index-2">
                 <li className="list-inline-item">
-                  <Button
-                    variant="light"
-                    size="sm"
-                    className="btn-round"
-                    onClick={() => {
-                      if (!isAuthenticated) {
-                        router.push('/auth/sign-in');
-                        return;
-                      }
-                    }}
-                  >
-                    <FaHeart className="fa-fw" />
-                  </Button>
+                  <FavoriteButton businessId={Number(hotel.id)} />
                 </li>
                 <Dropdown className="list-inline-item dropdown">
                   <DropdownToggle

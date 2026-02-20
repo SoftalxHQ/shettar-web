@@ -1,7 +1,6 @@
 'use client';
 
-import { TinySlider, SkeletonImage } from '@/app/components';
-import { useToggle } from '@/app/hooks';
+import { TinySlider, SkeletonImage, FavoriteButton } from '@/app/components';
 import { currency, useLayoutContext } from '@/app/states';
 import { Button, Card, CardBody, CardFooter } from 'react-bootstrap';
 import { renderToString } from 'react-dom/server';
@@ -16,7 +15,6 @@ import 'tiny-slider/dist/tiny-slider.css';
 import { HotelsGridType } from '@/app/types/hotel';
 
 const HotelGridCard = ({ id, slug, feature, images, name, price, rating, sale }: HotelsGridType) => {
-  const { isOpen, toggle } = useToggle();
   const { dir, isAuthenticated } = useLayoutContext();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -53,21 +51,7 @@ const HotelGridCard = ({ id, slug, feature, images, name, price, rating, sale }:
 
         {/* Heart icon on top right of image */}
         <div className="position-absolute top-0 end-0 z-index-2 m-3">
-          <Button
-            variant="white"
-            size="sm"
-            className="btn-round mb-0"
-            onClick={(e: React.MouseEvent) => {
-              e.preventDefault();
-              if (!isAuthenticated) {
-                router.push('/auth/sign-in');
-                return;
-              }
-              toggle();
-            }}
-          >
-            {!isOpen ? <BsHeart className="text-danger" /> : <BsHeartFill className="text-danger" />}
-          </Button>
+          <FavoriteButton businessId={Number(id)} />
         </div>
 
         <div className="tiny-slider arrow-round arrow-xs arrow-dark rounded-2 overflow-hidden" style={{ height: '200px' }}>

@@ -1,12 +1,65 @@
 'use client';
 
-import { SelectFormInput, WishCard } from '@/app/components';
+import { useEffect, useState } from 'react';
+import { SelectFormInput, WishCard, WishlistSkeleton } from '@/app/components';
 import { Button, Card, CardBody, CardHeader, Col } from 'react-bootstrap';
 import { FaTrash } from 'react-icons/fa';
 import UserLayout from '@/app/components/layouts/UserLayout';
-import { wishListCards } from '@/app/data/wishlist';
+import { getStoredToken } from '@/app/helpers/auth';
+import { toast } from 'react-hot-toast';
 
 const WishlistPage = () => {
+  const [wishlist, setWishlist] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchWishlist = async () => {
+    try {
+      const token = getStoredToken();
+      const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
+      const response = await fetch(`${API_URL}/api/v1/wishlists`, {
+        headers: {
+          'Authorization': token ? `Bearer ${token}` : '',
+          'Content-Type': 'application/json'
+        }
+      });
+      const data = await response.json();
+      setWishlist(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error('Error fetching wishlist:', error);
+      toast.error('Failed to load wishlist');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchWishlist();
+  }, []);
+
+  const handleRemove = async (businessId: number) => {
+    try {
+      const token = getStoredToken();
+      const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
+      const response = await fetch(`${API_URL}/api/v1/wishlists/${businessId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': token ? `Bearer ${token}` : '',
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        setWishlist(prev => prev.filter(item => item.business.id !== businessId));
+        toast.success('Removed from wishlist');
+      } else {
+        toast.error('Failed to remove item');
+      }
+    } catch (error) {
+      console.error('Error removing from wishlist:', error);
+      toast.error('An error occurred');
+    }
+  };
+
   return (
     <UserLayout>
       <Card className="border bg-transparent">
@@ -23,15 +76,42 @@ const WishlistPage = () => {
                 <option>Top rated</option>
               </SelectFormInput>
             </Col>
-            <Button variant="danger-soft" className="mb-0 items-center d-flex">
-              <FaTrash className="me-2" />
-              Remove all
-            </Button>
+            {wishlist.length > 0 && (
+              <Button variant="danger-soft" className="mb-0 items-center d-flex" onClick={() => toast.error('Bulk removal not implemented yet')}>
+                <FaTrash className="me-2" />
+                Remove all
+              </Button>
+            )}
           </form>
 
-          {wishListCards.map((card, idx) => (
-            <WishCard key={idx} wishCard={card} />
-          ))}
+          {loading ? (
+            <div className="vstack gap-4">
+              {[1, 2, 3].map((n) => (
+                <WishlistSkeleton key={n} />
+              ))}
+            </div>
+          ) : wishlist.length === 0 ? (
+            <div className="text-center py-5">
+              <h5 className="text-muted">Your wishlist is empty</h5>
+              <p className="small text-secondary">Save hotels you like to find them easily later.</p>
+            </div>
+          ) : (
+            wishlist.map((item) => (
+              <WishCard
+                key={item.id}
+                wishCard={{
+                  id: item.business.id,
+                  name: item.business.name,
+                  address: item.business.address,
+                  price: item.business.starting_from || 0,
+                  rating: item.business.star_rating || 0,
+                  slug: item.business.slug,
+                  image: item.business.image_url || '/assets/images/category_luxury.jpg'
+                }}
+                onRemove={() => handleRemove(item.business.id)}
+              />
+            ))
+          )}
 
         </CardBody>
       </Card>
@@ -40,3 +120,4 @@ const WishlistPage = () => {
 };
 
 export default WishlistPage;
+
