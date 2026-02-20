@@ -3,7 +3,7 @@
 import { Card, CardBody, CardHeader, Nav, NavItem, NavLink, TabContainer, TabContent, TabPane } from 'react-bootstrap';
 import { BsBriefcaseFill, BsPatchCheck, BsXOctagon } from 'react-icons/bs';
 import UserLayout from '@/app/components/layouts/UserLayout';
-import { UpcomingBooking, CancelledBooking, CompletedBooking } from '@/app/components';
+import { UpcomingBooking, CancelledBooking, CompletedBooking, ActiveBooking } from '@/app/components';
 
 const BookingsPage = () => {
   return (
@@ -23,6 +23,12 @@ const BookingsPage = () => {
                 </NavLink>
               </NavItem>
               <NavItem>
+                <NavLink eventKey="4" className="mb-0 flex-centered py-3">
+                  <BsBriefcaseFill className=" fa-fw me-1" />
+                  Active Booking
+                </NavLink>
+              </NavItem>
+              <NavItem>
                 <NavLink eventKey="2" className="mb-0 flex-centered py-3">
                   <BsXOctagon className=" fa-fw me-1" />
                   Canceled Booking
@@ -39,6 +45,10 @@ const BookingsPage = () => {
             <TabContent className="p-2 p-sm-4" id="nav-tabContent">
               <TabPane eventKey="1" className="fade">
                 <UpcomingBooking />
+              </TabPane>
+
+              <TabPane eventKey="4" className="fade">
+                <ActiveBooking />
               </TabPane>
 
               <TabPane eventKey="2" className="fade">

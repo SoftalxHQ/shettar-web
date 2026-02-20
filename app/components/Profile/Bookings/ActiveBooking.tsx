@@ -7,7 +7,7 @@ import { Skeleton } from '@/app/components';
 import Link from 'next/link';
 import Pagination from '../../Pagination';
 
-const UpcomingBooking = () => {
+const ActiveBooking = () => {
   const [loading, setLoading] = useState(true);
   const [bookings, setBookings] = useState<any[]>([]);
   const [page, setPage] = useState(1);
@@ -18,7 +18,7 @@ const UpcomingBooking = () => {
     try {
       const token = getStoredToken();
       const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
-      const response = await fetch(`${API_URL}/api/v1/reservations?filter=upcoming&page=${pageNumber}&limit=5`, {
+      const response = await fetch(`${API_URL}/api/v1/reservations?filter=active&page=${pageNumber}&limit=5`, {
         headers: {
           'Authorization': token ? `Bearer ${token}` : '',
           'Content-Type': 'application/json'
@@ -30,7 +30,7 @@ const UpcomingBooking = () => {
         setPagination(data.pagination);
       }
     } catch (error) {
-      console.error('Error fetching upcoming bookings:', error);
+      console.error('Error fetching active bookings:', error);
     } finally {
       setLoading(false);
     }
@@ -43,8 +43,7 @@ const UpcomingBooking = () => {
   if (loading) {
     return (
       <>
-        <h6 className="mb-3">Upcoming booking</h6>
-        <Skeleton height="150px" className="mb-4" />
+        <h6 className="mb-3">Active booking</h6>
         <Skeleton height="150px" className="mb-4" />
       </>
     );
@@ -52,11 +51,11 @@ const UpcomingBooking = () => {
 
   return (
     <>
-      <h6 className="mb-3">Upcoming booking ({pagination?.count || 0})</h6>
+      <h6 className="mb-3">Active booking ({pagination?.count || 0})</h6>
 
       {bookings.length === 0 ? (
         <div className="bg-light p-4 rounded text-center border border-dashed">
-          <p className="mb-2 text-secondary">No upcoming trips found.</p>
+          <p className="mb-2 text-secondary">No active trips found.</p>
           <Link href="/" className="btn btn-primary-soft btn-sm mb-0">Discover Hotels</Link>
         </div>
       ) : (
@@ -76,4 +75,4 @@ const UpcomingBooking = () => {
   );
 };
 
-export default UpcomingBooking;
+export default ActiveBooking;

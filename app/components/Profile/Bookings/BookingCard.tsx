@@ -17,6 +17,8 @@ interface Reservation {
     name: string;
     address: string;
     slug: string;
+    check_in: string;
+    check_out: string;
   };
   room?: {
     room_type: {
@@ -74,6 +76,7 @@ const BookingCard = ({ booking }: { booking: Reservation }) => {
               <div>
                 <span className="small text-secondary d-block">Check-in</span>
                 <h6 className="mb-0">{formatDate(start_date)}</h6>
+                <span className="small text-muted text-uppercase">{business?.check_in}</span>
               </div>
             </div>
           </Col>
@@ -83,6 +86,7 @@ const BookingCard = ({ booking }: { booking: Reservation }) => {
               <div>
                 <span className="small text-secondary d-block">Check-out</span>
                 <h6 className="mb-0">{formatDate(end_date)}</h6>
+                <span className="small text-muted text-uppercase">{business?.check_out}</span>
               </div>
             </div>
           </Col>

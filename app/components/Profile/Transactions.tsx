@@ -5,6 +5,7 @@ import { Card, CardBody, CardHeader, Table, Badge } from 'react-bootstrap';
 import { currency } from '@/app/states';
 import Skeleton from '../Skeleton';
 import { getStoredToken } from '@/app/helpers/auth';
+import Pagination from '../Pagination';
 
 interface Transaction {
   id: number;
@@ -20,31 +21,35 @@ interface Transaction {
 const Transactions = () => {
   const [loading, setLoading] = useState(true);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState<any>(null);
+
+  const fetchTransactions = async (pageNumber: number) => {
+    setLoading(true);
+    try {
+      const token = getStoredToken();
+      const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
+      const response = await fetch(`${API_URL}/api/v1/wallet_transactions?page=${pageNumber}&limit=10`, {
+        headers: {
+          'Authorization': token ? `Bearer ${token}` : '',
+          'Content-Type': 'application/json'
+        }
+      });
+      const data = await response.json();
+      if (data.transactions) {
+        setTransactions(data.transactions);
+        setPagination(data.pagination);
+      }
+    } catch (error) {
+      console.error('Error fetching transactions:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchTransactions = async () => {
-      try {
-        const token = getStoredToken();
-        const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
-        const response = await fetch(`${API_URL}/api/v1/wallet_transactions`, {
-          headers: {
-            'Authorization': token ? `Bearer ${token}` : '',
-            'Content-Type': 'application/json'
-          }
-        });
-        const data = await response.json();
-        if (data.transactions) {
-          setTransactions(data.transactions);
-        }
-      } catch (error) {
-        console.error('Error fetching transactions:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchTransactions();
-  }, []);
+    fetchTransactions(page);
+  }, [page]);
 
   const getStatusBadge = (status: string) => {
     const s = status.toLowerCase();
@@ -156,6 +161,15 @@ const Transactions = () => {
           </Table>
         </div>
       </CardBody>
+      {pagination && pagination.last > 1 && (
+        <div className="card-footer border-top bg-transparent">
+          <Pagination
+            currentPage={page}
+            totalPages={pagination.last}
+            onPageChange={(p) => setPage(p)}
+          />
+        </div>
+      )}
     </Card>
   );
 };

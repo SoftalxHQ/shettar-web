@@ -28,6 +28,7 @@ export { default as ProfileProgress } from './Profile/ProfileProgress';
 export { default as UpdatePassword } from './Profile/UpdatePassword';
 export { default as DeleteProfile } from './Profile/DeleteProfile';
 export { default as BookingCard } from './Profile/Bookings/BookingCard';
+export { default as ActiveBooking } from './Profile/Bookings/ActiveBooking';
 export { default as UpcomingBooking } from './Profile/Bookings/UpcomingBooking';
 export { default as CancelledBooking } from './Profile/Bookings/CancelledBooking';
 export { default as CompletedBooking } from './Profile/Bookings/CompletedBooking';

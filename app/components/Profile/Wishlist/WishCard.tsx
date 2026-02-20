@@ -6,6 +6,8 @@ import { FaCopy, FaFacebookSquare, FaHeart, FaLinkedin, FaShareAlt, FaStar, FaSt
 import Link from 'next/link';
 import { type WishCardType } from '@/app/data/wishlist';
 import { currency } from '@/app/states';
+import Skeleton from '../../Skeleton';
+import { useState } from 'react';
 
 interface WishCardProps {
   wishCard: WishCardType & { id?: number; slug?: string };
@@ -14,12 +16,26 @@ interface WishCardProps {
 
 const WishCard = ({ wishCard, onRemove }: WishCardProps) => {
   const { address, image, name, price, rating } = wishCard;
+  const [isImageLoading, setIsImageLoading] = useState(true);
 
   return (
     <Card className="shadow p-2 border-0">
       <Row className="g-0">
-        <Col md={3}>
-          <Image src={image} className="card-img rounded-2" alt="Card image" width={300} height={225} />
+        <Col md={3} className="position-relative">
+          {isImageLoading && (
+            <div className="position-absolute top-0 start-0 w-100 h-100 p-2">
+              <Skeleton height="100%" className="rounded-2" />
+            </div>
+          )}
+          <Image
+            src={image}
+            className={`card-img rounded-2 ${isImageLoading ? 'opacity-0' : 'opacity-100'}`}
+            style={{ transition: 'opacity 0.3s ease-in-out', objectFit: 'cover' }}
+            alt="Card image"
+            width={300}
+            height={225}
+            onLoad={() => setIsImageLoading(false)}
+          />
         </Col>
         <Col md={9}>
           <CardBody className="py-md-2 d-flex flex-column h-100">
