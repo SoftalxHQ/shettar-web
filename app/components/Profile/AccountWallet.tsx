@@ -257,7 +257,7 @@ const AccountWallet = () => {
                   <div className="bg-mode p-3 rounded border mb-3">
                     <p className="small mb-1 text-secondary">Account Number</p>
                     <div className="d-flex justify-content-between align-items-center">
-                      <h5 className="mb-0 text-primary tracking-wider">{dvaDetails.account_number.match(/.{1,4}/g)?.join(' ') || dvaDetails.account_number}</h5>
+                      <h3 className="mb-0 text-primary tracking-wider">{dvaDetails.account_number.match(/.{1,4}/g)?.join(' ') || dvaDetails.account_number}</h3>
                       <Button variant="link" className="p-0 text-primary" onClick={() => copyToClipboard(dvaDetails.account_number)}>
                         <BsCopy size={16} />
                       </Button>
