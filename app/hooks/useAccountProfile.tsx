@@ -10,7 +10,8 @@
  */
 
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
-import { getStoredToken } from '@/app/helpers/auth';
+import { getStoredToken, signOut } from '@/app/helpers/auth';
+import { useApi } from './useApi';
 
 const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
 
@@ -52,6 +53,7 @@ export function AccountProfileProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<AccountProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { apiFetch } = useApi();
 
   const fetchProfile = useCallback(async () => {
     setIsLoading(true);
@@ -65,7 +67,7 @@ export function AccountProfileProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      const res = await fetch(`${API_URL}/account_details`, {
+      const res = await apiFetch(`${API_URL}/account_details`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
@@ -139,6 +141,11 @@ export async function saveAccountProfile(
       });
     }
 
+    if (res.status === 401) {
+      await signOut();
+      return { ok: false, message: 'Session expired. Please sign in again.' };
+    }
+
     const data = await res.json();
     if (res.ok) {
       return { ok: true, message: data?.status?.message ?? 'Profile updated successfully.' };
@@ -180,6 +187,11 @@ export async function changeAccountPassword(
         },
       }),
     });
+
+    if (res.status === 401) {
+      await signOut();
+      return { ok: false, message: 'Session expired. Please sign in again.' };
+    }
 
     const data = await res.json();
 

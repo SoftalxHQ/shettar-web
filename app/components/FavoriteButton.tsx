@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Button, Spinner } from 'react-bootstrap';
 import { FaHeart, FaRegHeart } from 'react-icons/fa';
 import { getStoredToken } from '@/app/helpers/auth';
+import { useApi } from '@/app/hooks/useApi';
 import { toast } from 'react-hot-toast';
 
 interface FavoriteButtonProps {
@@ -15,6 +16,7 @@ const FavoriteButton = ({ businessId, className }: FavoriteButtonProps) => {
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [loading, setLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
+  const { apiFetch } = useApi();
 
   useEffect(() => {
     const checkStatus = async () => {
@@ -26,7 +28,7 @@ const FavoriteButton = ({ businessId, className }: FavoriteButtonProps) => {
         }
 
         const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
-        const response = await fetch(`${API_URL}/api/v1/wishlists/check?business_id=${businessId}`, {
+        const response = await apiFetch(`${API_URL}/api/v1/wishlists/check?business_id=${businessId}`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -58,7 +60,7 @@ const FavoriteButton = ({ businessId, className }: FavoriteButtonProps) => {
       const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
       if (isWishlisted) {
         // Remove
-        const response = await fetch(`${API_URL}/api/v1/wishlists/${businessId}`, {
+        const response = await apiFetch(`${API_URL}/api/v1/wishlists/${businessId}`, {
           method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${token}`
@@ -70,7 +72,7 @@ const FavoriteButton = ({ businessId, className }: FavoriteButtonProps) => {
         }
       } else {
         // Add
-        const response = await fetch(`${API_URL}/api/v1/wishlists`, {
+        const response = await apiFetch(`${API_URL}/api/v1/wishlists`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,

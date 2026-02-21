@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { getStoredToken } from '@/app/helpers/auth';
+import { useApi } from '@/app/hooks/useApi';
 import BookingCard from './BookingCard';
 import { Skeleton } from '@/app/components';
 import Link from 'next/link';
@@ -12,13 +13,14 @@ const ActiveBooking = () => {
   const [bookings, setBookings] = useState<any[]>([]);
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState<any>(null);
+  const { apiFetch } = useApi();
 
   const fetchBookings = async (pageNumber: number) => {
     setLoading(true);
     try {
       const token = getStoredToken();
       const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
-      const response = await fetch(`${API_URL}/api/v1/reservations?filter=active&page=${pageNumber}&limit=5`, {
+      const response = await apiFetch(`${API_URL}/api/v1/reservations?filter=active&page=${pageNumber}&limit=5`, {
         headers: {
           'Authorization': token ? `Bearer ${token}` : '',
           'Content-Type': 'application/json'
@@ -60,7 +62,7 @@ const ActiveBooking = () => {
         </div>
       ) : (
         bookings.map((booking) => (
-          <BookingCard key={booking.id} booking={booking} />
+          <BookingCard key={booking.id} booking={booking} onSuccess={() => fetchBookings(page)} />
         ))
       )}
 

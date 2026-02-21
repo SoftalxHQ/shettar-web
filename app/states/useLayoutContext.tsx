@@ -79,11 +79,13 @@ export const LayoutProvider = ({ children }: { children: ReactNode }) => {
       const res = await fetch(`${API_URL}/account_details`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (res.ok && data?.status?.code === 200) {
         updateSettings({ account: data.data, isAccountLoading: false });
+      } else if (res.status === 401) {
+        // Token expired or invalid - force logout to avoid loop
+        await logout();
       } else {
-        // If unauthorized or error, clear account
         updateSettings({ account: null, isAccountLoading: false });
       }
     } catch (err) {

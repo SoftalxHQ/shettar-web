@@ -19,6 +19,7 @@ import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { FaPlus } from 'react-icons/fa6';
 import { useState } from 'react';
 import { useLayoutContext } from '@/app/states';
+import { useApi } from '@/app/hooks/useApi';
 
 const currency = '₦';
 
@@ -55,6 +56,7 @@ const PaymentOptions = ({
   const roomSlug = params.roomSlug as string;
   const { isAuthenticated, account } = useLayoutContext();
   const router = useRouter();
+  const { apiFetch } = useApi();
 
   const isEmergencyMissing = isAuthenticated && (!account?.emer_first_name || !account?.emer_phone_number);
 
@@ -120,7 +122,7 @@ const PaymentOptions = ({
       reservation: reservationData
     };
 
-    const response = await fetch(`${API_URL}/api/v1/businesses/${hotel.id}/room_types/${room.id}/reservations`, {
+    const response = await apiFetch(`${API_URL}/api/v1/businesses/${hotel.id}/room_types/${room.id}/reservations`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -162,7 +164,7 @@ const PaymentOptions = ({
         const customReference = generateReference();
 
         // Initialize payment through backend to get access_code
-        const initResponse = await fetch(`${API_URL}/api/v1/payment_initializations`, {
+        const initResponse = await apiFetch(`${API_URL}/api/v1/payment_initializations`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

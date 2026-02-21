@@ -5,6 +5,7 @@ import { Card, CardBody, CardHeader, Table, Badge } from 'react-bootstrap';
 import { currency } from '@/app/states';
 import Skeleton from '../Skeleton';
 import { getStoredToken } from '@/app/helpers/auth';
+import { useApi } from '@/app/hooks/useApi';
 import Pagination from '../Pagination';
 
 interface Transaction {
@@ -23,13 +24,14 @@ const Transactions = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState<any>(null);
+  const { apiFetch } = useApi();
 
   const fetchTransactions = async (pageNumber: number) => {
     setLoading(true);
     try {
       const token = getStoredToken();
       const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
-      const response = await fetch(`${API_URL}/api/v1/wallet_transactions?page=${pageNumber}&limit=10`, {
+      const response = await apiFetch(`${API_URL}/api/v1/wallet_transactions?page=${pageNumber}&limit=10`, {
         headers: {
           'Authorization': token ? `Bearer ${token}` : '',
           'Content-Type': 'application/json'

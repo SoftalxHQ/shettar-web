@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Card, CardBody, CardHeader, Row, Col, Image, Button, Spinner } from 'react-bootstrap';
 import { BsStarFill, BsStarHalf, BsStar, BsTrash, BsPencilSquare } from 'react-icons/bs';
 import { getStoredToken } from '@/app/helpers/auth';
+import { useApi } from '@/app/hooks/useApi';
 import { toast } from 'react-hot-toast';
 import { Skeleton } from '../';
 
@@ -32,12 +33,13 @@ const ReviewSkeleton = () => (
 const Reviews = () => {
   const [reviews, setReviews] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const { apiFetch } = useApi();
 
   const fetchReviews = async () => {
     try {
       const token = getStoredToken();
       const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
-      const response = await fetch(`${API_URL}/api/v1/reviews`, {
+      const response = await apiFetch(`${API_URL}/api/v1/reviews`, {
         headers: {
           'Authorization': token ? `Bearer ${token}` : '',
           'Content-Type': 'application/json'
@@ -63,7 +65,7 @@ const Reviews = () => {
     try {
       const token = getStoredToken();
       const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
-      const response = await fetch(`${API_URL}/api/v1/reviews/${id}`, {
+      const response = await apiFetch(`${API_URL}/api/v1/reviews/${id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': token ? `Bearer ${token}` : '',

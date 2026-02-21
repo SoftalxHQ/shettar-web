@@ -6,17 +6,19 @@ import { Button, Card, CardBody, CardHeader, Col } from 'react-bootstrap';
 import { FaTrash } from 'react-icons/fa';
 import UserLayout from '@/app/components/layouts/UserLayout';
 import { getStoredToken } from '@/app/helpers/auth';
+import { useApi } from '@/app/hooks/useApi';
 import { toast } from 'react-hot-toast';
 
 const WishlistPage = () => {
   const [wishlist, setWishlist] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const { apiFetch } = useApi();
 
   const fetchWishlist = async () => {
     try {
       const token = getStoredToken();
       const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
-      const response = await fetch(`${API_URL}/api/v1/wishlists`, {
+      const response = await apiFetch(`${API_URL}/api/v1/wishlists`, {
         headers: {
           'Authorization': token ? `Bearer ${token}` : '',
           'Content-Type': 'application/json'
@@ -40,7 +42,7 @@ const WishlistPage = () => {
     try {
       const token = getStoredToken();
       const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
-      const response = await fetch(`${API_URL}/api/v1/wishlists/${businessId}`, {
+      const response = await apiFetch(`${API_URL}/api/v1/wishlists/${businessId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': token ? `Bearer ${token}` : '',

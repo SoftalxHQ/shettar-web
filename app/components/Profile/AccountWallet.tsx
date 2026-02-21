@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { toast } from 'react-hot-toast';
 import { useLayoutContext } from '@/app/states';
 import { getStoredToken } from '@/app/helpers/auth';
+import { useApi } from '@/app/hooks/useApi';
 
 import { createConsumer } from '@rails/actioncable';
 
@@ -19,13 +20,14 @@ const AccountWallet = () => {
   const [dvaDetails, setDvaDetails] = useState<{ account_number: string; bank_name: string; account_name: string } | null>(null);
   const [isDvaLoading, setIsDvaLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const { apiFetch } = useApi();
 
   const fetchDvaDetails = async () => {
     setIsDvaLoading(true);
     try {
       const token = getStoredToken();
       const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
-      const response = await fetch(`${API_URL}/api/v1/wallet/dva_details`, {
+      const response = await apiFetch(`${API_URL}/api/v1/wallet/dva_details`, {
         headers: { 'Authorization': token ? `Bearer ${token}` : '' }
       });
       const data = await response.json();
@@ -109,7 +111,7 @@ const AccountWallet = () => {
       const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
 
       // 1. Initialize topup on backend
-      const response = await fetch(`${API_URL}/api/v1/wallet/initialize_topup`, {
+      const response = await apiFetch(`${API_URL}/api/v1/wallet/initialize_topup`, {
         method: 'POST',
         headers: {
           'Authorization': token ? `Bearer ${token}` : '',
@@ -151,7 +153,7 @@ const AccountWallet = () => {
       const token = getStoredToken();
       const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
 
-      const response = await fetch(`${API_URL}/api/v1/wallet/verify_topup`, {
+      const response = await apiFetch(`${API_URL}/api/v1/wallet/verify_topup`, {
         method: 'POST',
         headers: {
           'Authorization': token ? `Bearer ${token}` : '',

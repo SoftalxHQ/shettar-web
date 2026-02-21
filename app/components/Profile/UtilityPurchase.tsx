@@ -5,6 +5,7 @@ import { Card, CardBody, Form, Button, Row, Col, Nav, Tab, InputGroup, Spinner }
 import { BsPhone, BsLightningCharge, BsWallet2 } from 'react-icons/bs';
 import { useLayoutContext, currency } from '@/app/states';
 import { getStoredToken } from '@/app/helpers/auth';
+import { useApi } from '@/app/hooks/useApi';
 import { toast } from 'react-hot-toast';
 
 const networks = [
@@ -26,6 +27,7 @@ const UtilityPurchase = () => {
   const { account: profile, refreshAccount } = useLayoutContext();
   const [activeTab, setActiveTab] = useState('airtime');
   const [loading, setLoading] = useState(false);
+  const { apiFetch } = useApi();
 
   // Form states
   const [network, setNetwork] = useState('');
@@ -52,7 +54,7 @@ const UtilityPurchase = () => {
       const token = getStoredToken();
       const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
 
-      const response = await fetch(`${API_URL}/api/v1/wallet/buy_airtime`, {
+      const response = await apiFetch(`${API_URL}/api/v1/wallet/buy_airtime`, {
         method: 'POST',
         headers: {
           'Authorization': token ? `Bearer ${token}` : '',
@@ -99,7 +101,7 @@ const UtilityPurchase = () => {
       const token = getStoredToken();
       const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
 
-      const response = await fetch(`${API_URL}/api/v1/wallet/buy_data`, {
+      const response = await apiFetch(`${API_URL}/api/v1/wallet/buy_data`, {
         method: 'POST',
         headers: {
           'Authorization': token ? `Bearer ${token}` : '',

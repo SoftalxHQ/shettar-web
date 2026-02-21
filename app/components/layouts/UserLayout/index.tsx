@@ -7,9 +7,12 @@ import { FaSlidersH } from 'react-icons/fa';
 import TopNavBar from './TopNavBar';
 import LeftPanel from './LeftPanel';
 import Footer from './Footer';
+import { notFound } from 'next/navigation';
+import { useLayoutContext } from '@/app/states';
 
 const UserLayout = ({ children }: { children: ReactNode }) => {
   const { isOpen, toggle } = useToggle();
+  const { isAuthenticated, isAccountLoading } = useLayoutContext();
 
   useEffect(() => {
     document.body.classList.add('dashboard');
@@ -17,6 +20,17 @@ const UserLayout = ({ children }: { children: ReactNode }) => {
       document.body.classList.remove('dashboard');
     };
   }, []);
+
+  // Show nothing while checking auth to prevent layout shift
+  if (isAccountLoading) {
+    return null;
+  }
+
+  // If not authenticated, act as if the page doesn't exist
+  if (!isAuthenticated) {
+    notFound();
+    return null;
+  }
 
   return (
     <>
