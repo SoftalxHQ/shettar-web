@@ -4,7 +4,7 @@ import { useToggle } from '@/app/hooks';
 import { type ReactNode, useEffect } from 'react';
 import { Button, Col, Container, Offcanvas, OffcanvasBody, OffcanvasHeader, Row } from 'react-bootstrap';
 import { FaSlidersH } from 'react-icons/fa';
-import TopNavBar from './TopNavBar';
+import { Header } from '@/app/components';
 import LeftPanel from './LeftPanel';
 import Footer from './Footer';
 import { notFound } from 'next/navigation';
@@ -34,7 +34,7 @@ const UserLayout = ({ children }: { children: ReactNode }) => {
 
   return (
     <>
-      <TopNavBar />
+      <Header />
 
       <main>
         <section className="pt-3">

@@ -1,13 +1,12 @@
 'use client';
 
-import TopNavBar4 from '@/app/components/TopNavBar4';
-import Footer from '@/app/components/Footer';
+import { Header, Footer } from '@/app/components';
 import ConfirmTicket from '@/app/components/BookingConfirmed/ConfirmTicket';
 
 export default function BookingConfirmedPage() {
   return (
     <>
-      <TopNavBar4 />
+      <Header />
       <main>
         <ConfirmTicket />
       </main>
