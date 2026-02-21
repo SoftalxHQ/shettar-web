@@ -145,6 +145,7 @@ const AboutHotel = ({ hotel, onRefresh }: { hotel: any; onRefresh?: () => void }
               <CustomerReview
                 reviews={hotel.reviews}
                 averageRating={hotel.average_rating}
+                ratingDistribution={hotel.rating_distribution}
                 businessId={hotel.id}
                 onReviewPosted={onRefresh}
               />
