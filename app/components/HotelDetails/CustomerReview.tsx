@@ -25,6 +25,7 @@ interface Review {
   rating: number;
   content: string;
   created_at: string;
+  updated_at?: string;
   verified?: boolean;
 }
 
@@ -256,6 +257,12 @@ const CustomerReview = ({ reviews, averageRating, ratingDistribution, businessId
                         </span>
                         <span className="small text-secondary">•</span>
                         <span className="small text-secondary">{review.review_count || 1} Review{review.review_count !== 1 ? 's' : ''} written</span>
+                        {review.updated_at && new Date(review.updated_at).getTime() - new Date(review.created_at).getTime() > 1000 && (
+                          <>
+                            <span className="small text-secondary">•</span>
+                            <span className="small text-secondary fst-italic">Edited</span>
+                          </>
+                        )}
                       </div>
                     </div>
 

@@ -10,12 +10,14 @@ import Footer from '@/app/components/Footer';
 import { Skeleton } from '@/app/components';
 import confetti from 'canvas-confetti';
 import { useReactToPrint } from 'react-to-print';
+import { useLayoutContext } from '@/app/states';
 
 export default function BookingConfirmedPage() {
   const params = useParams();
   const searchParams = useSearchParams();
   const hotelSlug = params.hotelSlug as string;
   const roomSlug = params.roomSlug as string;
+  const { isAuthenticated } = useLayoutContext();
 
   const startDate = searchParams.get('start_date');
   const endDate = searchParams.get('end_date');
@@ -364,6 +366,11 @@ export default function BookingConfirmedPage() {
                   </div>
 
                   <div className="mt-5 vstack gap-2">
+                    {isAuthenticated && (
+                      <Link href="/user/bookings">
+                        <Button variant="success" className="w-100 py-3 rounded-3 shadow-sm text-white">View My Bookings</Button>
+                      </Link>
+                    )}
                     <Link href="/">
                       <Button variant="primary" className="w-100 py-3 rounded-3 shadow-sm">Explore More Places</Button>
                     </Link>

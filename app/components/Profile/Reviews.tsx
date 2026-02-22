@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Card, CardBody, CardHeader, Row, Col, Image, Button, Spinner } from 'react-bootstrap';
+import { Card, CardBody, CardHeader, Row, Col, Image, Button, Form } from 'react-bootstrap';
 import { BsStarFill, BsStarHalf, BsStar, BsTrash, BsPencilSquare } from 'react-icons/bs';
 import { getStoredToken } from '@/app/helpers/auth';
 import { useApi } from '@/app/hooks/useApi';
@@ -33,6 +33,9 @@ const ReviewSkeleton = () => (
 const Reviews = () => {
   const [reviews, setReviews] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [editingReviewId, setEditingReviewId] = useState<number | null>(null);
+  const [editForm, setEditForm] = useState({ rating: 0, content: '' });
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { apiFetch } = useApi();
 
   const fetchReviews = async () => {
@@ -74,7 +77,7 @@ const Reviews = () => {
       });
 
       if (response.ok) {
-        setReviews(prev => prev.filter(r => r.id !== id));
+        setReviews((prev: any[]) => prev.filter((r) => r.id !== id));
         toast.success('Review deleted');
       } else {
         toast.error('Failed to delete review');
@@ -82,6 +85,50 @@ const Reviews = () => {
     } catch (error) {
       console.error('Error deleting review:', error);
       toast.error('An error occurred');
+    }
+  };
+
+  const handleEditClick = (review: any) => {
+    setEditingReviewId(review.id);
+    setEditForm({ rating: review.rating, content: review.content });
+  };
+
+  const submitEdit = async (id: number) => {
+    if (!editForm.content.trim() || editForm.rating === 0) {
+      toast.error('Please provide a rating and review text.');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const token = getStoredToken();
+      const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
+      const response = await apiFetch(`${API_URL}/api/v1/reviews/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': token ? `Bearer ${token}` : '',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ review: editForm })
+      });
+
+      if (response.ok) {
+        setReviews((prev: any[]) =>
+          prev.map((r) =>
+            r.id === id ? { ...r, rating: editForm.rating, content: editForm.content } : r
+          )
+        );
+        setEditingReviewId(null);
+        toast.success('Review updated successfully');
+      } else {
+        const errorData = await response.json();
+        toast.error(errorData.errors?.[0] || 'Failed to update review');
+      }
+    } catch (error) {
+      console.error('Error updating review:', error);
+      toast.error('An error occurred while updating.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -124,16 +171,16 @@ const Reviews = () => {
           reviews.map((review, idx) => (
             <div key={review.id} className={idx !== reviews.length - 1 ? 'border-bottom mb-4 pb-4' : ''}>
               <Row className="g-3 g-lg-4">
-                <Col md={3} lg={2}>
+                <Col md={3}>
                   <Image
                     src={review.hotel_image || '/assets/images/category_luxury.jpg'}
-                    className="rounded shadow-sm"
+                    className="card-img rounded-2 shadow-sm"
+                    style={{ objectFit: 'cover' }}
                     alt={review.hotel_name}
-                    fluid
                   />
                 </Col>
 
-                <Col md={9} lg={10}>
+                <Col md={9}>
                   <div className="d-flex justify-content-between align-items-start">
                     <div>
                       <h5 className="mb-1">{review.hotel_name}</h5>
@@ -148,7 +195,7 @@ const Reviews = () => {
                         variant="light"
                         size="sm"
                         className="btn-round mb-0"
-                        onClick={() => toast.success('Editing coming soon!')}
+                        onClick={() => handleEditClick(review)}
                       >
                         <BsPencilSquare />
                       </Button>
@@ -163,10 +210,58 @@ const Reviews = () => {
                     </div>
                   </div>
 
-                  <p className="mb-2 text-dark">"{review.content}"</p>
-                  <div className="d-flex justify-content-between align-items-center">
-                    <span className="small text-secondary">Posted on {review.date}</span>
-                  </div>
+                  {editingReviewId === review.id ? (
+                    <div className="mt-3 bg-light p-3 rounded rounded-3">
+                      <h6 className="mb-2">Edit Review</h6>
+                      <div className="d-flex mb-3">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <div
+                            key={star}
+                            style={{ cursor: 'pointer' }}
+                            onClick={() => setEditForm((prev) => ({ ...prev, rating: star }))}
+                          >
+                            {star <= editForm.rating ? (
+                              <BsStarFill className="text-warning me-1 fs-5" />
+                            ) : (
+                              <BsStar className="text-warning me-1 fs-5" />
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                      <Form.Control
+                        as="textarea"
+                        rows={3}
+                        value={editForm.content}
+                        onChange={(e) => setEditForm((prev) => ({ ...prev, content: e.target.value }))}
+                        className="mb-3"
+                      />
+                      <div className="d-flex gap-2">
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          onClick={() => submitEdit(review.id)}
+                          disabled={isSubmitting}
+                        >
+                          {isSubmitting ? 'Saving...' : 'Save Changes'}
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => setEditingReviewId(null)}
+                          disabled={isSubmitting}
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <p className="mb-2 text-dark">"{review.content}"</p>
+                      <div className="d-flex justify-content-between align-items-center">
+                        <span className="small text-secondary">Posted on {review.date}</span>
+                      </div>
+                    </>
+                  )}
                 </Col>
               </Row>
             </div>
