@@ -8,14 +8,17 @@ const PriceSummary = ({
   room,
   hotel,
   startDate,
-  endDate
+  endDate,
+  roomsCount
 }: {
   room: any,
   hotel: any,
   startDate: string | null,
-  endDate: string | null
+  endDate: string | null,
+  roomsCount: string | null
 }) => {
   const price = room?.price || 0;
+  const actualRoomsCount = parseInt(roomsCount || '1');
 
   const calculateNights = () => {
     if (!startDate || !endDate) return 1;
@@ -27,7 +30,8 @@ const PriceSummary = ({
   };
 
   const nights = calculateNights();
-  const roomCharges = price * nights;
+  const baseCharges = price * nights;
+  const roomCharges = baseCharges * actualRoomsCount;
   const discount = 0;
   const taxes = 0; // No tax applied
   const total = roomCharges - discount + taxes;
@@ -42,9 +46,15 @@ const PriceSummary = ({
       <CardBody className="p-4">
         <ul className="list-group list-group-borderless">
           <li className="list-group-item d-flex justify-content-between align-items-center px-0">
-            <span className="h6 fw-light mb-0">Room Charges</span>
-            <span className="h6 mb-0">{currency}{roomCharges.toLocaleString()}</span>
+            <span className="h6 fw-light mb-0">Room Charges ({nights} {nights > 1 ? 'nights' : 'night'})</span>
+            <span className="h6 mb-0">{currency}{baseCharges.toLocaleString()}</span>
           </li>
+          {actualRoomsCount > 1 && (
+            <li className="list-group-item d-flex justify-content-between align-items-center px-0">
+              <span className="h6 fw-light mb-0">Number of Rooms</span>
+              <span className="h6 mb-0">x {actualRoomsCount}</span>
+            </li>
+          )}
           <li className="list-group-item d-flex justify-content-between align-items-center px-0">
             <span className="h6 fw-light mb-0">Total Discount</span>
             <span className="h6 mb-0 text-success">-{currency}{discount.toLocaleString()}</span>

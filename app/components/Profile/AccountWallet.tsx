@@ -65,7 +65,7 @@ const AccountWallet = () => {
       {
         received: (data: any) => {
           if (data.event === 'balance_updated') {
-            toast.success(`Success! Wallet credited with ${currency}${data.amount}`);
+            toast.success(`Success! Wallet credited with ${currency}${data.amount}`, { id: data.reference });
             refreshAccount?.();
           }
         },
@@ -165,7 +165,9 @@ const AccountWallet = () => {
       const data = await response.json();
 
       if (response.ok) {
-        toast.success(data.message);
+        if (data.message !== "Transaction already processed") {
+          toast.success(data.message, { id: reference });
+        }
         setShowTopUp(false);
         setAmount('');
         refreshAccount?.(); // Refresh the account balance

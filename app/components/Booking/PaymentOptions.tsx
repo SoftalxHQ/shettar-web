@@ -3,6 +3,9 @@ import {
   AccordionBody,
   AccordionHeader,
   AccordionItem,
+  Modal,
+  Form,
+  InputGroup,
   Alert,
   Button,
   Card,
@@ -13,13 +16,16 @@ import {
   Image,
   Row,
 } from 'react-bootstrap';
-import { BsCreditCard, BsGlobe2, BsPaypal, BsWalletFill } from 'react-icons/bs';
+import { BsCreditCard, BsGlobe2, BsPaypal, BsWalletFill, BsPlusCircle } from 'react-icons/bs';
 import Link from 'next/link';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { FaPlus } from 'react-icons/fa6';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLayoutContext } from '@/app/states';
 import { useApi } from '@/app/hooks/useApi';
+import { toast } from 'react-hot-toast';
+import { getStoredToken } from '@/app/helpers/auth';
+import { createConsumer } from '@rails/actioncable';
 
 const currency = '₦';
 
@@ -54,7 +60,7 @@ const PaymentOptions = ({
   const searchParams = useSearchParams();
   const hotelSlug = params.hotelSlug as string;
   const roomSlug = params.roomSlug as string;
-  const { isAuthenticated, account } = useLayoutContext();
+  const { isAuthenticated, account, refreshAccount } = useLayoutContext();
   const router = useRouter();
   const { apiFetch } = useApi();
 
@@ -62,6 +68,41 @@ const PaymentOptions = ({
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Top-up state
+  const [showTopUp, setShowTopUp] = useState(false);
+  const [topUpAmount, setTopUpAmount] = useState('');
+  const [isTopUpProcessing, setIsTopUpProcessing] = useState(false);
+
+  // Handle Real-time updates via ActionCable (WebSocket)
+  useEffect(() => {
+    if (!isAuthenticated || !account) return;
+
+    const token = getStoredToken();
+    if (!token) return;
+
+    const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
+    const wsUrl = API_URL.replace(/^http/, 'ws') + '/cable';
+
+    const consumer = createConsumer(`${wsUrl}?token=${token}`);
+
+    const subscription = consumer.subscriptions.create(
+      { channel: 'WalletChannel' },
+      {
+        received: (data: any) => {
+          if (data.event === 'balance_updated') {
+            toast.success(`Success! Wallet credited with ${currency}${data.amount}`, { id: data.reference });
+            refreshAccount?.();
+          }
+        },
+      }
+    );
+
+    return () => {
+      subscription.unsubscribe();
+      consumer.disconnect();
+    };
+  }, [isAuthenticated, account, refreshAccount]);
 
   // Calculate adults/children from search params, but use props for stay details
   const adults = Math.max(1, parseInt(searchParams.get('adults') || '2'));
@@ -139,6 +180,86 @@ const PaymentOptions = ({
     }
 
     return result;
+  };
+
+  const handleTopUp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!topUpAmount || Number(topUpAmount) < 100) {
+      toast.error('Minimum top-up is 100');
+      return;
+    }
+
+    setIsTopUpProcessing(true);
+    try {
+      const token = getStoredToken();
+      const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
+
+      const response = await apiFetch(`${API_URL}/api/v1/wallet/initialize_topup`, {
+        method: 'POST',
+        headers: {
+          'Authorization': token ? `Bearer ${token}` : '',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ amount: Number(topUpAmount) })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.errors?.[0]?.message || 'Failed to initialize payment');
+      }
+
+      const handler = (window as any).PaystackPop.setup({
+        key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY,
+        email: account?.email,
+        amount: Number(topUpAmount) * 100,
+        ref: data.reference,
+        onClose: () => {
+          setIsTopUpProcessing(false);
+        },
+        callback: async (response: any) => {
+          await verifyTopUpPayment(response.reference);
+        }
+      });
+      handler.openIframe();
+
+    } catch (error: any) {
+      toast.error(error.message);
+      setIsTopUpProcessing(false);
+    }
+  };
+
+  const verifyTopUpPayment = async (reference: string) => {
+    try {
+      const token = getStoredToken();
+      const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
+
+      const response = await apiFetch(`${API_URL}/api/v1/wallet/verify_topup`, {
+        method: 'POST',
+        headers: {
+          'Authorization': token ? `Bearer ${token}` : '',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ reference })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        if (data.message !== "Transaction already processed") {
+          toast.success(data.message, { id: reference });
+        }
+        setShowTopUp(false);
+        setTopUpAmount('');
+        refreshAccount?.();
+      } else {
+        throw new Error(data.errors?.[0]?.message || 'Verification failed');
+      }
+    } catch (error: any) {
+      toast.error(error.message);
+    } finally {
+      setIsTopUpProcessing(false);
+    }
   };
 
   const onSubmit = async (data: any) => {
@@ -247,7 +368,7 @@ const PaymentOptions = ({
         )}
         <Accordion
           activeKey={paymentMethod === 'wallet' ? '1' : '2'}
-          onSelect={(key) => setValue('payment_method', key === '1' ? 'wallet' : 'card')}
+          onSelect={(key: any) => setValue('payment_method', key === '1' ? 'wallet' : 'card')}
           className="accordion-icon accordion-bg-light"
           id="paymentAccordion"
           defaultActiveKey={isAuthenticated ? '1' : '2'}
@@ -264,7 +385,9 @@ const PaymentOptions = ({
                       <h6 className="mb-1 fw-normal text-primary opacity-75">Available Balance</h6>
                       <h3 className="mb-0 text-primary fw-bold">{currency}{account?.wallet_balance?.toLocaleString() ?? '0.00'}</h3>
                     </div>
-                    <Button variant="primary" size="sm" className="px-3">Add Funds</Button>
+                    {Number(account?.wallet_balance || 0) < total && (
+                      <Button variant="primary" size="sm" className="px-3" onClick={() => setShowTopUp(true)}>Add Funds</Button>
+                    )}
                   </div>
                 </div>
                 <p className="small text-secondary mb-4">Your wallet balance will be debited for this booking.</p>
@@ -272,9 +395,9 @@ const PaymentOptions = ({
                   variant="primary"
                   className="w-100 mb-0"
                   onClick={handleSubmit(onSubmit)}
-                  disabled={isSubmitting || isEmergencyMissing}
+                  disabled={isSubmitting || isEmergencyMissing || Number(account?.wallet_balance || 0) < total}
                 >
-                  {isSubmitting ? 'Processing...' : isEmergencyMissing ? 'Update Profile to Book' : `Pay ${currency}${total.toLocaleString()} Now`}
+                  {isSubmitting ? 'Processing...' : isEmergencyMissing ? 'Update Profile to Book' : Number(account?.wallet_balance || 0) < total ? 'Insufficient Balance' : `Pay ${currency}${total.toLocaleString()} Now`}
                 </Button>
               </AccordionBody>
             </AccordionItem>
@@ -313,6 +436,55 @@ const PaymentOptions = ({
           By processing, You accept Abri <Link href="#" className="text-primary text-decoration-none border-bottom">Terms of Services</Link> and <Link href="#" className="text-primary text-decoration-none border-bottom">Policy</Link>
         </p>
       </div>
+      <Modal show={showTopUp} onHide={() => !isTopUpProcessing && setShowTopUp(false)} centered>
+        <Modal.Header closeButton={!isTopUpProcessing}>
+          <Modal.Title>Fund Your Wallet</Modal.Title>
+        </Modal.Header>
+        <Form onSubmit={handleTopUp}>
+          <Modal.Body className="p-4">
+            <p className="text-secondary small mb-4">Enter an amount to add to your wallet. You will be redirected to Paystack for secure payment.</p>
+            <Form.Group className="mb-3">
+              <Form.Label className="small fw-bold">Amount to Fund</Form.Label>
+              <InputGroup size="lg">
+                <InputGroup.Text className="bg-light">{currency}</InputGroup.Text>
+                <Form.Control
+                  type="number"
+                  placeholder="0.00"
+                  value={topUpAmount}
+                  onChange={(e) => setTopUpAmount(e.target.value)}
+                  min="100"
+                  required
+                  disabled={isTopUpProcessing}
+                />
+              </InputGroup>
+              <Form.Text className="text-muted">Minimum funding amount is {currency}100.00</Form.Text>
+            </Form.Group>
+
+            <div className="d-flex gap-2 mt-4">
+              {[500, 1000, 2000, 5000].map(amt => (
+                <Button
+                  key={amt}
+                  variant="outline-secondary"
+                  size="sm"
+                  className="flex-grow-1"
+                  onClick={() => setTopUpAmount(amt.toString())}
+                  disabled={isTopUpProcessing}
+                >
+                  +{amt}
+                </Button>
+              ))}
+            </div>
+          </Modal.Body>
+          <Modal.Footer className="border-0 p-4 pt-0">
+            <Button variant="white" onClick={() => setShowTopUp(false)} disabled={isTopUpProcessing}>
+              Cancel
+            </Button>
+            <Button variant="primary" type="submit" disabled={isTopUpProcessing || !topUpAmount}>
+              {isTopUpProcessing ? 'Processing...' : 'Proceed to Pay'}
+            </Button>
+          </Modal.Footer>
+        </Form>
+      </Modal>
     </Card>
   );
 };

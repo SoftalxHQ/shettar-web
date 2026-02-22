@@ -90,6 +90,7 @@ const BookingDetails = ({
                   hotel={hotel}
                   startDate={startDate}
                   endDate={endDate}
+                  roomsCount={roomsCount}
                 />
               </Col>
               <Col md={6} xl={12}>

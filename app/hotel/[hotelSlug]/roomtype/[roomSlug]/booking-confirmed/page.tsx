@@ -27,6 +27,7 @@ export default function BookingConfirmedPage() {
 
   const [roomType, setRoomType] = useState<any>(null);
   const [booking, setBooking] = useState<any>(null);
+  const [reservations, setReservations] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -92,12 +93,15 @@ export default function BookingConfirmedPage() {
           throw new Error('Failed to fetch booking details');
         }
 
-        const bookingData = await bookingResponse.json();
-        setBooking(bookingData);
+        const data = await bookingResponse.json();
 
-        // Fetch room type details if needed (data should already be in booking.room.room_type)
-        if (bookingData.room?.room_type) {
-          setRoomType(bookingData.room.room_type);
+        if (data.reservations && data.reservations.length > 0) {
+          const mainBooking = data.reservations[0];
+          setBooking(mainBooking);
+          setReservations(data.reservations);
+          setRoomType(mainBooking.room?.room_type);
+        } else {
+          throw new Error('No reservations found for this booking ID');
         }
       } catch (err) {
         console.error('Error fetching booking:', err);
@@ -164,7 +168,9 @@ export default function BookingConfirmedPage() {
   }
 
   const displayBookingId = booking.booking_id || bookingId;
-  const totalAmount = booking.total_amount || (roomType?.price * nights);
+  const totalAmount = reservations.reduce((sum, res) => sum + (Number(res.total_amount) || 0), 0);
+  const roomNumbers = reservations.map(res => res.room?.room_number).filter(Boolean).join(', ');
+  const bookingCodes = reservations.map(res => res.booking_id).filter(Boolean).join(', ');
 
   return (
     <>
@@ -265,8 +271,20 @@ export default function BookingConfirmedPage() {
                     </div>
                     <div className="d-flex justify-content-between align-items-center mb-2">
                       <span className="text-body-secondary fw-medium small">Number of Rooms</span>
-                      <span className="text-body fw-semibold small">×{booking.room ? 1 : 'N/A'}</span>
+                      <span className="text-body fw-semibold small">×{reservations.length}</span>
                     </div>
+                    {roomNumbers && (
+                      <div className="d-flex justify-content-between align-items-center mb-2">
+                        <span className="text-body-secondary fw-medium small">Room Number(s)</span>
+                        <span className="text-body fw-semibold small">{roomNumbers}</span>
+                      </div>
+                    )}
+                    {reservations.length > 1 && bookingCodes && (
+                      <div className="d-flex justify-content-between align-items-center mb-2">
+                        <span className="text-body-secondary fw-medium small">Booking Code(s)</span>
+                        <span className="text-body fw-semibold small font-monospace">{bookingCodes}</span>
+                      </div>
+                    )}
                     <div className="d-flex justify-content-between align-items-center mb-2">
                       <span className="text-body-secondary fw-medium small">Guests</span>
                       <span className="text-body fw-semibold small">{booking.guests || 0} Adults{booking.children > 0 ? `, ${booking.children} Children` : ''}</span>

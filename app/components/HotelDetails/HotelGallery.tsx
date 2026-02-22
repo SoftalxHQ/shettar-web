@@ -3,8 +3,8 @@
 import { useToggle } from '@/app/hooks';
 import { Alert, Button, Card, Col, Container, Dropdown, DropdownItem, DropdownMenu, DropdownToggle, Modal, ModalHeader, Row, Spinner } from 'react-bootstrap';
 import { BsExclamationOctagonFill, BsEyeFill, BsFullscreen, BsGeoAlt, BsPinMapFill, BsXLg } from 'react-icons/bs';
-import { FaFacebookSquare, FaShareAlt, FaTwitterSquare } from 'react-icons/fa';
-import { FaCopy, FaLinkedin } from 'react-icons/fa6';
+import { FaFacebookSquare, FaShareAlt } from 'react-icons/fa';
+import { FaCopy, FaLinkedin, FaXTwitter } from 'react-icons/fa6';
 import { useRouter } from 'next/navigation';
 import { useLayoutContext } from '@/app/states';
 import Link from 'next/link';
@@ -72,29 +72,30 @@ const HotelGallery = ({ hotel }: { hotel: any }) => {
                     </DropdownToggle>
                     <DropdownMenu className="dropdown-menu-end min-w-auto shadow rounded" aria-labelledby="dropdownShare">
                       <DropdownItem onClick={() => {
-                        const url = window.location.href;
-                        const text = `Check out ${hotel.name} on Abri!`;
+                        const url = `${window.location.origin}/hotel/${hotel.slug || hotel.id}`;
+                        const text = `Check out ${hotel.name} on Shettar!`;
                         window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, '_blank');
                       }}>
-                        <FaTwitterSquare className="me-2 text-info" />
-                        Twitter
+                        <FaXTwitter className="me-2" />
+                        X (Twitter)
                       </DropdownItem>
                       <DropdownItem onClick={() => {
-                        const url = window.location.href;
+                        const url = `${window.location.origin}/hotel/${hotel.slug || hotel.id}`;
                         window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank');
                       }}>
                         <FaFacebookSquare className="me-2 text-primary" />
                         Facebook
                       </DropdownItem>
                       <DropdownItem onClick={() => {
-                        const url = window.location.href;
+                        const url = `${window.location.origin}/hotel/${hotel.slug || hotel.id}`;
                         window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`, '_blank');
                       }}>
                         <FaLinkedin className="me-2 text-primary" />
                         LinkedIn
                       </DropdownItem>
                       <DropdownItem onClick={() => {
-                        navigator.clipboard.writeText(window.location.href);
+                        const url = `${window.location.origin}/hotel/${hotel.slug || hotel.id}`;
+                        navigator.clipboard.writeText(url);
                         toast.success('Link copied to clipboard!');
                       }}>
                         <FaCopy className="me-2" />

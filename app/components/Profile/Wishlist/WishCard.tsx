@@ -2,12 +2,14 @@
 
 import { Button, Card, CardBody, Col, Dropdown, DropdownItem, DropdownMenu, DropdownToggle, Image, Row } from 'react-bootstrap';
 import { BsGeoAlt } from 'react-icons/bs';
-import { FaCopy, FaFacebookSquare, FaHeart, FaLinkedin, FaShareAlt, FaStar, FaStarHalfAlt, FaTwitterSquare } from 'react-icons/fa';
+import { FaCopy, FaFacebookSquare, FaHeart, FaLinkedin, FaShareAlt, FaStar, FaStarHalfAlt } from 'react-icons/fa';
+import { FaXTwitter } from 'react-icons/fa6';
 import Link from 'next/link';
 import { type WishCardType } from '@/app/data/wishlist';
 import { currency } from '@/app/states';
 import Skeleton from '../../Skeleton';
 import { useState } from 'react';
+import { toast } from 'react-hot-toast';
 
 interface WishCardProps {
   wishCard: WishCardType & { id?: number; slug?: string };
@@ -76,20 +78,38 @@ const WishCard = ({ wishCard, onRemove }: WishCardProps) => {
                     <FaShareAlt size={10} />
                   </DropdownToggle>
                   <DropdownMenu align="end" className="min-w-auto shadow rounded border-0">
-                    <DropdownItem href="">
-                      <FaTwitterSquare className="me-2 text-primary" />
-                      Twitter
+                    <DropdownItem onClick={(e) => {
+                      e.preventDefault();
+                      const url = `${window.location.origin}/hotel/${wishCard.slug || wishCard.id}`;
+                      const text = `Check out ${name} on Shettar!`;
+                      window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, '_blank');
+                    }}>
+                      <FaXTwitter className="me-2" />
+                      X (Twitter)
                     </DropdownItem>
-                    <DropdownItem href="">
+                    <DropdownItem onClick={(e) => {
+                      e.preventDefault();
+                      const url = `${window.location.origin}/hotel/${wishCard.slug || wishCard.id}`;
+                      window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank');
+                    }}>
                       <FaFacebookSquare className="me-2 text-primary" />
                       Facebook
                     </DropdownItem>
-                    <DropdownItem href="">
+                    <DropdownItem onClick={(e) => {
+                      e.preventDefault();
+                      const url = `${window.location.origin}/hotel/${wishCard.slug || wishCard.id}`;
+                      window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`, '_blank');
+                    }}>
                       <FaLinkedin className="me-2 text-primary" />
                       LinkedIn
                     </DropdownItem>
-                    <DropdownItem href="">
-                      <FaCopy className="me-2 text-primary" />
+                    <DropdownItem onClick={(e) => {
+                      e.preventDefault();
+                      const url = `${window.location.origin}/hotel/${wishCard.slug || wishCard.id}`;
+                      navigator.clipboard.writeText(url);
+                      toast.success('Link copied to clipboard!');
+                    }}>
+                      <FaCopy className="me-2" />
                       Copy link
                     </DropdownItem>
                   </DropdownMenu>

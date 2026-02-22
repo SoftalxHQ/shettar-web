@@ -2,8 +2,13 @@
 
 import { Card, CardBody, CardHeader } from 'react-bootstrap';
 import { FaCheck } from 'react-icons/fa6';
+import { useLayoutContext } from '@/app/states';
 
 const LoginAdvantages = () => {
+  const { isAuthenticated } = useLayoutContext();
+
+  if (isAuthenticated) return null;
+
   return (
     <Card className="shadow">
       <CardHeader className="border-bottom bg-transparent">
