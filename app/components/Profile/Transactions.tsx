@@ -1,12 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Card, CardBody, CardHeader, Table, Badge } from 'react-bootstrap';
+import { Card, CardBody, CardHeader, Table, Badge, Button } from 'react-bootstrap';
+import { BsDownload } from 'react-icons/bs';
 import { currency } from '@/app/states';
 import Skeleton from '../Skeleton';
-import { getStoredToken } from '@/app/helpers/auth';
+import { getStoredToken, getStoredUser } from '@/app/helpers/auth';
 import { useApi } from '@/app/hooks/useApi';
 import Pagination from '../Pagination';
+import toast from 'react-hot-toast';
 
 interface Transaction {
   id: number;
@@ -24,7 +26,44 @@ const Transactions = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState<any>(null);
+  const [isExporting, setIsExporting] = useState(false);
   const { apiFetch } = useApi();
+
+  const handleExport = async () => {
+    setIsExporting(true);
+    const toastId = toast.loading('Exporting transactions...');
+    try {
+      const token = getStoredToken();
+      const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
+      const response = await fetch(`${API_URL}/api/v1/export_wallet_transactions`, {
+        headers: {
+          'Authorization': token ? `Bearer ${token}` : ''
+        }
+      });
+
+      if (!response.ok) throw new Error('Export failed');
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const user = getStoredUser();
+      const firstName = user?.first_name || 'user';
+      // Format to mimic ruby Time.current.strftime('%Y-%m-%d-%H%M%S') roughly, or just simple datetime
+      const dateStr = new Date().toISOString().replace(/T/, '-').replace(/:/g, '').split('.')[0];
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `transaction-${firstName.toLowerCase()}-${dateStr}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      a.remove();
+      toast.success('Export completed successfully!', { id: toastId });
+    } catch (error) {
+      console.error('Error exporting transactions:', error);
+      toast.error('Failed to export transactions.', { id: toastId });
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   const fetchTransactions = async (pageNumber: number) => {
     setLoading(true);
@@ -77,9 +116,23 @@ const Transactions = () => {
   };
 
   return (
-    <Card className="border">
-      <CardHeader className="border-bottom">
+    <Card className="border shadow-sm">
+      <CardHeader className="border-bottom d-flex justify-content-between align-items-center">
         <h4 className="card-header-title mb-0">Transaction History</h4>
+        <Button
+          variant="primary"
+          size="sm"
+          className="mb-0 d-flex align-items-center"
+          onClick={handleExport}
+          disabled={isExporting || transactions.length === 0}
+        >
+          {isExporting ? (
+            <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" />
+          ) : (
+            <BsDownload className="me-2" />
+          )}
+          {isExporting ? 'Exporting...' : 'Export Excel'}
+        </Button>
       </CardHeader>
 
       <CardBody className="p-0">
