@@ -65,6 +65,7 @@ const PaymentOptions = ({
   const { apiFetch } = useApi();
 
   const isEmergencyMissing = isAuthenticated && (!account?.emer_first_name || !account?.emer_phone_number);
+  const isEmailUnverified = isAuthenticated && account && !account.email_verified;
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -386,7 +387,9 @@ const PaymentOptions = ({
                       <h3 className="mb-0 text-primary fw-bold">{currency}{account?.wallet_balance?.toLocaleString() ?? '0.00'}</h3>
                     </div>
                     {Number(account?.wallet_balance || 0) < total && (
-                      <Button variant="primary" size="sm" className="px-3" onClick={() => setShowTopUp(true)}>Add Funds</Button>
+                      <Button variant="primary" size="sm" className="px-3" onClick={() => setShowTopUp(true)}>
+                        Add Funds
+                      </Button>
                     )}
                   </div>
                 </div>
@@ -395,9 +398,9 @@ const PaymentOptions = ({
                   variant="primary"
                   className="w-100 mb-0"
                   onClick={handleSubmit(onSubmit)}
-                  disabled={isSubmitting || isEmergencyMissing || Number(account?.wallet_balance || 0) < total}
+                  disabled={isSubmitting || isEmergencyMissing || isEmailUnverified || Number(account?.wallet_balance || 0) < total}
                 >
-                  {isSubmitting ? 'Processing...' : isEmergencyMissing ? 'Update Profile to Book' : Number(account?.wallet_balance || 0) < total ? 'Insufficient Balance' : `Pay ${currency}${total.toLocaleString()} Now`}
+                  {isSubmitting ? 'Processing...' : isEmailUnverified ? 'Verify Email to Book' : isEmergencyMissing ? 'Update Profile to Book' : Number(account?.wallet_balance || 0) < total ? 'Insufficient Balance' : `Pay ${currency}${total.toLocaleString()} Now`}
                 </Button>
               </AccordionBody>
             </AccordionItem>
@@ -417,9 +420,9 @@ const PaymentOptions = ({
                   variant="primary"
                   className="w-100 mb-0"
                   onClick={handleSubmit(onSubmit)}
-                  disabled={isSubmitting || isEmergencyMissing}
+                  disabled={isSubmitting || isEmergencyMissing || isEmailUnverified}
                 >
-                  {isSubmitting ? 'Processing...' : isEmergencyMissing ? 'Update Profile to Book' : 'Proceed to Payment'}
+                  {isSubmitting ? 'Processing...' : isEmailUnverified ? 'Verify Email to Book' : isEmergencyMissing ? 'Update Profile to Book' : 'Proceed to Payment'}
                 </Button>
               </div>
             </AccordionBody>
@@ -433,7 +436,7 @@ const PaymentOptions = ({
           </p>
         )}
         <p className="mb-0 opacity-50 small">
-          By processing, You accept Abri <Link href="#" className="text-primary text-decoration-none border-bottom">Terms of Services</Link> and <Link href="#" className="text-primary text-decoration-none border-bottom">Policy</Link>
+          By processing, You accept Shettar <Link href="#" className="text-primary text-decoration-none border-bottom">Terms of Services</Link> and <Link href="#" className="text-primary text-decoration-none border-bottom">Policy</Link>
         </p>
       </div>
       <Modal show={showTopUp} onHide={() => !isTopUpProcessing && setShowTopUp(false)} centered>

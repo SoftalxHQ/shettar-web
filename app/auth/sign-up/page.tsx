@@ -12,6 +12,7 @@ import { BsGoogle, BsArrowLeft, BsArrowRight, BsCheckCircleFill } from 'react-ic
 import Image from 'next/image';
 import toast from 'react-hot-toast';
 import { signUp } from '@/app/helpers/auth';
+import { useLayoutContext } from '@/app/states';
 
 type FormValues = {
   firstName: string;
@@ -23,6 +24,7 @@ type FormValues = {
 
 const SignUp = () => {
   const router = useRouter();
+  const { refreshAuth, refreshAccount } = useLayoutContext();
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
@@ -72,7 +74,9 @@ const SignUp = () => {
 
       if (result.ok) {
         toast.success('Account created! Please check your email for a verification code.', { id: toastId, duration: 4000 });
-        setTimeout(() => router.push(`/auth/verify-email?email=${encodeURIComponent(values.email)}`), 1500);
+        await refreshAuth();
+        await refreshAccount();
+        setTimeout(() => router.push('/'), 1500);
       } else {
         const detail = result.errors?.length
           ? result.errors.join(' • ')
@@ -202,7 +206,7 @@ const SignUp = () => {
                         <Button
                           variant="light"
                           type="button"
-                          className="w-100 border shadow-sm items-center d-flex justify-content-center"
+                          className="border shadow-sm items-center d-flex justify-content-center px-4 flex-shrink-0"
                           onClick={prevStep}
                           disabled={isLoading}
                         >
@@ -211,7 +215,7 @@ const SignUp = () => {
                         <Button
                           variant="primary"
                           type="submit"
-                          className="w-100 shadow-sm"
+                          className="w-100 shadow-sm flex-grow-1"
                           disabled={isLoading}
                         >
                           {isLoading ? (

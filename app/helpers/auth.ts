@@ -174,7 +174,25 @@ export async function signUp(payload: SignUpPayload): Promise<AuthResult> {
     const data = await res.json();
 
     if (res.ok && data?.status?.code === 200) {
-      return { ok: true, message: data.status.message ?? 'Account created successfully.' };
+      const authHeader = res.headers.get('Authorization');
+      const token = authHeader?.replace('Bearer ', '') ?? '';
+
+      const raw = data.status.data;
+      const user: StoredUser = {
+        id: raw.id,
+        email: raw.email,
+        first_name: raw.first_name,
+        last_name: raw.last_name,
+        phone_number: raw.phone_number ?? null,
+        address: raw.address ?? null,
+        zip_code: raw.zip_code ?? null,
+        avatar_url: raw.avatar_url ?? null,
+      };
+
+      if (token && user.id) {
+        saveAuthSession(user, token);
+      }
+      return { ok: true, message: data.status.message ?? 'Account created successfully.', user, token };
     }
 
     // Error shape from Accounts::RegistrationsController: { errors: [...] }

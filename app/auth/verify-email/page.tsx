@@ -7,7 +7,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import { BsArrowLeft, BsCheckCircleFill, BsEnvelopeCheck } from 'react-icons/bs';
 import toast from 'react-hot-toast';
-import { verifyEmail, resendVerification } from '@/app/helpers/auth';
+import { verifyEmail, resendVerification, getStoredToken } from '@/app/helpers/auth';
 
 // ─── Resend cooldown ──────────────────────────────────────────────────────────
 
@@ -82,8 +82,19 @@ function VerifyEmailContent() {
     try {
       const result = await verifyEmail(email, fullCode);
       if (result.ok) {
-        toast.success('Email verified! You can now sign in. 🎉', { id: toastId, duration: 4000 });
-        setTimeout(() => router.push('/auth/sign-in'), 1500);
+        toast.success('Email verifiedsuccessfully! 🎉', { id: toastId, duration: 4000 });
+
+        // Since they could be verifying while logged in, refresh account data
+        const token = getStoredToken();
+        if (token) {
+          // You might need to add `useLayoutContext` if you want to cleanly refresh the global UI state or 
+          // they can just reload/redirect. Redirecting to home is easiest.
+          setTimeout(() => {
+            window.location.href = '/';
+          }, 1500);
+        } else {
+          setTimeout(() => router.push('/auth/sign-in'), 1500);
+        }
       } else {
         toast.error(result.message, { id: toastId });
         setCode(['', '', '', '', '', '']);

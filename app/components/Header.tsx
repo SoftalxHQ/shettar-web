@@ -5,6 +5,9 @@ import { useScrollEvent, useToggle } from '@/app/hooks';
 import { useLayoutContext } from '@/app/states';
 import clsx from 'clsx';
 import { useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import toast from 'react-hot-toast';
+import { resendVerification } from '@/app/helpers/auth';
 import {
   Button,
   Card,
@@ -64,6 +67,27 @@ export default function Header() {
   const { scrollY } = useScrollEvent();
   const headerRef = useRef<HTMLElement>(null);
   const [headerHeight, setHeaderHeight] = useState(0);
+  const router = useRouter();
+  const [isSendingCode, setIsSendingCode] = useState(false);
+
+  const handleVerifyClick = async () => {
+    if (!account?.email) return;
+    setIsSendingCode(true);
+    const toastId = toast.loading('Sending verification code...');
+    try {
+      const result = await resendVerification(account.email);
+      if (result.ok) {
+        toast.success('Verification code sent! Please check your email.', { id: toastId });
+        router.push(`/auth/verify-email?email=${encodeURIComponent(account.email)}`);
+      } else {
+        toast.error(result.message || 'Failed to send verification code.', { id: toastId });
+      }
+    } catch (error) {
+      toast.error('An error occurred while sending the code.', { id: toastId });
+    } finally {
+      setIsSendingCode(false);
+    }
+  };
 
   useEffect(() => {
     if (headerRef.current) {
@@ -77,6 +101,19 @@ export default function Header() {
 
   return (
     <div style={{ minHeight: scrollY >= 400 ? headerHeight : 'auto' }}>
+      {isAuthenticated && account && !account.email_verified && (
+        <div className="bg-warning bg-opacity-10 border-bottom border-warning text-dark text-center py-2 px-3 small">
+          <BsInfoCircle className="me-2 text-warning mb-1" />
+          Your email address has not been verified.{' '}
+          <button
+            onClick={handleVerifyClick}
+            disabled={isSendingCode}
+            className="btn btn-link p-0 text-primary fw-bold text-decoration-underline ms-1 mb-1 align-baseline"
+          >
+            {isSendingCode ? 'Sending...' : 'Verify Now'}
+          </button>
+        </div>
+      )}
       <header
         ref={headerRef}
         className={clsx('navbar-light header-sticky bg-mode border-bottom mb-3', { 'header-sticky-on': scrollY >= 400 })}
