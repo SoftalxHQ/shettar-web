@@ -1,12 +1,11 @@
 'use client';
 
 import { SelectFormInput, TextAreaFormInput, TextFormInput } from '@/app/components';
-import { Button, Card, CardBody, CardHeader, Col } from 'react-bootstrap';
+import { Button, Card, CardBody, CardHeader, Col, Image } from 'react-bootstrap';
 import * as yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { useForm, Controller } from 'react-hook-form';
 import { useEffect, useRef, useState, useMemo } from 'react';
-import Image from 'next/image';
 import toast from 'react-hot-toast';
 import { useLayoutContext } from '@/app/states';
 import { saveAccountProfile } from '@/app/hooks/useAccountProfile';
@@ -166,7 +165,6 @@ const PersonalInformation = () => {
                     width={80}
                     height={80}
                     style={{ objectFit: 'cover' }}
-                    unoptimized={!!avatarPreview}
                   />
                 ) : (
                   <div

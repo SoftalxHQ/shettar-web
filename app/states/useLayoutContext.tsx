@@ -84,6 +84,7 @@ export const LayoutProvider = ({ children }: { children: ReactNode }) => {
       });
       const data = await res.json().catch(() => ({}));
       if (res.ok && data?.status?.code === 200) {
+        localStorage.setItem('user', JSON.stringify(data.data));
         updateSettings({ account: data.data, isAccountLoading: false });
       } else if (res.status === 401) {
         // Token expired or invalid - force logout to avoid loop

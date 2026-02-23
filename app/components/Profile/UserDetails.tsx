@@ -1,9 +1,8 @@
 'use client';
 
-import { Card, CardBody, CardHeader, Col, Row } from 'react-bootstrap';
+import { Card, CardBody, CardHeader, Col, Row, Image } from 'react-bootstrap';
 import { BsPencilSquare, BsEnvelope, BsPhone, BsCalendarDate, BsGenderAmbiguous, BsGeoAlt, BsPersonBadge } from 'react-icons/bs';
 import Link from 'next/link';
-import Image from 'next/image';
 import { useLayoutContext } from '@/app/states';
 
 const Field = ({ icon: Icon, label, value }: { icon: any; label: string; value?: string | null }) => (
