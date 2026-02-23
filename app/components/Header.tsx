@@ -79,7 +79,7 @@ export default function Header() {
     <div style={{ minHeight: scrollY >= 400 ? headerHeight : 'auto' }}>
       <header
         ref={headerRef}
-        className={clsx('navbar-light header-sticky bg-mode border-bottom', { 'header-sticky-on': scrollY >= 400 })}
+        className={clsx('navbar-light header-sticky bg-mode border-bottom mb-3', { 'header-sticky-on': scrollY >= 400 })}
       >
         <Navbar expand="lg">
           <Container>

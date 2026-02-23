@@ -44,7 +44,7 @@ export const LayoutProvider = ({ children }: { children: ReactNode }) => {
     hotelLocation: null,
     isAuthenticated: false,
     account: null,
-    isAccountLoading: false,
+    isAccountLoading: true,
   });
 
   const updateSettings = useCallback((newSettings: Partial<LayoutState>) => {
@@ -71,7 +71,10 @@ export const LayoutProvider = ({ children }: { children: ReactNode }) => {
 
   const refreshAccount = useCallback(async () => {
     const token = localStorage.getItem('token');
-    if (!token) return;
+    if (!token) {
+      updateSettings({ isAccountLoading: false });
+      return;
+    }
 
     updateSettings({ isAccountLoading: true });
     try {

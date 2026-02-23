@@ -1,7 +1,7 @@
 'use client';
 
 import { useToggle } from '@/app/hooks';
-import { type ReactNode, useEffect } from 'react';
+import { type ReactNode, useEffect, useState } from 'react';
 import { Button, Col, Container, Offcanvas, OffcanvasBody, OffcanvasHeader, Row } from 'react-bootstrap';
 import { FaSlidersH } from 'react-icons/fa';
 import { Header } from '@/app/components';
@@ -13,16 +13,18 @@ import { useLayoutContext } from '@/app/states';
 const UserLayout = ({ children }: { children: ReactNode }) => {
   const { isOpen, toggle } = useToggle();
   const { isAuthenticated, isAccountLoading } = useLayoutContext();
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     document.body.classList.add('dashboard');
     return () => {
       document.body.classList.remove('dashboard');
     };
   }, []);
 
-  // Show nothing while checking auth to prevent layout shift
-  if (isAccountLoading) {
+  // Wait for client hydration to finish before evaluating client-side auth state
+  if (!mounted || isAccountLoading) {
     return null;
   }
 

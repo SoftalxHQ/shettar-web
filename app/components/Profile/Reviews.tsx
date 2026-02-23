@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Card, CardBody, CardHeader, Row, Col, Image, Button, Form } from 'react-bootstrap';
+import { Card, CardBody, CardHeader, Row, Col, Image, Button, Form, Modal } from 'react-bootstrap';
 import { BsStarFill, BsStarHalf, BsStar, BsTrash, BsPencilSquare } from 'react-icons/bs';
 import { getStoredToken } from '@/app/helpers/auth';
 import { useApi } from '@/app/hooks/useApi';
@@ -36,6 +36,9 @@ const Reviews = () => {
   const [editingReviewId, setEditingReviewId] = useState<number | null>(null);
   const [editForm, setEditForm] = useState({ rating: 0, content: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [reviewToDeleteId, setReviewToDeleteId] = useState<number | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const { apiFetch } = useApi();
 
   const fetchReviews = async () => {
@@ -62,13 +65,19 @@ const Reviews = () => {
     fetchReviews();
   }, []);
 
-  const handleDelete = async (id: number) => {
-    if (!window.confirm('Are you sure you want to delete this review?')) return;
+  const handlePreDelete = (id: number) => {
+    setReviewToDeleteId(id);
+    setShowDeleteModal(true);
+  };
 
+  const confirmDelete = async () => {
+    if (!reviewToDeleteId) return;
+
+    setIsDeleting(true);
     try {
       const token = getStoredToken();
       const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
-      const response = await apiFetch(`${API_URL}/api/v1/reviews/${id}`, {
+      const response = await apiFetch(`${API_URL}/api/v1/reviews/${reviewToDeleteId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': token ? `Bearer ${token}` : '',
@@ -77,14 +86,18 @@ const Reviews = () => {
       });
 
       if (response.ok) {
-        setReviews((prev: any[]) => prev.filter((r) => r.id !== id));
-        toast.success('Review deleted');
+        setReviews((prev: any[]) => prev.filter((r) => r.id !== reviewToDeleteId));
+        toast.success('Review deleted successfully');
+        setShowDeleteModal(false);
       } else {
         toast.error('Failed to delete review');
       }
     } catch (error) {
       console.error('Error deleting review:', error);
       toast.error('An error occurred');
+    } finally {
+      setIsDeleting(false);
+      setReviewToDeleteId(null);
     }
   };
 
@@ -203,7 +216,7 @@ const Reviews = () => {
                         variant="light"
                         size="sm"
                         className="btn-round mb-0 text-danger"
-                        onClick={() => handleDelete(review.id)}
+                        onClick={() => handlePreDelete(review.id)}
                       >
                         <BsTrash />
                       </Button>
@@ -268,6 +281,29 @@ const Reviews = () => {
           ))
         )}
       </CardBody>
+
+      {/* Confirmation Modal */}
+      <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered>
+        <Modal.Header closeButton className="border-0 pb-0">
+        </Modal.Header>
+        <Modal.Body className="text-center pb-4 px-4">
+          <div className="bg-danger bg-opacity-10 text-danger rounded-circle mx-auto d-flex align-items-center justify-content-center mb-3" style={{ width: '64px', height: '64px' }}>
+            <BsTrash className="fs-3" />
+          </div>
+          <h4 className="mb-2">Delete this review?</h4>
+          <p className="text-secondary mb-0">
+            Are you sure you want to permanently delete this review? This action cannot be undone.
+          </p>
+        </Modal.Body>
+        <Modal.Footer className="border-0 pt-0 justify-content-center pb-4">
+          <Button variant="light" onClick={() => setShowDeleteModal(false)} disabled={isDeleting}>
+            Keep Review
+          </Button>
+          <Button variant="danger" onClick={confirmDelete} disabled={isDeleting}>
+            {isDeleting ? 'Deleting...' : 'Yes, delete'}
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </Card>
   );
 };
