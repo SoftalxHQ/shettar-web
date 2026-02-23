@@ -1,7 +1,7 @@
 'use client';
 
 import { SelectFormInput, TextAreaFormInput, TextFormInput } from '@/app/components';
-import { Button, Card, CardBody, CardHeader, Col, Image } from 'react-bootstrap';
+import { Button, Card, CardBody, CardHeader, Col, Image, Modal } from 'react-bootstrap';
 import * as yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { useForm, Controller } from 'react-hook-form';

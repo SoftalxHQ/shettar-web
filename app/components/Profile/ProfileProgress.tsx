@@ -17,7 +17,7 @@ const ProfileProgress = () => {
 
   const checks: CheckItem[] = [
     { label: 'Verified Email', done: !!profile?.email_verified, href: '/user/settings' },
-    { label: 'Mobile Number', done: !!profile?.phone_number, href: '/user/settings' },
+    { label: 'Verified Mobile', done: !!profile?.phone_verified, href: '/user/profile' },
     { label: 'Profile Photo', done: !!profile?.avatar_url, href: '/user/settings' },
     { label: 'Date of Birth', done: !!profile?.date_of_birth, href: '/user/settings' },
     { label: 'Gender', done: !!profile?.gender, href: '/user/settings' },

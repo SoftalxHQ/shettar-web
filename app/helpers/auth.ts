@@ -25,6 +25,7 @@ export interface StoredUser {
   first_name: string;
   last_name: string;
   phone_number?: string | null;
+  phone_verified?: boolean;
   address?: string | null;
   zip_code?: string | null;
   avatar_url?: string | null;
@@ -130,6 +131,7 @@ export async function signIn(payload: SignInPayload): Promise<AuthResult> {
         first_name: raw.first_name,
         last_name: raw.last_name,
         phone_number: raw.phone_number ?? null,
+        phone_verified: raw.phone_verified ?? false,
         address: raw.address ?? null,
         zip_code: raw.zip_code ?? null,
         avatar_url: raw.avatar_url ?? null,
@@ -184,6 +186,7 @@ export async function signUp(payload: SignUpPayload): Promise<AuthResult> {
         first_name: raw.first_name,
         last_name: raw.last_name,
         phone_number: raw.phone_number ?? null,
+        phone_verified: raw.phone_verified ?? false,
         address: raw.address ?? null,
         zip_code: raw.zip_code ?? null,
         avatar_url: raw.avatar_url ?? null,
@@ -319,6 +322,67 @@ export async function resendVerification(email: string): Promise<AuthResult> {
     return {
       ok: false,
       message: data?.error?.[0]?.message ?? data?.message ?? 'Failed to resend code.',
+    };
+  } catch {
+    return { ok: false, message: 'Unable to connect to server. Please try again.' };
+  }
+}
+
+/**
+ * POST /accounts/verify_phone
+ * Verifies the 6-digit code the user received via SMS.
+ */
+export async function verifyPhone(code: string): Promise<AuthResult> {
+  const token = getStoredToken();
+  try {
+    const res = await fetch(`${API_URL}/accounts/verify_phone`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+      },
+      body: JSON.stringify({ account: { code } }),
+    });
+
+    const data = await res.json();
+
+    if (res.ok) {
+      return { ok: true, message: data.message ?? 'Phone number verified successfully.' };
+    }
+
+    return {
+      ok: false,
+      message: data?.error?.[0]?.message ?? data?.message ?? 'Invalid or expired code.',
+    };
+  } catch {
+    return { ok: false, message: 'Unable to connect to server. Please try again.' };
+  }
+}
+
+/**
+ * POST /accounts/resend_phone_verification
+ * Sends a 6-digit verification code to the account's phone number.
+ */
+export async function resendPhoneVerification(): Promise<AuthResult> {
+  const token = getStoredToken();
+  try {
+    const res = await fetch(`${API_URL}/accounts/resend_phone_verification`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+      },
+    });
+
+    const data = await res.json();
+
+    if (res.ok) {
+      return { ok: true, message: data.message ?? 'Verification code sent.' };
+    }
+
+    return {
+      ok: false,
+      message: data?.error?.[0]?.message ?? data?.message ?? 'Failed to send code.',
     };
   } catch {
     return { ok: false, message: 'Unable to connect to server. Please try again.' };

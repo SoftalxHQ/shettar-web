@@ -29,6 +29,7 @@ export interface AccountProfile {
   wallet_balance?: number | string | null;
   account_unique_id?: string | null;
   email_verified?: boolean;
+  phone_verified?: boolean;
   avatar_url?: string | null;
   emer_first_name?: string | null;
   emer_last_name?: string | null;

@@ -4,6 +4,10 @@ import { Card, CardBody, CardHeader, Col, Row, Image } from 'react-bootstrap';
 import { BsPencilSquare, BsEnvelope, BsPhone, BsCalendarDate, BsGenderAmbiguous, BsGeoAlt, BsPersonBadge } from 'react-icons/bs';
 import Link from 'next/link';
 import { useLayoutContext } from '@/app/states';
+import { useState, useEffect } from 'react';
+import toast from 'react-hot-toast';
+import { resendPhoneVerification, verifyPhone } from '@/app/helpers/auth';
+import { Button, Modal, Form } from 'react-bootstrap';
 
 const Field = ({ icon: Icon, label, value }: { icon: any; label: string; value?: string | null }) => (
   <Col md={6}>
@@ -33,7 +37,46 @@ const UserDetailsSkeleton = () => (
 );
 
 const UserDetails = () => {
-  const { account: profile, isAccountLoading: isLoading } = useLayoutContext();
+  const { account: profile, isAccountLoading: isLoading, refreshAccount } = useLayoutContext();
+
+  const [isSendingCode, setIsSendingCode] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [showVerifyModal, setShowVerifyModal] = useState(false);
+  const [verificationCode, setVerificationCode] = useState('');
+
+  const handleSendPhoneCode = async () => {
+    setIsSendingCode(true);
+    const toastId = toast.loading('Sending verification code...');
+    try {
+      const result = await resendPhoneVerification();
+      if (result.ok) {
+        toast.success(result.message, { id: toastId });
+        setShowVerifyModal(true);
+      } else {
+        toast.error(result.message, { id: toastId });
+      }
+    } finally {
+      setIsSendingCode(false);
+    }
+  };
+
+  const handleVerifyPhoneCode = async () => {
+    if (!verificationCode) return toast.error('Please enter the code');
+    setIsVerifying(true);
+    const toastId = toast.loading('Verifying code...');
+    try {
+      const result = await verifyPhone(verificationCode);
+      if (result.ok) {
+        toast.success(result.message, { id: toastId });
+        setShowVerifyModal(false);
+        refreshAccount();
+      } else {
+        toast.error(result.message, { id: toastId });
+      }
+    } finally {
+      setIsVerifying(false);
+    }
+  };
 
   if (isLoading) {
     return <UserDetailsSkeleton />;
@@ -58,9 +101,6 @@ const UserDetails = () => {
     <Card className="border">
       <CardHeader className="border-bottom d-flex justify-content-between align-items-center">
         <h4 className="card-header-title mb-0">Personal Information</h4>
-        <Link href="/user/settings" className="btn btn-sm btn-primary-soft">
-          <BsPencilSquare className="me-1" /> Edit
-        </Link>
       </CardHeader>
 
       <CardBody>
@@ -95,7 +135,45 @@ const UserDetails = () => {
 
         <Row className="g-4">
           <Field icon={BsEnvelope} label="Email address" value={profile?.email} />
-          <Field icon={BsPhone} label="Mobile number" value={profile?.phone_number} />
+
+          <Col md={6}>
+            <div className="d-flex align-items-center mb-3">
+              <div className="icon-sm bg-light text-primary rounded-circle me-3 flex-centered">
+                <BsPhone size={14} />
+              </div>
+              <div className="flex-grow-1">
+                <p className="small mb-0 text-secondary">Mobile number</p>
+                <h6 className="mb-0">{profile?.phone_number || <span className="text-muted fst-italic">Not set</span>}</h6>
+
+                {profile?.phone_number && (
+                  <div className="mt-1">
+                    {profile?.phone_verified ? (
+                      <span className="badge bg-success bg-opacity-10 text-success">
+                        ✓ Verified Profile
+                      </span>
+                    ) : (
+                      <div className="d-flex align-items-center gap-2">
+                        <span className="badge bg-warning bg-opacity-10 text-warning">
+                          ⚠ Unverified phone
+                        </span>
+                        <Button
+                          variant="link"
+                          size="sm"
+                          className="p-0 text-decoration-underline text-primary"
+                          style={{ fontSize: '0.8rem' }}
+                          onClick={handleSendPhoneCode}
+                          disabled={isSendingCode}
+                        >
+                          {isSendingCode ? 'Sending...' : 'Verify Now'}
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          </Col>
+
           <Field icon={BsCalendarDate} label="Date of Birth" value={dob} />
           <Field icon={BsGenderAmbiguous} label="Gender" value={profile?.gender} />
           <Field icon={BsGeoAlt} label="Address" value={profile?.address} />
@@ -120,7 +198,52 @@ const UserDetails = () => {
           </div>
         )}
       </CardBody>
-    </Card>
+
+      {/* Phone Verification Modal */}
+      <Modal show={showVerifyModal} onHide={() => setShowVerifyModal(false)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Verify Phone Number</Modal.Title>
+        </Modal.Header>
+        <Modal.Body className="p-4">
+          <p className="text-secondary mb-4">
+            We sent a 6-digit verification code to your phone number <strong>{profile?.phone_number}</strong>.
+            Please enter it below to verify your phone number.
+          </p>
+          <div className="mb-3">
+            <label className="form-label">Verification Code</label>
+            <Form.Control
+              type="text"
+              size="lg"
+              placeholder="e.g. 123456"
+              maxLength={6}
+              value={verificationCode}
+              onChange={(e) => setVerificationCode(e.target.value)}
+            />
+          </div>
+          <Button
+            variant="primary"
+            className="w-100"
+            size="lg"
+            onClick={handleVerifyPhoneCode}
+            disabled={isVerifying || verificationCode.length < 6}
+          >
+            {isVerifying ? 'Verifying...' : 'Verify Phone'}
+          </Button>
+          <div className="text-center mt-3">
+            <Button
+              variant="link"
+              size="sm"
+              className="p-0 text-decoration-underline text-secondary"
+              onClick={handleSendPhoneCode}
+              disabled={isSendingCode}
+            >
+              {isSendingCode ? 'Sending...' : "Didn't receive code? Resend"}
+            </Button>
+          </div>
+        </Modal.Body>
+      </Modal>
+
+    </Card >
   );
 };
 
