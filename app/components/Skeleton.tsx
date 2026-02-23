@@ -8,9 +8,10 @@ interface SkeletonProps {
   width?: string | number;
   height?: string | number;
   variant?: 'text' | 'rect' | 'circle';
+  text?: string;
 }
 
-const Skeleton: React.FC<SkeletonProps> = ({ className, width, height, variant = 'rect' }) => {
+const Skeleton: React.FC<SkeletonProps> = ({ className, width, height, variant = 'rect', text }) => {
   const style = {
     width: width || '100%',
     height: height || '1rem',
@@ -19,12 +20,17 @@ const Skeleton: React.FC<SkeletonProps> = ({ className, width, height, variant =
   return (
     <div
       className={clsx(
-        'skeleton-pulse bg-gray-200 dark:bg-gray-700',
+        'skeleton-pulse bg-gray-200 dark:bg-gray-700 d-flex align-items-center justify-content-center overflow-hidden',
         variant === 'circle' ? 'rounded-circle' : 'rounded-2',
         className
       )}
       style={style}
     >
+      {text && (
+        <span className="fw-bold mb-0" style={{ opacity: 0.2, userSelect: 'none', letterSpacing: '1px', whiteSpace: 'nowrap', fontSize: '1.5rem', lineHeight: 1.2 }}>
+          {text}
+        </span>
+      )}
       <style jsx>{`
         .skeleton-pulse {
           background-size: 200% 100%;

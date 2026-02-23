@@ -62,7 +62,7 @@ const SkeletonImage: React.FC<SkeletonImageProps> = ({ src, alt, className, cont
       {/* Skeleton overlay */}
       {(!isLoaded && !hasError) && (
         <div className="position-absolute top-0 start-0 w-100 h-100" style={{ zIndex: 1 }}>
-          <Skeleton height="100%" width="100%" />
+          <Skeleton height="100%" width="100%" text="Shettar" />
         </div>
       )}
 
