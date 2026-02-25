@@ -31,7 +31,7 @@ const RoomSelection = ({ room, hotel }: { room: any, hotel: any }) => {
 
                   {room.other_room_types && room.other_room_types.length > 0 && (
                     <div className="mt-5">
-                      <h4 className="mb-4">Other Available Rooms</h4>
+                      <h4 className="mb-4">Explore Other Rooms</h4>
                       <div className="vstack gap-4">
                         {room.other_room_types.map((otherRoom: any, idx: number) => (
                           <RoomCard
