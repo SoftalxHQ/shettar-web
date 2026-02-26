@@ -281,7 +281,7 @@ const PaymentOptions = ({
         const generateReference = () => {
           const timestamp = Date.now().toString(36).toUpperCase(); // Base36 encoded timestamp
           const random = Math.random().toString(36).substring(2, 10).toUpperCase(); // Random string
-          return `STR${timestamp}${random}`;
+          return `STR${random}`;
         };
         const customReference = generateReference();
 
