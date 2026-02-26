@@ -277,11 +277,11 @@ const PaymentOptions = ({
         const user = userJson ? JSON.parse(userJson) : null;
         const email = user?.email || data.email_address || 'guest@abri.com';
 
-        // Generate custom Paystack reference: BKN{timestamp}{random}
+        // Generate custom Paystack reference: STR{TIMESTAMP}{RANDOM}
         const generateReference = () => {
-          const timestamp = Date.now().toString(36); // Base36 encoded timestamp
-          const random = Math.random().toString(36).substring(2, 10); // Random string
-          return `BKN${timestamp}${random}`;
+          const timestamp = Date.now().toString(36).toUpperCase(); // Base36 encoded timestamp
+          const random = Math.random().toString(36).substring(2, 10).toUpperCase(); // Random string
+          return `STR${timestamp}${random}`;
         };
         const customReference = generateReference();
 
