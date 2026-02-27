@@ -14,7 +14,7 @@ import 'tiny-slider/dist/tiny-slider.css';
 
 import { HotelsGridType } from '@/app/types/hotel';
 
-const HotelGridCard = ({ id, slug, feature, images, name, price, rating, sale }: HotelsGridType) => {
+const HotelGridCard = ({ id, slug, feature, images, name, price, rating, sale, is_favorite }: HotelsGridType) => {
   const { dir, isAuthenticated } = useLayoutContext();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -51,7 +51,7 @@ const HotelGridCard = ({ id, slug, feature, images, name, price, rating, sale }:
 
         {/* Heart icon on top right of image */}
         <div className="position-absolute top-0 end-0 z-index-2 m-3">
-          <FavoriteButton businessId={Number(id)} />
+          <FavoriteButton businessId={Number(id)} initialIsWishlisted={is_favorite} />
         </div>
 
         <div className="tiny-slider arrow-round arrow-xs arrow-dark rounded-2 overflow-hidden" style={{ height: '200px' }}>

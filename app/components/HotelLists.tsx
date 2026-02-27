@@ -12,6 +12,7 @@ import { useSearchParams } from 'next/navigation';
 import HotelListCard from './HotelListCard';
 import HotelListFilter from './HotelListFilter';
 import { HotelListSkeleton } from './index';
+import { getStoredToken } from '@/app/helpers/auth';
 
 // Types
 import { Hotel } from '@/app/types/hotel';
@@ -40,7 +41,12 @@ const HotelLists = () => {
         }
       });
 
-      const response = await fetch(`${API_URL}/api/v1/businesses?${query.toString()}`);
+      const token = getStoredToken();
+      const response = await fetch(`${API_URL}/api/v1/businesses?${query.toString()}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
 
       if (!response.ok) {
         throw new Error('Failed to fetch hotels');
@@ -71,7 +77,8 @@ const HotelLists = () => {
           feature: features.length > 0 ? features : ['Standard Room'],
           features: features.length > 0 ? features : ['Standard Room'],
           sale: sale,
-          schemes: ['Free Cancellation', 'Instant Confirmation']
+          schemes: ['Free Cancellation', 'Instant Confirmation'],
+          is_favorite: b.is_favorite || false,
         };
       });
 

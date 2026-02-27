@@ -89,7 +89,7 @@ const HotelListCard = ({ hotel }: { hotel: Hotel }) => {
               </ul>
               <ul className="list-inline mb-0 z-index-2">
                 <li className="list-inline-item">
-                  <FavoriteButton businessId={Number(hotel.id)} />
+                  <FavoriteButton businessId={Number(hotel.id)} initialIsWishlisted={hotel.is_favorite} />
                 </li>
                 <Dropdown className="list-inline-item dropdown">
                   <DropdownToggle

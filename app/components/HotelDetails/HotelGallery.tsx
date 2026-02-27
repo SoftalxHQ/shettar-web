@@ -60,7 +60,7 @@ const HotelGallery = ({ hotel }: { hotel: any }) => {
                 </div>
                 <ul className="list-inline text-end">
                   <li className="list-inline-item">
-                    <FavoriteButton businessId={Number(hotel.id)} />
+                    <FavoriteButton businessId={Number(hotel.id)} initialIsWishlisted={hotel.is_favorite} />
                   </li>
                   <Dropdown className="list-inline-item dropdown">
                     <DropdownToggle

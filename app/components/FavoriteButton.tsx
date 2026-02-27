@@ -9,16 +9,24 @@ import { toast } from 'react-hot-toast';
 
 interface FavoriteButtonProps {
   businessId: number;
+  initialIsWishlisted?: boolean;
   className?: string;
 }
 
-const FavoriteButton = ({ businessId, className }: FavoriteButtonProps) => {
-  const [isWishlisted, setIsWishlisted] = useState(false);
-  const [loading, setLoading] = useState(true);
+const FavoriteButton = ({ businessId, initialIsWishlisted, className }: FavoriteButtonProps) => {
+  const [isWishlisted, setIsWishlisted] = useState(initialIsWishlisted || false);
+  const [loading, setLoading] = useState(initialIsWishlisted === undefined);
   const [isProcessing, setIsProcessing] = useState(false);
   const { apiFetch } = useApi();
 
   useEffect(() => {
+    // Skip checking if we already have the status from props
+    if (initialIsWishlisted !== undefined) {
+      setIsWishlisted(initialIsWishlisted);
+      setLoading(false);
+      return;
+    }
+
     const checkStatus = async () => {
       try {
         const token = getStoredToken();
@@ -43,7 +51,7 @@ const FavoriteButton = ({ businessId, className }: FavoriteButtonProps) => {
     };
 
     checkStatus();
-  }, [businessId]);
+  }, [businessId, initialIsWishlisted]);
 
   const toggleWishlist = async (e: React.MouseEvent) => {
     e.preventDefault();

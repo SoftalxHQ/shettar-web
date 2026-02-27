@@ -9,6 +9,7 @@ import { useSearchParams, usePathname } from 'next/navigation';
 import { useEffect, useState, useCallback } from 'react';
 import { Hotel } from '@/app/types/hotel';
 import { useLayoutContext } from '@/app/states/useLayoutContext';
+import { getStoredToken } from '@/app/helpers/auth';
 
 const HotelGridLayout = () => {
   const [hotels, setHotels] = useState<Hotel[]>([]);
@@ -23,6 +24,7 @@ const HotelGridLayout = () => {
       const rawUrl = process.env.NEXT_PUBLIC_API_URL;
       const baseUrl = (rawUrl && rawUrl !== 'undefined') ? rawUrl : "http://127.0.0.1:3000";
       const API_URL = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+      const token = getStoredToken();
 
       const query = new URLSearchParams();
       searchParams.forEach((value, key) => {
@@ -33,7 +35,11 @@ const HotelGridLayout = () => {
         }
       });
 
-      const response = await fetch(`${API_URL}/api/v1/businesses?${query.toString()}`);
+      const response = await fetch(`${API_URL}/api/v1/businesses?${query.toString()}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
 
       if (!response.ok) {
         throw new Error('Failed to fetch hotels');
@@ -63,6 +69,7 @@ const HotelGridLayout = () => {
           feature: features.length > 0 ? features : ['Standard Room'],
           features: features.length > 0 ? features : ['Standard Room'],
           sale: sale,
+          is_favorite: b.is_favorite || false,
         };
       });
 
@@ -110,6 +117,7 @@ const HotelGridLayout = () => {
                       images={hotel.images}
                       rating={hotel.rating}
                       sale={hotel.sale}
+                      is_favorite={hotel.is_favorite}
                     />
                   </Col>
                 );

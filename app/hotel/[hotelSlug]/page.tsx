@@ -9,6 +9,7 @@ import HotelGallery from '@/app/components/HotelDetails/HotelGallery';
 import AboutHotel from '@/app/components/HotelDetails/AboutHotel';
 import { Hotel } from '@/app/types/hotel';
 import { Skeleton } from '@/app/components';
+import { getStoredToken } from '@/app/helpers/auth';
 
 const formatDateToLocalISO = (date: Date) => {
   const year = date.getFullYear();
@@ -46,7 +47,10 @@ export default function HotelDetailPage() {
         url += `?${query.toString()}`;
       }
 
-      const response = await fetch(url);
+      const token = getStoredToken();
+      const response = await fetch(url, {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+      });
 
       if (!response.ok) {
         throw new Error('Hotel not found');

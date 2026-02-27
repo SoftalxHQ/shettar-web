@@ -10,6 +10,7 @@ export interface Hotel {
   features?: string[]; // Added for list view standard
   price: number;
   schemes?: string[]; // Added for list view
+  is_favorite?: boolean;
 }
 
 export type HotelsGridType = Hotel;
