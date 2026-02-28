@@ -62,6 +62,32 @@ const WishlistPage = () => {
     }
   };
 
+  const handleClearAll = async () => {
+    if (!window.confirm('Are you sure you want to clear your entire wishlist?')) return;
+
+    try {
+      const token = getStoredToken();
+      const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
+      const response = await apiFetch(`${API_URL}/api/v1/wishlists/clear`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': token ? `Bearer ${token}` : '',
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        setWishlist([]);
+        toast.success('Wishlist cleared successfully');
+      } else {
+        toast.error('Failed to clear wishlist');
+      }
+    } catch (error) {
+      console.error('Error clearing wishlist:', error);
+      toast.error('An error occurred');
+    }
+  };
+
   return (
     <UserLayout>
       <Card className="border bg-transparent">
@@ -79,7 +105,7 @@ const WishlistPage = () => {
               </SelectFormInput>
             </Col>
             {wishlist.length > 0 && (
-              <Button variant="danger-soft" className="mb-0 items-center d-flex" onClick={() => toast.error('Bulk removal not implemented yet')}>
+              <Button variant="danger-soft" className="mb-0 items-center d-flex" onClick={handleClearAll}>
                 <FaTrash className="me-2" />
                 Remove all
               </Button>
