@@ -139,14 +139,15 @@
   100% { opacity: 0; }
 }
 .notif-badge {
-  width: 10px;
-  height: 10px;
+  width: 12px;
+  height: 12px;
   background: $danger;
   border-radius: 50%;
   position: absolute;
-  top: -1px;
-  right: -1px;
-  z-index: 1;
+  top: -2px;
+  right: -2px;
+  z-index: 5;
+  border: 2px solid var(--bs-body-bg);
 }
 // unread notification
 .notif-unread{

@@ -28,20 +28,49 @@ import {
   Tooltip,
 } from 'react-bootstrap';
 import {
-  BsBell,
+  BsBellFill,
   BsBookmarkCheck,
+  BsCalendarCheckFill,
   BsCircleHalf,
   BsGear,
   BsHeart,
   BsInfoCircle,
+  BsLightningChargeFill,
   BsMoonStars,
   BsPerson,
   BsPower,
   BsStar,
-  BsSun
+  BsSun,
+  BsWalletFill
 } from 'react-icons/bs';
 import Link from 'next/link';
-import { notificationData } from '@/app/data/hotel';
+import { useNotifications } from '@/app/context/NotificationContext';
+
+function timeAgo(dateString: string) {
+  const date = new Date(dateString);
+  const now = new Date();
+  const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+  let interval = Math.floor(seconds / 31536000);
+  if (interval >= 1) return interval + "y ago";
+  interval = Math.floor(seconds / 2592000);
+  if (interval >= 1) return interval + "mo ago";
+  interval = Math.floor(seconds / 86400);
+  if (interval >= 1) return interval + "d ago";
+  interval = Math.floor(seconds / 3600);
+  if (interval >= 1) return interval + "h ago";
+  interval = Math.floor(seconds / 60);
+  if (interval >= 1) return interval + "m ago";
+  return "just now";
+}
+
+function getNotificationIcon(title: string, message: string) {
+  const content = (title + ' ' + message).toLowerCase();
+  if (content.includes('booking')) return { icon: BsCalendarCheckFill, color: 'text-success', bg: 'bg-success' };
+  if (content.includes('wallet') || content.includes('payment') || content.includes('funded')) return { icon: BsWalletFill, color: 'text-primary', bg: 'bg-primary' };
+  if (content.includes('airtime') || content.includes('data')) return { icon: BsLightningChargeFill, color: 'text-warning', bg: 'bg-warning' };
+  return { icon: BsBellFill, color: 'text-info', bg: 'bg-info' };
+}
 
 const themeModes: any[] = [
   {
@@ -63,6 +92,7 @@ const themeModes: any[] = [
 
 export default function Header() {
   const { theme, updateTheme, account, isAccountLoading, logout, isAuthenticated } = useLayoutContext();
+  const { notifications, unreadCount, markAsRead } = useNotifications();
   const { isOpen, toggle } = useToggle();
   const { scrollY } = useScrollEvent();
   const headerRef = useRef<HTMLElement>(null);
@@ -177,39 +207,66 @@ export default function Header() {
               {isAuthenticated ? (
                 <>
                   <Dropdown className="nav-item ms-3" id="notificationMenu">
-                    <DropdownToggle as={Link} href="#" className="arrow-none nav-link p-0" id="notificationDropdown" role="button">
-                      <BsBell className="fs-5" />
+                    <DropdownToggle as={Link} href="#" className="arrow-none nav-link p-0 position-relative" id="notificationDropdown" role="button">
+                      <BsBellFill className="fs-5" />
+                      {unreadCount > 0 && <span className="notif-badge animation-blink" />}
                     </DropdownToggle>
-                    <span className="notif-badge animation-blink" />
 
                     <DropdownMenu align="end" className="dropdown-animation dropdown-menu-size-md shadow-lg p-0" renderOnMount>
                       <Card className="bg-transparent border-0">
                         <CardHeader className="bg-transparent d-flex justify-content-between align-items-center border-bottom">
                           <h6 className="m-0">
-                            Notifications <span className="badge bg-danger bg-opacity-10 text-danger ms-2">4 new</span>
+                            Notifications {unreadCount > 0 && <span className="badge bg-danger bg-opacity-10 text-danger ms-2">{unreadCount} new</span>}
                           </h6>
-                          <Link className="small" href="#">
-                            Clear all
-                          </Link>
+                          <button
+                            className="btn btn-link link-primary p-0 small"
+                            onClick={() => markAsRead('all')}
+                            disabled={notifications.length === 0}
+                          >
+                            Mark all as read
+                          </button>
                         </CardHeader>
 
                         <CardBody className="p-0">
-                          <ListGroup className="list-group-flush list-unstyled p-2">
-                            {(notificationData ?? []).map((notification, idx) => (
-                              <li key={idx}>
-                                <ListGroupItem className={clsx('list-group-item-action rounded border-0 mb-1 p-3', { 'notif-unread': idx === 0 })}>
-                                  <h6 className="mb-2">{notification.title}</h6>
-                                  {notification.content && <p className="mb-0 small">{notification.content}</p>}
-                                  <span className="small">{notification.time}</span>
-                                </ListGroupItem>
+                          <ListGroup className="list-group-flush list-unstyled p-2" style={{ maxHeight: '300px', overflowY: 'auto' }}>
+                            {notifications.length > 0 ? (
+                              notifications.map((notification) => (
+                                <li key={notification.id}>
+                                  <ListGroupItem
+                                    className={clsx('list-group-item-action rounded border-0 mb-1 p-3', { 'notif-unread': !notification.read_at })}
+                                    onClick={() => !notification.read_at && markAsRead(notification.id)}
+                                  >
+                                    <div className="d-flex align-items-start">
+                                      {(() => {
+                                        const { icon: Icon, color, bg } = getNotificationIcon(notification.title, notification.message);
+                                        return (
+                                          <div className={clsx('avatar avatar-xs me-3 flex-shrink-0')}>
+                                            <div className={clsx('avatar-img rounded-circle d-flex align-items-center justify-content-center', bg, 'bg-opacity-15', color)}>
+                                              <Icon size={16} />
+                                            </div>
+                                          </div>
+                                        );
+                                      })()}
+                                      <div className="flex-grow-1">
+                                        <h6 className="mb-1 small">{notification.title}</h6>
+                                        {notification.message && <p className="mb-0 small text-truncate" style={{ maxWidth: '200px' }}>{notification.message}</p>}
+                                        <span className="small text-muted">{timeAgo(notification.created_at)}</span>
+                                      </div>
+                                    </div>
+                                  </ListGroupItem>
+                                </li>
+                              ))
+                            ) : (
+                              <li className="p-4 text-center">
+                                <p className="mb-0 text-muted small">No notifications yet</p>
                               </li>
-                            ))}
+                            )}
                           </ListGroup>
                         </CardBody>
 
                         <CardFooter className="bg-transparent text-center border-top">
-                          <Link href="#" className="btn btn-sm btn-link mb-0 p-0">
-                            See all incoming activity
+                          <Link href="/user/notifications" className="btn btn-sm btn-link mb-0 p-0">
+                            See all activity
                           </Link>
                         </CardFooter>
                       </Card>

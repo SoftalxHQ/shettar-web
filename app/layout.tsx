@@ -8,6 +8,7 @@ export const metadata: Metadata = {
 };
 
 import { LayoutProvider } from "./states";
+import { NotificationProvider } from "./context/NotificationContext";
 import { Toaster } from 'react-hot-toast';
 
 export default function RootLayout({
@@ -64,7 +65,9 @@ export default function RootLayout({
           }}
         />
         <LayoutProvider>
-          {children}
+          <NotificationProvider>
+            {children}
+          </NotificationProvider>
         </LayoutProvider>
       </body>
     </html>
