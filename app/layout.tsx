@@ -10,6 +10,7 @@ export const metadata: Metadata = {
 import { LayoutProvider } from "./states";
 import { NotificationProvider } from "./context/NotificationContext";
 import { Toaster } from 'react-hot-toast';
+import { GoogleOAuthProvider } from '@react-oauth/google';
 
 export default function RootLayout({
   children,
@@ -66,7 +67,9 @@ export default function RootLayout({
         />
         <LayoutProvider>
           <NotificationProvider>
-            {children}
+            <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || ""}>
+              {children}
+            </GoogleOAuthProvider>
           </NotificationProvider>
         </LayoutProvider>
       </body>

@@ -8,10 +8,10 @@ import { Button, Card, CardBody, Col, Container, Row } from 'react-bootstrap';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { PasswordFormInput, TextFormInput } from '@/app/components';
-import { BsGoogle } from 'react-icons/bs';
+import { GoogleLogin } from '@react-oauth/google';
 import Image from 'next/image';
 import toast from 'react-hot-toast';
-import { signIn } from '@/app/helpers/auth';
+import { signIn, signInWithGoogle } from '@/app/helpers/auth';
 import { useLayoutContext } from '@/app/states';
 
 type FormValues = {
@@ -51,6 +51,29 @@ const SignIn = () => {
       } else {
         toast.error(result.message, { id: toastId });
       }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGoogleSuccess = async (credentialResponse: any) => {
+    if (!credentialResponse.credential) return;
+
+    setIsLoading(true);
+    const toastId = toast.loading('Signing in with Google…');
+
+    try {
+      const result = await signInWithGoogle(credentialResponse.credential);
+      if (result.ok) {
+        toast.success('Signed in with Google! 👋', { id: toastId });
+        await refreshAuth();
+        await refreshAccount();
+        router.push('/');
+      } else {
+        toast.error(result.message, { id: toastId });
+      }
+    } catch (error) {
+      toast.error('An error occurred during Google sign in.', { id: toastId });
     } finally {
       setIsLoading(false);
     }
@@ -126,14 +149,18 @@ const SignIn = () => {
                     </span>
                   </div>
 
-                  <Button
-                    variant="light"
-                    className="w-100 mb-0 border shadow-sm items-center d-flex justify-content-center py-2"
-                    disabled
-                    title="Google sign-in coming soon"
-                  >
-                    <BsGoogle className="text-danger me-2" /> Continue with Google
-                  </Button>
+                  <div className="d-flex justify-content-center">
+                    <GoogleLogin
+                      onSuccess={handleGoogleSuccess}
+                      onError={() => {
+                        toast.error('Google Sign In was unsuccessful. Try again later.');
+                      }}
+                      useOneTap
+                      theme="outline"
+                      shape="pill"
+                      width="100%"
+                    />
+                  </div>
                 </form>
 
                 <div className="text-center mt-4">
