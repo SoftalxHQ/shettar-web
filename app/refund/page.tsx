@@ -45,14 +45,14 @@ const RefundPage = () => {
                     </p>
 
                     <p className="text-secondary mt-4 mb-0">
-                      Abri acts as a facilitator and follows the specific cancellation policies set by each hotel partner. Please review the specific terms of your booking before confirming.
+                      Shettar acts as a facilitator and follows the specific cancellation policies set by each hotel partner. Please review the specific terms of your booking before confirming.
                     </p>
                   </CardBody>
                 </Card>
 
                 <div className="text-center mt-5">
                   <p className="text-secondary small">
-                    For specific refund queries, please contact our support at <a href="mailto:support@abri.com" className="text-primary">support@abri.com</a>
+                    For specific refund queries, please contact our support at <a href="mailto:support@shettar.com" className="text-primary">support@shettar.com</a>
                   </p>
                 </div>
               </Col>

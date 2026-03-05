@@ -54,7 +54,7 @@ export default function FooterWithLinks() {
               </Link>
               <Link href="#" className="text-body-secondary text-primary-hover d-flex align-items-center mb-0">
                 <BsEnvelope className="me-2" />
-                hello@abri.com
+                hello@shettar.com
               </Link>
             </div>
           </Col>

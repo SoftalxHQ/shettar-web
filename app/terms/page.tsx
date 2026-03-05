@@ -63,7 +63,7 @@ const TermsPage = () => {
 
                 <div className="text-center mt-5">
                   <p className="text-secondary small">
-                    If you have any questions regarding our terms, please contact us at <a href="mailto:legal@abri.com" className="text-primary">legal@abri.com</a>
+                    If you have any questions regarding our terms, please contact us at <a href="mailto:legal@shettar.com" className="text-primary">legal@shettar.com</a>
                   </p>
                 </div>
               </Col>

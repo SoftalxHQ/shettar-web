@@ -275,7 +275,7 @@ const PaymentOptions = ({
         // Get user email
         const userJson = localStorage.getItem('user');
         const user = userJson ? JSON.parse(userJson) : null;
-        const email = user?.email || data.email_address || 'guest@abri.com';
+        const email = user?.email || data.email_address || 'guest@shettar.com';
 
         // Generate custom Paystack reference: STR{TIMESTAMP}{RANDOM}
         const generateReference = () => {

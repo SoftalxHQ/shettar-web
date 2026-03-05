@@ -53,7 +53,7 @@ const PrivacyPage = () => {
 
                 <div className="text-center mt-5">
                   <p className="text-secondary small">
-                    If you have any questions regarding our privacy practices, please contact us at <a href="mailto:privacy@abri.com" className="text-primary">privacy@abri.com</a>
+                    If you have any questions regarding our privacy practices, please contact us at <a href="mailto:privacy@shettar.com" className="text-primary">privacy@shettar.com</a>
                   </p>
                 </div>
               </Col>
