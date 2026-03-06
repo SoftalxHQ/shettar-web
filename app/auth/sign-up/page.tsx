@@ -73,7 +73,7 @@ const SignUp = () => {
       });
 
       if (result.ok) {
-        toast.success('Account created! Please check your email for a verification code.', { id: toastId, duration: 4000 });
+        toast.success('Account created! Welcome to Shettar!', { id: toastId, duration: 4000 });
         await refreshAuth();
         await refreshAccount();
         setTimeout(() => router.push('/'), 1500);
