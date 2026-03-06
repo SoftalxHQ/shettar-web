@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 import Skeleton from './Skeleton';
 
 interface SkeletonImageProps {
@@ -17,16 +18,11 @@ interface SkeletonImageProps {
 const SkeletonImage: React.FC<SkeletonImageProps> = ({ src, alt, className, containerClassName, height, style, objectPosition, children }) => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [hasError, setHasError] = useState(false);
-  const imgRef = useRef<HTMLImageElement>(null);
 
   useEffect(() => {
     // Reset state when source changes
     setIsLoaded(false);
     setHasError(false);
-
-    if (imgRef.current && imgRef.current.complete) {
-      setIsLoaded(true);
-    }
   }, [src]);
 
   return (
@@ -37,12 +33,12 @@ const SkeletonImage: React.FC<SkeletonImageProps> = ({ src, alt, className, cont
         ...style
       }}
     >
-      {/* Image in normal flow to maintain dimensions if not fixed */}
-      <img
-        ref={imgRef}
+      <Image
         src={src}
         alt={alt}
-        className={`${className || ''} w-100 h-100 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
+        fill
+        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+        className={`${className || ''} ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
         onLoad={() => setIsLoaded(true)}
         onError={() => {
           setHasError(true);

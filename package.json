@@ -32,6 +32,7 @@
     "react-sticky-el": "^2.1.1",
     "react-to-print": "^3.2.0",
     "sass": "^1.97.3",
+    "sharp": "^0.34.5",
     "tiny-slider": "^2.9.4",
     "yup": "^1.7.1"
   },

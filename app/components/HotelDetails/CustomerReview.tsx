@@ -13,6 +13,7 @@ import Link from 'next/link';
 import { useLayoutContext } from '@/app/states';
 import { getStoredToken } from '@/app/helpers/auth';
 import toast from 'react-hot-toast';
+import Image from 'next/image';
 
 interface Review {
   id: number;
@@ -231,11 +232,13 @@ const CustomerReview = ({ reviews, averageRating, ratingDistribution, businessId
                 {/* Avatar */}
                 <div className="flex-shrink-0">
                   {review.reviewer_avatar ? (
-                    <img
+                    <Image
                       src={review.reviewer_avatar}
                       className="rounded-circle shadow-sm"
-                      style={{ width: '56px', height: '56px', objectFit: 'cover' }}
-                      alt={review.reviewer}
+                      style={{ objectFit: 'cover' }}
+                      width={56}
+                      height={56}
+                      alt={review.reviewer || 'Reviewer'}
                     />
                   ) : (
                     <div
