@@ -113,41 +113,16 @@ const GuestDetails = ({
           />
 
           {!isAuthenticated ? (
-            <>
-              <Col xs={12} className="mt-5">
-                <div className="bg-light rounded-2 px-4 py-3 border-start border-danger border-4">
-                  <h6 className="mb-0">Emergency Contact</h6>
-                </div>
-              </Col>
-
-              <TextFormInput
-                name="emer_first_name"
-                type="text"
-                label="First Name"
-                control={control}
-                placeholder="Emergency contact first name"
-                className="form-control-lg"
-                containerClass="col-md-6"
-              />
-              <TextFormInput
-                name="emer_last_name"
-                label="Last Name"
-                type="text"
-                control={control}
-                placeholder="Emergency contact last name"
-                className="form-control-lg"
-                containerClass="col-md-6"
-              />
-              <TextFormInput
-                name="emer_phone_number"
-                label="Phone Number"
-                type="text"
-                control={control}
-                placeholder="Emergency contact phone"
-                className="form-control-lg"
-                containerClass="col-md-12"
-              />
-            </>
+            <Col xs={12}>
+              <Alert variant="warning" className="mt-4 mb-3 border-2" role="alert">
+                <h6 className="alert-heading">Account Required</h6>
+                <p className="mb-0 small fw-bold text-dark">
+                  You must be signed in to create a booking.
+                  <Link href="/auth/sign-in" className="ms-2 text-primary text-decoration-underline">Sign In</Link> or
+                  <Link href="/auth/sign-up" className="ms-1 text-primary text-decoration-underline">Create an Account</Link>.
+                </p>
+              </Alert>
+            </Col>
           ) : (
             <div style={{ display: 'none' }}>
               <input type="hidden" {...control.register('emer_first_name')} value={account?.emer_first_name || ''} />
@@ -167,23 +142,13 @@ const GuestDetails = ({
           </Alert>
         )}
 
-        {!isAuthenticated && (
-          <Alert variant="warning" className="mt-4 mb-3 border-2" role="alert">
-            <h6 className="alert-heading">Notice: Guest Booking Policy</h6>
+        {isEmergencyMissing && (
+          <Alert variant="danger" className="mt-4 mb-3 border-2" role="alert">
+            <h6 className="alert-heading">Action Required: Update Profile</h6>
             <p className="mb-0 small fw-bold text-dark">
-              Please note that bookings made without an account are <strong>not eligible for refund or cancellation</strong>.
-              To enjoy flexible booking options, please sign in or create an account before proceeding.
+              You must update your <strong>Next of Kin</strong> details in your profile settings before you can proceed with a booking.
+              <Link href="/user/settings" className="ms-2 text-danger text-decoration-underline">Update Settings Now</Link>
             </p>
-          </Alert>
-        )}
-
-        {!isAuthenticated && (
-          <Alert variant="info" className="mt-0 mb-0" role="alert">
-            Already have an account? {' '}
-            <Link href="/auth/sign-in" className="alert-heading h6 text-decoration-none">
-              Sign In
-            </Link>{' '}
-            to prefill details and earn rewards.
           </Alert>
         )}
       </CardBody>

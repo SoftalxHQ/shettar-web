@@ -420,9 +420,9 @@ const PaymentOptions = ({
                   variant="primary"
                   className="w-100 mb-0"
                   onClick={handleSubmit(onSubmit)}
-                  disabled={isSubmitting || isEmergencyMissing || isEmailUnverified}
+                  disabled={!isAuthenticated || isSubmitting || isEmergencyMissing || isEmailUnverified}
                 >
-                  {isSubmitting ? 'Processing...' : isEmailUnverified ? 'Verify Email to Book' : isEmergencyMissing ? 'Update Profile to Book' : 'Proceed to Payment'}
+                  {!isAuthenticated ? 'Account Required to Book' : isSubmitting ? 'Processing...' : isEmailUnverified ? 'Verify Email to Book' : isEmergencyMissing ? 'Update Profile to Book' : 'Proceed to Payment'}
                 </Button>
               </div>
             </AccordionBody>
@@ -431,8 +431,8 @@ const PaymentOptions = ({
       </CardBody>
       <div className="card-footer p-4 pt-0 bg-transparent text-center">
         {!isAuthenticated && (
-          <p className="bg-danger bg-opacity-10 text-danger p-2 rounded small mb-3 fw-bold border border-danger border-opacity-25">
-            Guest bookings are non-refundable and cannot be cancelled.
+          <p className="bg-warning bg-opacity-10 text-dark p-2 rounded small mb-3 fw-bold border border-warning border-opacity-25">
+            You must be signed in to create a booking on Shettar.
           </p>
         )}
         <p className="mb-0 opacity-50 small">
