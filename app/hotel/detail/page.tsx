@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useParams, usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Header, Footer, Skeleton } from '@/app/components';
 import AvailabilityFilter from '@/app/components/HotelDetails/AvailabilityFilter';
@@ -14,7 +14,7 @@ const formatDateToLocalISO = (date: Date) => {
   return `${year}-${month}-${day}`;
 };
 
-export default function HotelDetailPage() {
+function HotelDetailContent() {
   const params = useParams();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -143,4 +143,12 @@ export default function HotelDetailPage() {
       <Footer />
     </>
   );
+}
+
+export default function HotelDetailPage() {
+  return (
+    <Suspense fallback={<div>Loading hotel details...</div>}>
+      <HotelDetailContent />
+    </Suspense>
+  )
 }

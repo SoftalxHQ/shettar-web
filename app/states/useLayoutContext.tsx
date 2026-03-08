@@ -1,6 +1,6 @@
 'use client';
 
-import { changeHTMLAttribute } from '@/app/utils/layout';
+import { changeHTMLAttribute } from '@/app/utils/html-layout';
 import { signOut } from '@/app/helpers/auth';
 import { useRouter } from 'next/navigation';
 import { type ReactNode, createContext, useContext, useState, useEffect, useCallback } from 'react';

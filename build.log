@@ -1,0 +1,27 @@
+
+> abri-web@0.1.0 build /Users/alex/Desktop/apps/Shettar/shettar-web
+> next build
+
+▲ Next.js 16.1.6 (Turbopack)
+- Environments: .env.local
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 18.0s
+  Running TypeScript ...
+  Collecting page data using 7 workers ...
+  Generating static pages using 7 workers (0/27) ...
+⨯ useSearchParams() should be wrapped in a suspense boundary at page "/". Read more: https://nextjs.org/docs/messages/missing-suspense-with-csr-bailout
+    at Q (/Users/alex/Desktop/apps/Shettar/shettar-web/.next/server/chunks/ssr/node_modules__pnpm_cb2bce46._.js:2:2111)
+    at o (/Users/alex/Desktop/apps/Shettar/shettar-web/.next/server/chunks/ssr/node_modules__pnpm_cb2bce46._.js:4:5279)
+    at /Users/alex/Desktop/apps/Shettar/shettar-web/.next/server/chunks/ssr/[root-of-the-server]__e7b3dc22._.js:1:69876
+    at an (/Users/alex/Desktop/apps/Shettar/shettar-web/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3_sass@1.97.3/node_modules/next/dist/compiled/next-server/app-page-turbo.runtime.prod.js:2:84360)
+    at ai (/Users/alex/Desktop/apps/Shettar/shettar-web/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3_sass@1.97.3/node_modules/next/dist/compiled/next-server/app-page-turbo.runtime.prod.js:2:86179)
+    at al (/Users/alex/Desktop/apps/Shettar/shettar-web/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3_sass@1.97.3/node_modules/next/dist/compiled/next-server/app-page-turbo.runtime.prod.js:2:107953)
+    at as (/Users/alex/Desktop/apps/Shettar/shettar-web/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3_sass@1.97.3/node_modules/next/dist/compiled/next-server/app-page-turbo.runtime.prod.js:2:105368)
+    at am (/Users/alex/Desktop/apps/Shettar/shettar-web/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3_sass@1.97.3/node_modules/next/dist/compiled/next-server/app-page-turbo.runtime.prod.js:2:112882)
+    at au (/Users/alex/Desktop/apps/Shettar/shettar-web/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3_sass@1.97.3/node_modules/next/dist/compiled/next-server/app-page-turbo.runtime.prod.js:2:109985)
+    at al (/Users/alex/Desktop/apps/Shettar/shettar-web/node_modules/.pnpm/next@16.1.6_@babel+core@7.29.0_react-dom@19.2.3_react@19.2.3__react@19.2.3_sass@1.97.3/node_modules/next/dist/compiled/next-server/app-page-turbo.runtime.prod.js:2:108231)
+Error occurred prerendering page "/". Read more: https://nextjs.org/docs/messages/prerender-error
+Export encountered an error on /page: /, exiting the build.
+⨯ Next.js build worker exited with code: 1 and signal: null
+ ELIFECYCLE  Command failed with exit code 1.

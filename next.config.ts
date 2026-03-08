@@ -2,6 +2,9 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   images: {
+    // Only bypass Next.js image optimization in local dev to prevent local active_storage timeouts. 
+    // In production, Next.js will optimize and cache the images perfectly.
+    unoptimized: process.env.NODE_ENV === 'development',
     dangerouslyAllowLocalIP: true,
     remotePatterns: [
       {

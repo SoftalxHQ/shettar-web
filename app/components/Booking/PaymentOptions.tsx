@@ -139,6 +139,7 @@ const PaymentOptions = ({
       payment_method: data.payment_method,
       option: isAuthenticated ? data.option : 'guest', // Force 'guest' if not authenticated
       paystack_reference: paystackReference,
+      booking_source: 'web',
     };
 
     if (isAuthenticated && data.option === 'self') {

@@ -1,6 +1,6 @@
 export interface Hotel {
   id: number;
-  slug: string;
+  slug?: string;
   name: string;
   address?: string; // Added for list view
   sale?: string;
