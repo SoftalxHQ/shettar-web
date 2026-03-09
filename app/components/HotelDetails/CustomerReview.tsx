@@ -5,7 +5,7 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import { Fragment, useState, useRef } from 'react';
 import { Button, Card, Col, ProgressBar, Row, CardHeader, CardBody } from 'react-bootstrap';
 import { useForm } from 'react-hook-form';
-import { BsArrowRight, BsStar, BsStarFill, BsStarHalf } from 'react-icons/bs';
+import { BsArrowRight, BsStar, BsStarFill, BsStarHalf, BsShieldCheck } from 'react-icons/bs';
 import { FaStar } from 'react-icons/fa6';
 import { FaStarHalfAlt } from 'react-icons/fa';
 import * as yup from 'yup';
@@ -28,6 +28,10 @@ interface Review {
   created_at: string;
   updated_at?: string;
   verified?: boolean;
+  // Admin reply
+  admin_reply?: string | null;
+  admin_reply_by?: string | null;
+  admin_replied_at?: string | null;
 }
 
 type FormValues = {
@@ -277,6 +281,38 @@ const CustomerReview = ({ reviews, averageRating, ratingDistribution, businessId
                   <p className="mt-3 text-secondary lh-base fs-6 mb-0" style={{ maxWidth: '800px' }}>
                     {review.content}
                   </p>
+
+                  {/* ── Admin reply ── */}
+                  {review.admin_reply && (
+                    <div
+                      className="mt-3 rounded-4 p-3"
+                      style={{
+                        background: 'rgba(99,102,241,0.06)',
+                        border: '1px solid rgba(99,102,241,0.18)',
+                      }}
+                    >
+                      <div className="d-flex align-items-center gap-2 mb-2">
+                        <BsShieldCheck className="text-primary" size={14} />
+                        <span className="fw-semibold small" style={{ color: '#4f46e5' }}>
+                          {review.admin_reply_by || 'Management'}
+                        </span>
+                        <span
+                          className="badge rounded-pill small"
+                          style={{ background: 'rgba(99,102,241,0.12)', color: '#4f46e5', fontSize: '10px', padding: '2px 8px' }}
+                        >
+                          Admin
+                        </span>
+                        {review.admin_replied_at && (
+                          <span className="ms-auto text-secondary" style={{ fontSize: '11px' }}>
+                            {new Date(review.admin_replied_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                          </span>
+                        )}
+                      </div>
+                      <p className="mb-0 text-secondary lh-base" style={{ fontSize: '13.5px' }}>
+                        {review.admin_reply}
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
               {idx < reviews.length - 1 && <hr className="my-4 opacity-50" />}
