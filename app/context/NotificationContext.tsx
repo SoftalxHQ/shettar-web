@@ -4,6 +4,7 @@ import React, { createContext, useContext, useEffect, useState, useCallback } fr
 import { createConsumer, type Consumer, type Subscription } from '@rails/actioncable';
 import { getStoredToken, getStoredUser } from '@/app/helpers/auth';
 import toast from 'react-hot-toast';
+import { useLayoutContext } from '@/app/states';
 
 const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
 
@@ -30,6 +31,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
+  const { account, isAuthenticated } = useLayoutContext();
 
   const fetchUnreadCount = useCallback(async () => {
     try {
@@ -110,9 +112,8 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
 
     const setupActionCable = async () => {
       const token = getStoredToken();
-      const user = getStoredUser();
 
-      if (!token || !user) {
+      if (!token || !account) {
         if (isActive) {
           setNotifications([]);
           setUnreadCount(0);
@@ -159,7 +160,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
       if (subscription) subscription.unsubscribe();
       if (consumer) consumer.disconnect();
     };
-  }, [refreshNotifications]);
+  }, [refreshNotifications, account, isAuthenticated]);
 
   return (
     <NotificationContext.Provider value={{
