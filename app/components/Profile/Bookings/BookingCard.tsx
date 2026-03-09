@@ -17,6 +17,7 @@ interface Reservation {
   end_date: string;
   total_amount: string | number;
   cancelled: boolean;
+  status?: string; // 'upcoming' | 'active' | 'past' | 'cancelled' — sent by the backend
   business?: {
     name: string;
     address: string;
@@ -36,6 +37,18 @@ interface BookingCardProps {
   onSuccess?: () => void;
 }
 
+const getStatusBadge = (booking: Reservation) => {
+  if (booking.cancelled) return { bg: 'danger', text: 'Cancelled' };
+
+  switch (booking.status) {
+    case 'active': return { bg: 'primary', text: 'Active' };
+    case 'past': return { bg: 'secondary', text: 'Completed' };
+    case 'upcoming': return { bg: 'success', text: 'Upcoming' };
+    default: return { bg: 'success', text: 'Confirmed' }; // fallback
+  }
+};
+
+
 const CANCELLATION_REASONS = [
   "Change of plans",
   "Found a better deal",
@@ -48,6 +61,7 @@ const CANCELLATION_REASONS = [
 
 const BookingCard = ({ booking, onSuccess }: BookingCardProps) => {
   const { id, booking_id, start_date, end_date, cancelled, business, room, total_amount } = booking;
+  const statusBadge = getStatusBadge(booking);
 
   const [showModal, setShowModal] = useState(false);
   const [selectedReason, setSelectedReason] = useState(CANCELLATION_REASONS[0]);
@@ -132,11 +146,12 @@ const BookingCard = ({ booking, onSuccess }: BookingCardProps) => {
         </div>
 
         <div className="mt-3 mt-md-0 text-md-end">
-          {cancelled ? (
-            <Badge bg="danger" className="bg-opacity-10 text-danger mb-2 d-block">Cancelled</Badge>
-          ) : (
-            <Badge bg="success" className="bg-opacity-10 text-success mb-2 d-block">Confirmed</Badge>
-          )}
+          <Badge
+            bg={statusBadge.bg}
+            className={`bg-opacity-10 text-${statusBadge.bg} mb-2 d-block text-capitalize`}
+          >
+            {statusBadge.text}
+          </Badge>
           <h5 className="mb-0 text-primary">{currency}{Number(total_amount).toLocaleString()}</h5>
         </div>
       </CardHeader>
