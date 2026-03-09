@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { createConsumer, type Consumer, type Subscription } from '@rails/actioncable';
-import { getStoredToken, getStoredUser } from '@/app/helpers/auth';
+import { getStoredToken } from '@/app/helpers/auth';
 import toast from 'react-hot-toast';
 import { useLayoutContext } from '@/app/states';
 
@@ -23,6 +23,7 @@ interface NotificationContextType {
   loading: boolean;
   refreshNotifications: () => Promise<void>;
   markAsRead: (id: number | 'all') => Promise<void>;
+  deleteNotification: (id: number | 'all') => Promise<void>;
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
@@ -105,62 +106,110 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     }
   }, []);
 
-  useEffect(() => {
-    let consumer: Consumer | null = null;
-    let subscription: Subscription | null = null;
-    let isActive = true;
-
-    const setupActionCable = async () => {
+  const deleteNotification = useCallback(async (id: number | 'all') => {
+    try {
       const token = getStoredToken();
+      if (!token) return;
 
-      if (!token || !account) {
-        if (isActive) {
+      const response = await fetch(`${API_URL}/api/v1/notifications/delete_notifications`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ id }),
+      });
+
+      if (response.ok) {
+        if (id === 'all') {
           setNotifications([]);
           setUnreadCount(0);
+          toast.success('All notifications deleted');
+        } else {
+          setNotifications(prev => {
+            const removed = prev.find(n => n.id === id);
+            if (removed && !removed.read_at) {
+              setUnreadCount(count => Math.max(0, count - 1));
+            }
+            return prev.filter(n => n.id !== id);
+          });
+          toast.success('Notification deleted');
         }
-        return;
       }
+    } catch (error) {
+      console.error('Delete notification error:', error);
+      toast.error('Failed to delete notification');
+    }
+  }, []);
 
-      if (isActive) refreshNotifications();
+  // ── Initial data load when auth state is known ────────────────────────────
+  useEffect(() => {
+    if (!account) {
+      setNotifications([]);
+      setUnreadCount(0);
+      return;
+    }
+    refreshNotifications();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [account?.id]);
 
-      try {
-        const wsUrl = API_URL.replace(/^http/, 'ws') + '/cable';
-        consumer = createConsumer(`${wsUrl}?token=${token}`);
+  // ── ActionCable subscription — mirrors WalletChannel pattern exactly ───────
+  useEffect(() => {
+    // Guard: must be authenticated, same as wallet's `if (!profile) return`
+    if (!account || !isAuthenticated) return;
 
-        subscription = consumer.subscriptions.create(
-          { channel: 'AccountNotificationsChannel' },
-          {
-            received: (data: any) => {
-              console.log('[NotificationCable] Received:', data);
-              // Optimistically update or just refresh
-              refreshNotifications();
+    const token = getStoredToken();
+    if (!token) return;
 
-              // Show toast for new notification
-              toast.success(data.message || 'New notification', {
-                icon: '🔔',
-                duration: 5000,
-              });
-            },
-            connected: () => {
-              console.log('[NotificationCable] Connected');
-              refreshNotifications();
-            },
-            disconnected: () => console.log('[NotificationCable] Disconnected'),
+    const wsUrl = API_URL.replace(/^http/, 'ws') + '/cable';
+
+    // Synchronous creation — no async wrapper, same as wallet
+    const consumer: Consumer = createConsumer(`${wsUrl}?token=${token}`);
+
+    const subscription: Subscription = consumer.subscriptions.create(
+      { channel: 'AccountNotificationsChannel' },
+      {
+        received: (data: any) => {
+          console.log('[NotificationCable] Received:', data);
+
+          // Prepend incoming notification optimistically — no extra HTTP request needed
+          const newItem: NotificationItem = {
+            id: data.notification_id,
+            title: data.title,
+            message: data.message,
+            data: data.data,
+            read_at: undefined,
+            created_at: data.created_at || new Date().toISOString(),
+          };
+          setNotifications(prev => [newItem, ...prev]);
+          setUnreadCount(prev => prev + 1);
+
+          // Only show toast if the broadcast hasn't flagged that another channel
+          // (e.g. WalletChannel) is already handling the user-visible alert
+          if (!data.suppress_toast) {
+            toast.success(data.message || 'New notification', {
+              icon: '🔔',
+              duration: 5000,
+            });
           }
-        );
-      } catch (err) {
-        console.error('NotificationCable setup error:', err);
+        },
+        connected: () => {
+          console.log('[NotificationCable] Connected to AccountNotificationsChannel');
+        },
+        disconnected: () => {
+          console.log('[NotificationCable] Disconnected from AccountNotificationsChannel');
+        },
       }
-    };
+    );
 
-    setupActionCable();
-
+    // Cleanup — same as wallet
     return () => {
-      isActive = false;
-      if (subscription) subscription.unsubscribe();
-      if (consumer) consumer.disconnect();
+      subscription.unsubscribe();
+      consumer.disconnect();
     };
-  }, [refreshNotifications, account, isAuthenticated]);
+    // Only re-run when account identity or auth status changes — NOT refreshNotifications
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [account?.id, isAuthenticated]);
 
   return (
     <NotificationContext.Provider value={{
@@ -168,7 +217,8 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
       unreadCount,
       loading,
       refreshNotifications,
-      markAsRead
+      markAsRead,
+      deleteNotification
     }}>
       {children}
     </NotificationContext.Provider>

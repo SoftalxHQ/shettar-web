@@ -2,9 +2,12 @@
 
 import UserLayout from '@/app/components/layouts/UserLayout';
 import { useNotifications, NotificationItem } from '@/app/context/NotificationContext';
+import toast from 'react-hot-toast';
 import { Card, CardBody, CardHeader, ListGroup, ListGroupItem, Button } from 'react-bootstrap';
-import { BsBellFill, BsCheckAll, BsCalendarCheckFill, BsWalletFill, BsLightningChargeFill } from 'react-icons/bs';
+import { BsBellFill, BsCheckAll, BsCalendarCheckFill, BsWalletFill, BsLightningChargeFill, BsTrash } from 'react-icons/bs';
 import clsx from 'clsx';
+import DeleteConfirmModal from '@/app/components/Common/DeleteConfirmModal';
+import { useState } from 'react';
 
 function timeAgo(dateString: string) {
   const date = new Date(dateString);
@@ -33,7 +36,16 @@ function getNotificationIcon(title: string, message: string) {
 }
 
 const NotificationsPage = () => {
-  const { notifications, unreadCount, markAsRead, loading } = useNotifications();
+  const { notifications, unreadCount, markAsRead, deleteNotification, loading } = useNotifications();
+  const [deleteModal, setDeleteModal] = useState<{ show: boolean; id: number | 'all' | null; isAll: boolean }>({
+    show: false,
+    id: null,
+    isAll: false
+  });
+
+  const handleDeleteClick = (id: number | 'all', isAll = false) => {
+    setDeleteModal({ show: true, id, isAll });
+  };
 
   return (
     <UserLayout>
@@ -48,15 +60,26 @@ const NotificationsPage = () => {
               </span>
             )}
           </h5>
-          <Button
-            variant="link"
-            className="p-0 text-primary fw-bold text-decoration-none small"
-            onClick={() => markAsRead('all')}
-            disabled={notifications.length === 0}
-          >
-            <BsCheckAll className="me-1" />
-            Mark all as read
-          </Button>
+          <div className="d-flex gap-2">
+            <Button
+              variant="link"
+              className="p-0 text-primary fw-bold text-decoration-none small"
+              onClick={() => markAsRead('all')}
+              disabled={notifications.length === 0}
+            >
+              <BsCheckAll className="me-1" />
+              Mark all as read
+            </Button>
+            <Button
+              variant="link"
+              className="p-0 text-danger fw-bold text-decoration-none small ms-2"
+              onClick={() => handleDeleteClick('all', true)}
+              disabled={notifications.length === 0}
+            >
+              <BsTrash className="me-1" />
+              Delete all
+            </Button>
+          </div>
         </CardHeader>
 
         <CardBody className="p-0">
@@ -91,16 +114,27 @@ const NotificationsPage = () => {
                         <span className="small text-muted">{timeAgo(notification.created_at)}</span>
                       </div>
                     </div>
-                    {!notification.read_at && (
+                    <div className="d-flex align-items-center gap-3">
+                      {!notification.read_at && (
+                        <Button
+                          variant="link"
+                          size="sm"
+                          className="p-0 text-secondary text-primary-hover mt-2 mt-sm-0"
+                          onClick={() => markAsRead(notification.id)}
+                        >
+                          Mark as read
+                        </Button>
+                      )}
                       <Button
                         variant="link"
                         size="sm"
-                        className="p-0 text-secondary text-primary-hover mt-2 mt-sm-0"
-                        onClick={() => markAsRead(notification.id)}
+                        className="p-0 text-danger-hover mt-2 mt-sm-0"
+                        onClick={() => handleDeleteClick(notification.id)}
+                        title="Delete notification"
                       >
-                        Mark as read
+                        <BsTrash size={16} />
                       </Button>
-                    )}
+                    </div>
                   </div>
                 </ListGroupItem>
               ))}
@@ -116,6 +150,17 @@ const NotificationsPage = () => {
           )}
         </CardBody>
       </Card>
+
+      <DeleteConfirmModal
+        show={deleteModal.show}
+        isAll={deleteModal.isAll}
+        onHide={() => setDeleteModal({ ...deleteModal, show: false })}
+        onConfirm={() => {
+          if (deleteModal.id) {
+            deleteNotification(deleteModal.id);
+          }
+        }}
+      />
     </UserLayout>
   );
 };
