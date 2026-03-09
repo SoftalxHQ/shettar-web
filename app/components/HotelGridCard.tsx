@@ -14,7 +14,7 @@ import 'tiny-slider/dist/tiny-slider.css';
 
 import { HotelsGridType } from '@/app/types/hotel';
 
-const HotelGridCard = ({ id, slug, feature, images, name, price, rating, sale, is_favorite }: HotelsGridType) => {
+const HotelGridCard = ({ id, slug, feature, images, name, price, rating, sale, is_favorite, old_price }: HotelsGridType) => {
   const { dir, isAuthenticated } = useLayoutContext();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -92,7 +92,7 @@ const HotelGridCard = ({ id, slug, feature, images, name, price, rating, sale, i
             </h5>
             <span className="mb-0 me-2 small opacity-50">/day</span>
 
-            {sale && <span className="text-decoration-line-through small opacity-50">{currency}{((price || 0) * 1.25).toLocaleString()}</span>}
+            {sale && old_price && <span className="text-decoration-line-through small opacity-50">{currency}{old_price.toLocaleString()}</span>}
           </div>
           <div className="mt-2 mt-sm-0">
             <Link href={hotelDetailLink} className="btn btn-sm btn-primary-soft mb-0 w-100 items-center shadow-sm">

@@ -25,7 +25,7 @@ const splitArray = <T,>(array: T[], size: number): T[][] => {
   return result;
 };
 
-const RoomCard = ({ id, slug, features, images, name, price, sale, schemes, hotelSlug, allAmenities, available_rooms }: HotelsRoomType & { hotelSlug?: string, allAmenities?: string[] }) => {
+const RoomCard = ({ id, slug, features, images, name, price, sale, schemes, hotelSlug, allAmenities, available_rooms, ...props }: HotelsRoomType & { hotelSlug?: string, allAmenities?: string[], daily_availability?: Record<string, number> }) => {
   const searchParams = useSearchParams();
   const searchQuery = searchParams.toString();
 
@@ -55,6 +55,23 @@ const RoomCard = ({ id, slug, features, images, name, price, sale, schemes, hote
   const requestedRooms = parseInt(searchParams.get('rooms') || '1');
   const actualAvailableRooms = available_rooms ?? 0;
   const isAvailable = actualAvailableRooms >= requestedRooms;
+
+  // Calculate sold out dates from daily_availability
+  const dailyAvailability = (props as any).daily_availability || {};
+  const endDateStr = searchParams.get('end_date');
+  const endDate = endDateStr ? new Date(endDateStr) : null;
+
+  const soldOutDates = Object.entries(dailyAvailability)
+    .filter(([date, count]) => {
+      const d = new Date(date);
+      // Only count if it's before the check-out date
+      if (endDate && d >= endDate) return false;
+      return (count as number) < requestedRooms;
+    })
+    .map(([date, _]) => {
+      const d = new Date(date);
+      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    });
 
   return (
     <Card className="card-hover-shadow border-0 overflow-hidden mb-4 shadow-sm">
@@ -114,9 +131,26 @@ const RoomCard = ({ id, slug, features, images, name, price, sale, schemes, hote
 
             <div className="mb-3">
               <p className={`mb-0 small fw-bold ${isAvailable ? 'text-primary' : 'text-danger'}`}>
-                {actualAvailableRooms} rooms available
-                {!isAvailable && <span className="ms-2">(Insufficient for your search)</span>}
+                {actualAvailableRooms === 0 ? (
+                  <>Sold Out {soldOutDates.length > 0 && `on ${soldOutDates.join(', ')}`}</>
+                ) : actualAvailableRooms < requestedRooms ? (
+                  <>Only {actualAvailableRooms} rooms available (Insufficient for your search)</>
+                ) : (
+                  <>
+                    <FaCheckCircle className="me-1" /> {actualAvailableRooms} rooms available
+                  </>
+                )}
               </p>
+              {!isAvailable && soldOutDates.length > 0 && (
+                <p className="text-muted small mb-0 mt-1">
+                  Try adjusting your dates to skip these fully booked nights.
+                </p>
+              )}
+              {!isAvailable && actualAvailableRooms > 0 && actualAvailableRooms < requestedRooms && (
+                <p className="text-muted small mb-0 mt-1">
+                  Try reducing the number of rooms in your search.
+                </p>
+              )}
             </div>
 
             <div className="d-flex justify-content-between align-items-center">
@@ -132,7 +166,7 @@ const RoomCard = ({ id, slug, features, images, name, price, sale, schemes, hote
                 </Link>
               ) : (
                 <Button variant="secondary" className="mb-0 px-4 shadow-sm" disabled>
-                  Sold Out
+                  Unavailable
                 </Button>
               )}
             </div>

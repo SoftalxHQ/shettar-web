@@ -17,7 +17,7 @@ import { toast } from 'react-hot-toast';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 const HotelListCard = ({ hotel }: { hotel: Hotel }) => {
-  const { address, features, images, name, price, rating, sale, schemes } = hotel;
+  const { address, features, images, name, price, rating, sale, schemes, old_price } = hotel;
   const { isAuthenticated } = useLayoutContext();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -177,7 +177,7 @@ const HotelListCard = ({ hotel }: { hotel: Hotel }) => {
                   {price?.toLocaleString()}
                 </h5>
                 <span className="mb-0 me-2 small opacity-50">/day</span>
-                {sale && <span className="text-decoration-line-through mb-0 small opacity-50">{currency}{((price || 0) * 1.25).toLocaleString()}</span>}
+                {sale && old_price && <span className="text-decoration-line-through mb-0 small opacity-50">{currency}{old_price.toLocaleString()}</span>}
               </div>
               <div className="mt-3 mt-sm-0">
                 <Link href={hotelDetailLink} className="btn btn-sm btn-dark mb-0 w-100 shadow-sm">

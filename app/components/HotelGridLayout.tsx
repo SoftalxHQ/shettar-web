@@ -65,6 +65,7 @@ const HotelGridLayout = () => {
           address: `${b.address}, ${b.city}, ${b.state}`,
           images: b.images_url || [],
           price: price,
+          old_price: oldPrice,
           rating: parseFloat(b.average_rating) || 0,
           feature: features.length > 0 ? features : ['Standard Room'],
           features: features.length > 0 ? features : ['Standard Room'],

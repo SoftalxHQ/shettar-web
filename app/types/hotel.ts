@@ -9,6 +9,7 @@ export interface Hotel {
   feature: string[]; // Keep for backward compatibility if needed, or alias to features
   features?: string[]; // Added for list view standard
   price: number;
+  old_price?: number;
   schemes?: string[]; // Added for list view
   is_favorite?: boolean;
 }

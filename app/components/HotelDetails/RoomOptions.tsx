@@ -40,6 +40,10 @@ const RoomOptions = ({ availableRoomTypes, hotel }: { availableRoomTypes: any[],
             // If no amenities are found, use a default fallback
             const finalFeatures = featuresToDisplay.length > 0 ? featuresToDisplay : ['Standard Amenities'];
 
+            const cur_p = parseFloat(room_type.price || 0);
+            const old_p = parseFloat(room_type.old_price || 0);
+            const sale = (old_p > cur_p && old_p > 0) ? `${Math.round(((old_p - cur_p) / old_p) * 100)}% Off` : undefined;
+
             return (
               <RoomCard
                 key={idx}
@@ -52,7 +56,8 @@ const RoomOptions = ({ availableRoomTypes, hotel }: { availableRoomTypes: any[],
                 name={room_type.name}
                 price={room_type.price}
                 available_rooms={room_type.available_rooms}
-                sale={room_type.old_price ? `${Math.round(((room_type.old_price - room_type.price) / room_type.old_price) * 100)}% Off` : undefined}
+                daily_availability={room_type.daily_availability}
+                sale={sale}
                 schemes={['Free Cancellation', 'Free Breakfast']}
               />
             );
