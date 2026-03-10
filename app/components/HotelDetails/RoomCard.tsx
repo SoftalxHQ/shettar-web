@@ -1,16 +1,12 @@
 'use client';
 
-import { useMemo } from 'react';
-import TinySlider from '../TinySlider';
 import { useToggle } from '@/app/hooks';
+import { ImageSlider } from '@/app/components/ImageSlider';
 import { Button, Card, CardBody, CardHeader, Col, Modal, ModalBody, ModalHeader, Row } from 'react-bootstrap';
-import { renderToString } from 'react-dom/server';
-import { BsArrowLeft, BsArrowRight, BsEyeFill } from 'react-icons/bs';
+import { BsEyeFill } from 'react-icons/bs';
 import { FaCheckCircle } from 'react-icons/fa';
 import Link from 'next/link';
-import { type TinySliderSettings } from 'tiny-slider';
 import { type HotelsRoomType } from '@/app/data/hotel-details';
-import { SkeletonImage } from '../';
 import { useSearchParams } from 'next/navigation';
 
 const currency = '₦';
@@ -29,19 +25,6 @@ const RoomCard = ({ id, slug, features, images, name, price, sale, schemes, hote
   const searchParams = useSearchParams();
   const searchQuery = searchParams.toString();
 
-  const roomSliderSettings: TinySliderSettings = useMemo(() => ({
-    autoplay: false,
-    controls: true,
-    autoplayButton: false,
-    autoplayButtonOutput: false,
-    controlsText: [renderToString(<BsArrowLeft size={16} />), renderToString(<BsArrowRight size={16} />)],
-    arrowKeys: true,
-    items: 1,
-    nav: false,
-    mouseDrag: true,
-    slideBy: 'page',
-    autoWidth: false,
-  }), []);
 
   const formattedPrice = typeof price === 'number' ? price : parseFloat(price || '0');
 
@@ -82,26 +65,7 @@ const RoomCard = ({ id, slug, features, images, name, price, sale, schemes, hote
               <div className="badge text-bg-danger">{sale}</div>
             </div>
           )}
-          <div className="tiny-slider arrow-round arrow-xs arrow-dark h-100">
-            <div className="position-absolute top-0 start-0 w-100 h-100 tns-height-fix">
-              <TinySlider settings={roomSliderSettings} className="h-100">
-                {images.map((image, idx) => (
-                  <div key={idx} className="h-100">
-                    <SkeletonImage src={image} alt="Room image" className="w-100 h-100" height="100%" />
-                  </div>
-                ))}
-              </TinySlider>
-            </div>
-          </div>
-          <style dangerouslySetInnerHTML={{
-            __html: `
-            .tns-height-fix .tns-outer,
-            .tns-height-fix .tns-inner,
-            .tns-height-fix .tns-ovh,
-            .tns-height-fix .tns-slider {
-              height: 100% !important;
-            }
-          `}} />
+          <ImageSlider images={images} height="250px" alt={name} fillHeight />
         </Col>
         <Col md={8}>
           <div className="card-body p-3 p-md-4">

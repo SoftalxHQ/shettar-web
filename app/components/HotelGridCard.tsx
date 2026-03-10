@@ -1,68 +1,38 @@
 'use client';
 
-import { TinySlider, SkeletonImage, FavoriteButton } from '@/app/components';
+import { FavoriteButton } from '@/app/components';
+import { ImageSlider } from '@/app/components/ImageSlider';
 import { currency, useLayoutContext } from '@/app/states';
 import { Button, Card, CardBody, CardFooter } from 'react-bootstrap';
-import { renderToString } from 'react-dom/server';
-import { BsArrowLeft, BsArrowRight, BsHeart, BsHeartFill, BsStarFill } from 'react-icons/bs';
+import { BsArrowRight, BsStarFill } from 'react-icons/bs';
 import Link from 'next/link';
-import { useMemo } from 'react';
-import { type TinySliderSettings } from 'tiny-slider';
 import { useRouter, useSearchParams } from 'next/navigation';
-
-import 'tiny-slider/dist/tiny-slider.css';
 
 import { HotelsGridType } from '@/app/types/hotel';
 
 const HotelGridCard = ({ id, slug, feature, images, name, price, rating, sale, is_favorite, old_price }: HotelsGridType) => {
-  const { dir, isAuthenticated } = useLayoutContext();
+  const { isAuthenticated } = useLayoutContext();
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  // Create the search query string once
   const searchQuery = searchParams.toString();
   const hotelDetailLink = `/hotel/${slug || id}${searchQuery ? `?${searchQuery}` : ''}`;
-
-  const gridSliderSettings: TinySliderSettings = useMemo(() => ({
-    mouseDrag: true,
-    gutter: 0,
-    items: 1,
-    autoplay: false,
-    controls: true,
-    autoplayButton: false,
-    autoplayButtonOutput: false,
-    controlsText: [renderToString(<BsArrowLeft size={16} />), renderToString(<BsArrowRight size={16} />)],
-    arrowKeys: true,
-    autoplayDirection: dir === 'ltr' ? 'forward' : 'backward',
-    nav: false,
-    slideBy: 'page',
-    autoWidth: false,
-    preventScrollOnTouch: 'auto',
-  }), [dir]);
 
   return (
     <Card className="shadow p-2 pb-0 h-100 border-0">
       <div className="position-relative">
         {sale && (
-          <div className="position-absolute top-0 start-0 z-index-2 m-3">
+          <div className="position-absolute top-0 start-0 z-index-2 m-3" style={{ zIndex: 5 }}>
             <div className="badge bg-danger text-white">{sale}</div>
           </div>
         )}
 
         {/* Heart icon on top right of image */}
-        <div className="position-absolute top-0 end-0 z-index-2 m-3">
+        <div className="position-absolute top-0 end-0 z-index-2 m-3" style={{ zIndex: 5 }}>
           <FavoriteButton businessId={Number(id)} initialIsWishlisted={is_favorite} />
         </div>
 
-        <div className="tiny-slider arrow-round arrow-xs arrow-dark rounded-2 overflow-hidden" style={{ height: '200px' }}>
-          <TinySlider settings={gridSliderSettings}>
-            {images.map((image, idx) => (
-              <div key={idx}>
-                <SkeletonImage src={image} alt="Card image" className="card-img-top w-100" height="200px" />
-              </div>
-            ))}
-          </TinySlider>
-        </div>
+        <ImageSlider images={images} height="200px" alt={name} />
       </div>
 
       <CardBody className="px-3 pb-0">

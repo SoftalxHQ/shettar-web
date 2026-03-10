@@ -1,17 +1,14 @@
 'use client';
 
-import { TinySlider, SkeletonImage, FavoriteButton } from '@/app/components';
+import { FavoriteButton } from '@/app/components';
+import { ImageSlider } from '@/app/components/ImageSlider';
 import { currency, useLayoutContext } from '@/app/states';
 import { Fragment, useMemo } from 'react';
-import { Button, Card, CardBody, Col, Dropdown, DropdownItem, DropdownMenu, DropdownToggle, Image, Row } from 'react-bootstrap';
-import { renderToString } from 'react-dom/server';
-import { BsArrowLeft, BsArrowRight, BsGeoAlt, BsPatchCheckFill } from 'react-icons/bs';
+import { Card, CardBody, Col, Dropdown, DropdownItem, DropdownMenu, DropdownToggle, Row } from 'react-bootstrap';
+import { BsGeoAlt, BsPatchCheckFill } from 'react-icons/bs';
 import { FaFacebookSquare, FaLinkedin, FaShareAlt, FaStarHalfAlt, FaRegStar, FaTwitterSquare } from 'react-icons/fa';
 import { FaCopy, FaHeart, FaStar } from 'react-icons/fa6';
-import { type TinySliderSettings } from 'tiny-slider';
 import { type Hotel } from '@/app/types/hotel';
-
-import 'tiny-slider/dist/tiny-slider.css';
 import Link from 'next/link';
 import { toast } from 'react-hot-toast';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -22,29 +19,8 @@ const HotelListCard = ({ hotel }: { hotel: Hotel }) => {
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  // Create the search query string once
   const searchQuery = searchParams.toString();
   const hotelDetailLink = `/hotel/${hotel.slug || hotel.id}${searchQuery ? `?${searchQuery}` : ''}`;
-
-  // Assuming LTR as default since context is client-side only and might not be hydrated yet
-  const dir = 'ltr';
-
-  const listSliderSettings: TinySliderSettings = useMemo(() => ({
-    mouseDrag: true,
-    gutter: 0,
-    items: 1,
-    autoplay: false,
-    controls: true,
-    autoplayButton: false,
-    autoplayButtonOutput: false,
-    controlsText: [renderToString(<BsArrowLeft size={16} />), renderToString(<BsArrowRight size={16} />)],
-    arrowKeys: true,
-    autoplayDirection: dir === 'ltr' ? 'forward' : 'backward',
-    nav: false,
-    slideBy: 'page',
-    autoWidth: false,
-    preventScrollOnTouch: 'auto',
-  }), [dir]);
 
   return (
     <Card className="shadow p-2">
@@ -56,15 +32,7 @@ const HotelListCard = ({ hotel }: { hotel: Hotel }) => {
             </div>
           )}
 
-          <div className="tiny-slider arrow-round arrow-xs arrow-dark overflow-hidden rounded-2" style={{ height: '250px' }}>
-            <TinySlider settings={listSliderSettings}>
-              {images.map((image, idx) => (
-                <div key={idx} className="position-relative">
-                  <SkeletonImage src={image} alt="Card image" className="card-img-top w-100" height="250px" />
-                </div>
-              ))}
-            </TinySlider>
-          </div>
+          <ImageSlider images={images} height="250px" alt={name} />
         </Col>
         <Col md={7}>
           <CardBody className="py-md-2 d-flex flex-column h-100 position-relative">

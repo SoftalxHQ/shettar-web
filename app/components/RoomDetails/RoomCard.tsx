@@ -1,15 +1,12 @@
 'use client';
 
 import { useMemo } from 'react';
-import { GlightBox, SkeletonImage, TinySlider } from '@/app/components';
+import { ImageSlider } from '@/app/components/ImageSlider';
 import { Button, Card, CardBody, Col, Row } from 'react-bootstrap';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { renderToString } from 'react-dom/server';
-import { BsArrowLeft, BsArrowRight } from 'react-icons/bs';
 import { FaSquare } from 'react-icons/fa6';
 import { type HotelRoomType } from '@/app/data/room-details';
-import { type TinySliderSettings } from 'tiny-slider';
 
 const currency = '₦';
 
@@ -23,19 +20,6 @@ const RoomCard = ({ id, slug, images, name, price, sqfeet, hotelSlug, isSelected
 
   const roomLink = `${baseRoomLink}${searchQuery ? (baseRoomLink.includes('?') ? `&${searchQuery}` : `?${searchQuery}`) : ''}`;
 
-  const roomSliderSettings: TinySliderSettings = useMemo(() => ({
-    autoplay: false,
-    controls: true,
-    autoplayButton: false,
-    autoplayButtonOutput: false,
-    controlsText: [renderToString(<BsArrowLeft size={16} />), renderToString(<BsArrowRight size={16} />)],
-    arrowKeys: true,
-    items: 1,
-    nav: false,
-    mouseDrag: true,
-    slideBy: 'page',
-    autoWidth: false,
-  }), []);
 
   // Process active amenities
   const activeAmenities = Object.entries(amenities || {})
@@ -54,15 +38,7 @@ const RoomCard = ({ id, slug, images, name, price, sqfeet, hotelSlug, isSelected
     <Card className={`card-hover-shadow border-0 overflow-hidden shadow-sm ${isSelected ? 'border-primary border-2' : 'border'}`}>
       <Row className="g-0">
         <Col md={4} className="position-relative">
-          <div className="tiny-slider arrow-round arrow-xs arrow-dark h-100">
-            <TinySlider settings={roomSliderSettings} className="h-100">
-              {images.map((image, idx) => (
-                <div key={idx} className="h-100">
-                  <SkeletonImage src={image} alt={name} className="w-100 h-100" height="200px" />
-                </div>
-              ))}
-            </TinySlider>
-          </div>
+          <ImageSlider images={images} height="200px" alt={name} fillHeight />
         </Col>
         <Col md={8}>
           <CardBody className="d-flex flex-column h-100 p-3 p-md-4">
