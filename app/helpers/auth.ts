@@ -159,49 +159,6 @@ export async function signIn(payload: SignInPayload): Promise<AuthResult> {
   }
 }
 
-/**
- * POST /accounts/google_auth
- * Authenticates an Account using a Google ID Token.
- */
-export async function signInWithGoogle(googleToken: string): Promise<AuthResult> {
-  try {
-    const res = await fetch(`${API_URL}/accounts/google_auth`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ google_token: googleToken }),
-    });
-
-    const data = await res.json();
-
-    if (res.ok && data?.status?.code === 200) {
-      const authHeader = res.headers.get('Authorization');
-      const token = authHeader?.replace('Bearer ', '') ?? '';
-
-      const raw = data.data;
-      const user: StoredUser = {
-        id: raw.id,
-        email: raw.email,
-        first_name: raw.first_name,
-        last_name: raw.last_name,
-        phone_number: raw.phone_number ?? null,
-        phone_verified: raw.phone_verified ?? false,
-        address: raw.address ?? null,
-        zip_code: raw.zip_code ?? null,
-        avatar_url: raw.avatar_url ?? null,
-      };
-
-      saveAuthSession(user, token);
-      return { ok: true, message: 'Signed in with Google successfully.', user, token };
-    }
-
-    return {
-      ok: false,
-      message: data?.error || data?.status?.message || 'Google sign in failed.',
-    };
-  } catch {
-    return { ok: false, message: 'Unable to connect to server. Please try again.' };
-  }
-}
 
 /**
  * POST /accounts/sign_up

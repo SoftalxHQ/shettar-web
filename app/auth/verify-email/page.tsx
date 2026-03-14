@@ -139,7 +139,7 @@ function VerifyEmailContent() {
                 {/* Header */}
                 <div className="text-center mb-4">
                   <Link href="/">
-                    <Image src="/images/logo/logo.svg" height={50} width={160} alt="logo" className="mb-3" />
+                    <Image src="/images/logo/shettar-logo.png" height={50} width={160} alt="logo" className="mb-3" style={{ objectFit: 'contain' }} />
                   </Link>
                   <div
                     className="rounded-circle d-inline-flex align-items-center justify-content-center mb-3"

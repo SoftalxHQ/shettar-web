@@ -8,10 +8,9 @@ import { Button, Card, CardBody, Col, Container, Row } from 'react-bootstrap';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { PasswordFormInput, TextFormInput } from '@/app/components';
-import { GoogleLogin } from '@react-oauth/google';
 import Image from 'next/image';
 import toast from 'react-hot-toast';
-import { signIn, signInWithGoogle } from '@/app/helpers/auth';
+import { signIn } from '@/app/helpers/auth';
 import { useLayoutContext } from '@/app/states';
 
 type FormValues = {
@@ -56,28 +55,6 @@ const SignIn = () => {
     }
   };
 
-  const handleGoogleSuccess = async (credentialResponse: any) => {
-    if (!credentialResponse.credential) return;
-
-    setIsLoading(true);
-    const toastId = toast.loading('Signing in with Google…');
-
-    try {
-      const result = await signInWithGoogle(credentialResponse.credential);
-      if (result.ok) {
-        toast.success('Signed in with Google! 👋', { id: toastId });
-        await refreshAuth();
-        await refreshAccount();
-        router.push('/');
-      } else {
-        toast.error(result.message, { id: toastId });
-      }
-    } catch (error) {
-      toast.error('An error occurred during Google sign in.', { id: toastId });
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   return (
     <section className="vh-xxl-100 p-0 m-0 d-flex align-items-center bg-light">
@@ -88,7 +65,7 @@ const SignIn = () => {
               <CardBody className="p-4 p-sm-5">
                 <div className="text-center mb-4">
                   <Link href="/">
-                    <Image src="/images/logo/logo.svg" height={50} width={160} alt="logo" className="mb-3" />
+                    <Image src="/images/logo/shettar-logo.png" height={50} width={160} alt="logo" className="mb-3" style={{ objectFit: 'contain' }} />
                   </Link>
                   <h1 className="h4 mb-1">Welcome back</h1>
                   <p className="mb-0 text-secondary">Please enter your details to sign in.</p>
@@ -142,25 +119,6 @@ const SignIn = () => {
                     </Button>
                   </div>
 
-                  <div className="position-relative my-4 text-center">
-                    <hr />
-                    <span className="position-absolute top-50 start-50 translate-middle bg-body px-3 small text-secondary">
-                      Or continue with
-                    </span>
-                  </div>
-
-                  <div className="d-flex justify-content-center">
-                    <GoogleLogin
-                      onSuccess={handleGoogleSuccess}
-                      onError={() => {
-                        toast.error('Google Sign In was unsuccessful. Try again later.');
-                      }}
-                      useOneTap
-                      theme="outline"
-                      shape="pill"
-                      width="100%"
-                    />
-                  </div>
                 </form>
 
                 <div className="text-center mt-4">

@@ -8,7 +8,7 @@ import { Button, Card, CardBody, Col, Container, Row } from 'react-bootstrap';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { PasswordFormInput, TextFormInput } from '@/app/components';
-import { BsGoogle, BsArrowLeft, BsArrowRight, BsCheckCircleFill } from 'react-icons/bs';
+import { BsArrowLeft, BsArrowRight, BsCheckCircleFill } from 'react-icons/bs';
 import Image from 'next/image';
 import toast from 'react-hot-toast';
 import { signUp } from '@/app/helpers/auth';
@@ -97,7 +97,7 @@ const SignUp = () => {
               <CardBody className="p-4 p-sm-5">
                 <div className="text-center mb-4">
                   <Link href="/">
-                    <Image src="/images/logo/logo.svg" height={50} width={160} alt="logo" className="mb-3" />
+                    <Image src="/images/logo/shettar-logo.png" height={50} width={160} alt="logo" className="mb-3" style={{ objectFit: 'contain' }} />
                   </Link>
                   <h1 className="h4 mb-1">Create an account</h1>
                   <p className="mb-0 text-secondary">
@@ -233,25 +233,6 @@ const SignUp = () => {
                     </div>
                   )}
 
-                  {step === 1 && (
-                    <>
-                      <div className="position-relative my-4 text-center">
-                        <hr />
-                        <span className="position-absolute top-50 start-50 translate-middle bg-body px-3 small text-secondary">
-                          Or register with
-                        </span>
-                      </div>
-
-                      <Button
-                        variant="light"
-                        className="w-100 mb-0 border shadow-sm items-center d-flex justify-content-center py-2"
-                        disabled
-                        title="Google sign-up coming soon"
-                      >
-                        <BsGoogle className="text-danger me-2" /> Register with Google
-                      </Button>
-                    </>
-                  )}
                 </form>
 
                 <div className="text-center mt-4">

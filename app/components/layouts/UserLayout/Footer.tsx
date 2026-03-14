@@ -14,7 +14,7 @@ const Footer = () => {
           <Col md={4}>
             <div className="text-center text-md-start mb-3 mb-md-0">
               <Link href="/">
-                <Image className="h-30px" src="/images/logo/logo-light.svg" alt="logo" width={110} height={28} />
+                <Image className="h-30px" src="/images/logo/shettar-logo.png" alt="logo" width={110} height={28} style={{ objectFit: 'contain' }} />
               </Link>
             </div>
           </Col>

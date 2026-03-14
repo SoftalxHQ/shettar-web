@@ -19,13 +19,13 @@ export default function LogoBox({ imgClassName, onlyDark }: LogoBoxType) {
       */}
       <img
         className={clsx(!onlyDark && 'light-mode-item', 'navbar-brand-item', imgClassName)}
-        src="/images/logo/logo.svg"
+        src="/images/logo/shettar-logo.png"
         alt="logo"
       />
       {!onlyDark && (
         <img
           className={clsx('dark-mode-item navbar-brand-item', imgClassName)}
-          src="/images/logo/logo-light.svg"
+          src="/images/logo/shettar-logo.png"
           alt="logo"
         />
       )}

@@ -37,11 +37,12 @@ export default function FooterWithLinks() {
           <Col lg={4}>
             <Link href="/">
               <Image
-                src="/images/logo/logo-light.svg"
+                src="/images/logo/shettar-logo.png"
                 alt="logo"
                 width={160}
                 height={40}
                 className="h-40px"
+                style={{ objectFit: 'contain' }}
               />
             </Link>
             <p className="my-3 text-body-secondary">

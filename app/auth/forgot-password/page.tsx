@@ -161,7 +161,7 @@ const ForgotPassword = () => {
                   {/* Header */}
                   <div className="text-center mb-4">
                     <Link href="/">
-                      <Image src="/images/logo/logo.svg" height={50} width={160} alt="logo" className="mb-3" />
+                      <Image src="/images/logo/shettar-logo.png" height={50} width={160} alt="logo" className="mb-3" style={{ objectFit: 'contain' }} />
                     </Link>
                     <div
                       className="rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
@@ -315,14 +315,8 @@ const ForgotPassword = () => {
                 {/* Header */}
                 <div className="text-center mb-4">
                   <Link href="/">
-                    <Image src="/images/logo/logo.svg" height={50} width={160} alt="logo" className="mb-3" />
+                    <Image src="/images/logo/shettar-logo.png" height={50} width={160} alt="logo" className="mb-3" style={{ objectFit: 'contain' }} />
                   </Link>
-                  <div
-                    className="rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
-                    style={{ width: 56, height: 56, background: 'var(--bs-primary-bg-subtle)' }}
-                  >
-                    <BsEnvelopeCheck size={26} className="text-primary" />
-                  </div>
                   <h1 className="h4 mb-1">Forgot Password?</h1>
                   <p className="mb-0 text-secondary">
                     Enter your email and we&apos;ll send you a 6-digit reset code.
