@@ -187,7 +187,7 @@ const PaymentOptions = ({
   const handleTopUp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!topUpAmount || Number(topUpAmount) < 100) {
-      toast.error('Minimum top-up is 100');
+      toast.error('Minimum top-up is ₦100');
       return;
     }
 
@@ -202,7 +202,7 @@ const PaymentOptions = ({
           'Authorization': token ? `Bearer ${token}` : '',
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ amount: Number(topUpAmount) })
+        body: JSON.stringify({ amount: Number(topUpAmount), payment_method: 'card' })
       });
 
       const data = await response.json();
@@ -211,14 +211,14 @@ const PaymentOptions = ({
         throw new Error(data.errors?.[0]?.message || 'Failed to initialize payment');
       }
 
+      const chargeAmount = data.charge_amount || Number(topUpAmount);
       const handler = (window as any).PaystackPop.setup({
         key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY,
         email: account?.email,
-        amount: Number(topUpAmount) * 100,
+        amount: Math.round(chargeAmount * 100),
         ref: data.reference,
-        onClose: () => {
-          setIsTopUpProcessing(false);
-        },
+        metadata: data.metadata,
+        onClose: () => { setIsTopUpProcessing(false); },
         callback: async (response: any) => {
           await verifyTopUpPayment(response.reference);
         }
@@ -278,15 +278,24 @@ const PaymentOptions = ({
         const user = userJson ? JSON.parse(userJson) : null;
         const email = user?.email || data.email_address || 'guest@shettar.com';
 
-        // Generate custom Paystack reference: STR{TIMESTAMP}{RANDOM}
-        const generateReference = () => {
-          const timestamp = Date.now().toString(36).toUpperCase(); // Base36 encoded timestamp
-          const random = Math.random().toString(36).substring(2, 10).toUpperCase(); // Random string
-          return `STR${random}`;
-        };
+        const generateReference = () => `STR${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
         const customReference = generateReference();
 
-        // Initialize payment through backend to get access_code
+        // Calculate gross amount so platform receives exactly `total` after Paystack fee
+        const calculateGross = (target: number) => {
+          let gross: number;
+          if (target < 2500) {
+            gross = target / (1 - 0.015);
+          } else {
+            gross = (target + 100) / (1 - 0.015);
+            if (gross - target > 2000) gross = target + 2000;
+          }
+          return Math.round(gross * 100) / 100;
+        };
+        const grossAmount = calculateGross(total);
+        const paystackFee = Math.round((grossAmount - total) * 100) / 100;
+
+        // Initialize payment through backend
         const initResponse = await apiFetch(`${API_URL}/api/v1/payment_initializations`, {
           method: 'POST',
           headers: {
@@ -296,9 +305,11 @@ const PaymentOptions = ({
           body: JSON.stringify({
             initialization: {
               email: email,
-              amount: total,
-              reference: customReference, // Use our custom reference
+              amount: grossAmount,
+              reference: customReference,
               metadata: {
+                target_amount: total,
+                paystack_fee: paystackFee,
                 booking_data: {
                   start_date: startDate,
                   end_date: endDate,
@@ -319,15 +330,13 @@ const PaymentOptions = ({
           throw new Error(initResult.message || 'Failed to initialize payment');
         }
 
-        // Open inline Paystack popup with access_code from backend
         const paystack = new window.PaystackPop();
         paystack.newTransaction({
           key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY,
           email: email,
-          amount: Math.round(total * 100),
-          ref: initResult.reference, // Use reference from backend
+          amount: Math.round(grossAmount * 100), // gross amount in kobo
+          ref: initResult.reference,
           onSuccess: (transaction: any) => {
-            // Payment successful, create booking
             createReservation(data, transaction.reference)
               .then((result: any) => {
                 router.push(`/hotel/${hotelSlug}/roomtype/${roomSlug}/booking-confirmed?booking_id=${result.reservations[0].booking_id}`);
@@ -416,7 +425,32 @@ const PaymentOptions = ({
                 <Image src="/images/element/visa.svg" className="h-30px me-2" alt="visa" />
                 <Image src="/images/element/mastercard.svg" className="h-30px me-2" alt="mastercard" />
                 <Image src="/images/element/expresscard.svg" className="h-30px" alt="express" />
-                <p className="mt-3 mb-4 opacity-75">You will be redirected to Paystack to complete your payment securely.</p>
+                <p className="mt-3 mb-3 opacity-75">You will be redirected to Paystack to complete your payment securely.</p>
+                {/* Fee breakdown */}
+                {total > 0 && (() => {
+                  let gross: number;
+                  if (total < 2500) { gross = total / (1 - 0.015); }
+                  else { gross = (total + 100) / (1 - 0.015); if (gross - total > 2000) gross = total + 2000; }
+                  gross = Math.round(gross * 100) / 100;
+                  const fee = Math.round((gross - total) * 100) / 100;
+                  return (
+                    <div className="bg-warning bg-opacity-10 border border-warning border-opacity-25 rounded p-3 mb-3 text-start">
+                      <p className="small fw-bold mb-2">Payment Breakdown</p>
+                      <div className="d-flex justify-content-between small mb-1">
+                        <span className="text-muted">Booking amount</span>
+                        <span>{currency}{total.toLocaleString('en-NG', { minimumFractionDigits: 2 })}</span>
+                      </div>
+                      <div className="d-flex justify-content-between small mb-1">
+                        <span className="text-muted">Paystack processing fee</span>
+                        <span className="text-danger">+{currency}{fee.toLocaleString('en-NG', { minimumFractionDigits: 2 })}</span>
+                      </div>
+                      <div className="d-flex justify-content-between small fw-bold border-top pt-2 mt-1">
+                        <span>Total charged</span>
+                        <span className="text-primary">{currency}{gross.toLocaleString('en-NG', { minimumFractionDigits: 2 })}</span>
+                      </div>
+                    </div>
+                  );
+                })()}
                 <Button
                   variant="primary"
                   className="w-100 mb-0"

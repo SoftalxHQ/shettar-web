@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button, Card, CardBody, CardHeader, Col, Row, Badge, Modal, Form, Spinner } from 'react-bootstrap';
 import { currency } from '@/app/states';
 import { BsBuilding, BsCalendar2Check, BsGeoAlt, BsInfoCircle, BsXCircle } from 'react-icons/bs';
@@ -67,7 +67,42 @@ const BookingCard = ({ booking, onSuccess }: BookingCardProps) => {
   const [selectedReason, setSelectedReason] = useState(CANCELLATION_REASONS[0]);
   const [customReason, setCustomReason] = useState('');
   const [loading, setLoading] = useState(false);
+  const [config, setConfig] = useState<{ cancellation_fee_percentage: number; business_cancellation_credit_percentage: number } | null>(null);
   const { apiFetch } = useApi();
+
+  // Fetch platform config when modal opens to show refund preview
+  const openModal = async () => {
+    setShowModal(true);
+    if (config) return; // already fetched
+    try {
+      const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
+      // Public endpoint — no auth required, won't trigger logout on 401
+      const res = await fetch(`${API_URL}/api/v1/cancellation_policy`);
+      if (res.ok) {
+        const data = await res.json();
+        setConfig({
+          cancellation_fee_percentage: data.cancellation_fee_percentage ?? 10,
+          business_cancellation_credit_percentage: data.business_cancellation_credit_percentage ?? 22.22,
+        });
+      }
+    } catch { /* silent — modal still works without preview */ }
+  };
+
+  // Calculate the customer refund amount
+  const refundBreakdown = (() => {
+    if (!config) return null;
+    const total = Number(total_amount) || 0;
+    if (total <= 0) return null;
+    const feeRate = config.cancellation_fee_percentage / 100;
+    const remaining = 1 - feeRate;
+    const businessCreditRate = config.business_cancellation_credit_percentage / 100;
+    const platformFee = +(total * feeRate).toFixed(2);
+    const refundable = total - platformFee;
+    const businessCredit = +(refundable * businessCreditRate).toFixed(2);
+    const customerRefund = +(refundable - businessCredit).toFixed(2);
+    const customerPct = +((1 - feeRate) * (1 - businessCreditRate) * 100).toFixed(1);
+    return { total, platformFee, businessCredit, customerRefund, customerPct };
+  })();
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-GB', {
@@ -193,7 +228,7 @@ const BookingCard = ({ booking, onSuccess }: BookingCardProps) => {
                   variant="outline-danger"
                   size="sm"
                   className="mb-0"
-                  onClick={() => setShowModal(true)}
+                  onClick={openModal}
                 >
                   <BsXCircle className="me-1" /> Cancel Booking
                 </Button>
@@ -212,6 +247,37 @@ const BookingCard = ({ booking, onSuccess }: BookingCardProps) => {
           <p className="small text-secondary mb-3">
             Please select a reason for cancelling your stay at <strong>{business?.name}</strong>.
           </p>
+
+          {/* Refund breakdown */}
+          {refundBreakdown ? (
+            <div className="bg-warning bg-opacity-10 border border-warning border-opacity-25 rounded p-3 mb-3">
+              <p className="small fw-bold mb-2">Refund Breakdown</p>
+              <div className="d-flex justify-content-between small mb-1">
+                <span className="text-muted">Booking total</span>
+                <span>{currency}{refundBreakdown.total.toLocaleString()}</span>
+              </div>
+              <div className="d-flex justify-content-between small mb-1">
+                <span className="text-muted">Platform cancellation fee ({config?.cancellation_fee_percentage}%)</span>
+                <span className="text-danger">−{currency}{refundBreakdown.platformFee.toLocaleString()}</span>
+              </div>
+              <div className="d-flex justify-content-between small mb-1">
+                <span className="text-muted">Business retention</span>
+                <span className="text-secondary">−{currency}{refundBreakdown.businessCredit.toLocaleString()}</span>
+              </div>
+              <div className="d-flex justify-content-between small fw-bold border-top pt-2 mt-1">
+                <span className="text-success">You will receive ({refundBreakdown.customerPct}%)</span>
+                <span className="text-success">{currency}{refundBreakdown.customerRefund.toLocaleString()}</span>
+              </div>
+              <p className="text-muted mb-0 mt-2" style={{ fontSize: '0.7rem' }}>
+                Refund will be credited to your Shettar wallet.
+              </p>
+            </div>
+          ) : (
+            <div className="bg-light rounded p-2 mb-3 text-center">
+              <Spinner animation="border" size="sm" className="me-2" />
+              <span className="small text-muted">Loading refund details…</span>
+            </div>
+          )}
 
           <Form.Group className="mb-3">
             <Form.Label className="small fw-bold">Why are you cancelling?</Form.Label>

@@ -17,6 +17,9 @@ const AccountWallet = () => {
   const [showTopUp, setShowTopUp] = useState(false);
   const [amount, setAmount] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<'card' | 'dva'>('dva');
+  const [feeBreakdown, setFeeBreakdown] = useState<{ target_amount: number; charge_amount: number; paystack_fee: number } | null>(null);
+  const [isFetchingFee, setIsFetchingFee] = useState(false);
   const [dvaDetails, setDvaDetails] = useState<{ account_number: string; bank_name: string; account_name: string } | null>(null);
   const [isDvaLoading, setIsDvaLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -98,10 +101,40 @@ const AccountWallet = () => {
     toast.success('Copied to clipboard!');
   };
 
+  // Calculate fee breakdown when amount or payment method changes
+  useEffect(() => {
+    const num = Number(amount);
+    if (!num || num < 100) {
+      setFeeBreakdown(null);
+      return;
+    }
+
+    const calculateCardFee = (target: number) => {
+      let gross: number;
+      if (target < 2500) {
+        gross = target / (1 - 0.015);
+      } else {
+        gross = (target + 100) / (1 - 0.015);
+        if (gross - target > 2000) gross = target + 2000;
+      }
+      gross = Math.round(gross * 100) / 100;
+      return { target_amount: target, charge_amount: gross, paystack_fee: Math.round((gross - target) * 100) / 100 };
+    };
+
+    const calculateDvaFee = (target: number) => {
+      const uncappedGross = target / (1 - 0.01);
+      const uncappedFee = uncappedGross - target;
+      const gross = Math.round((uncappedFee > 300 ? target + 300 : uncappedGross) * 100) / 100;
+      return { target_amount: target, charge_amount: gross, paystack_fee: Math.round((gross - target) * 100) / 100 };
+    };
+
+    setFeeBreakdown(paymentMethod === 'card' ? calculateCardFee(num) : calculateDvaFee(num));
+  }, [amount, paymentMethod]);
+
   const handleTopUp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!amount || Number(amount) < 100) {
-      toast.error('Minimum top-up is 100');
+      toast.error('Minimum top-up is ₦100');
       return;
     }
 
@@ -110,14 +143,14 @@ const AccountWallet = () => {
       const token = getStoredToken();
       const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
 
-      // 1. Initialize topup on backend
+      // 1. Initialize topup on backend — pass payment method so backend calculates gross amount
       const response = await apiFetch(`${API_URL}/api/v1/wallet/initialize_topup`, {
         method: 'POST',
         headers: {
           'Authorization': token ? `Bearer ${token}` : '',
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ amount: Number(amount) })
+        body: JSON.stringify({ amount: Number(amount), payment_method: paymentMethod })
       });
 
       const data = await response.json();
@@ -126,17 +159,26 @@ const AccountWallet = () => {
         throw new Error(data.errors?.[0]?.message || 'Failed to initialize payment');
       }
 
-      // 2. Open Paystack
+      if (paymentMethod === 'dva') {
+        // DVA — just show the account details, no Paystack popup needed
+        toast.success('Transfer the exact amount to your virtual account to fund your wallet.');
+        setShowTopUp(false);
+        setAmount('');
+        return;
+      }
+
+      // 2. Open Paystack with the GROSS amount (includes fee passed to customer)
+      const chargeAmount = data.charge_amount || Number(amount);
       const handler = (window as any).PaystackPop.setup({
         key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY,
         email: profile?.email,
-        amount: Number(amount) * 100, // in kobo
+        amount: Math.round(chargeAmount * 100), // in kobo
         ref: data.reference,
+        metadata: data.metadata,
         onClose: () => {
           setIsProcessing(false);
         },
         callback: async (response: any) => {
-          // 3. Verify on backend
           await verifyPayment(response.reference);
         }
       });
@@ -238,11 +280,14 @@ const AccountWallet = () => {
         <Col md={6}>
           <Card className="bg-light border h-100 shadow-sm">
             <CardBody className="p-4">
-              <div className="d-flex align-items-center mb-3">
-                <div className="icon-md bg-dark text-white rounded-circle me-3 flex-centered">
-                  <BsBank size={20} />
+              <div className="d-flex align-items-center justify-content-between mb-3">
+                <div className="d-flex align-items-center">
+                  <div className="icon-md bg-dark text-white rounded-circle me-3 flex-centered">
+                    <BsBank size={20} />
+                  </div>
+                  <h5 className="mb-0">Virtual Account</h5>
                 </div>
-                <h5 className="mb-0">Virtual Account</h5>
+                <span className="badge bg-success text-white" style={{ fontSize: '0.7rem' }}>Recommended</span>
               </div>
 
               {isDvaLoading && !dvaDetails ? (
@@ -298,7 +343,44 @@ const AccountWallet = () => {
         </Modal.Header>
         <Form onSubmit={handleTopUp}>
           <Modal.Body className="p-4">
-            <p className="text-secondary small mb-4">Enter an amount to add to your wallet. You will be redirected to Paystack for secure payment.</p>
+            {/* Payment method selector */}
+            <div className="mb-4">
+              <Form.Label className="small fw-bold mb-2">Payment Method</Form.Label>
+              <div className="d-flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setPaymentMethod('dva')}
+                  className={`flex-grow-1 p-3 rounded border text-start ${paymentMethod === 'dva' ? 'border-primary bg-primary bg-opacity-10' : 'border-secondary-subtle'}`}
+                  style={{ cursor: 'pointer', background: paymentMethod === 'dva' ? undefined : 'white' }}
+                >
+                  <div className="d-flex align-items-center gap-2">
+                    <BsBank size={18} className={paymentMethod === 'dva' ? 'text-primary' : 'text-muted'} />
+                    <div>
+                      <div className="small fw-bold">Bank Transfer (DVA)</div>
+                      <div className="text-muted" style={{ fontSize: '0.7rem' }}>1% fee (max ₦300) — Recommended</div>
+                    </div>
+                    {paymentMethod === 'dva' && <span className="ms-auto badge bg-primary" style={{ fontSize: '0.65rem' }}>✓</span>}
+                    <span className="ms-auto badge bg-success" style={{ fontSize: '0.65rem' }}>Recommended</span>
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPaymentMethod('card')}
+                  className={`flex-grow-1 p-3 rounded border text-start ${paymentMethod === 'card' ? 'border-primary bg-primary bg-opacity-10' : 'border-secondary-subtle'}`}
+                  style={{ cursor: 'pointer', background: paymentMethod === 'card' ? undefined : 'white' }}
+                >
+                  <div className="d-flex align-items-center gap-2">
+                    <BsPlusCircle size={18} className={paymentMethod === 'card' ? 'text-primary' : 'text-muted'} />
+                    <div>
+                      <div className="small fw-bold">Card</div>
+                      <div className="text-muted" style={{ fontSize: '0.7rem' }}>1.5% + ₦100 fee</div>
+                    </div>
+                    {paymentMethod === 'card' && <span className="ms-auto badge bg-primary" style={{ fontSize: '0.65rem' }}>✓</span>}
+                  </div>
+                </button>
+              </div>
+            </div>
+
             <Form.Group className="mb-3">
               <Form.Label className="small fw-bold">Amount to Fund</Form.Label>
               <InputGroup size="lg">
@@ -316,7 +398,7 @@ const AccountWallet = () => {
               <Form.Text className="text-muted">Minimum funding amount is {currency}100.00</Form.Text>
             </Form.Group>
 
-            <div className="d-flex gap-2 mt-4">
+            <div className="d-flex gap-2 mt-3 mb-3">
               {[500, 1000, 2000, 5000].map(amt => (
                 <Button
                   key={amt}
@@ -330,13 +412,66 @@ const AccountWallet = () => {
                 </Button>
               ))}
             </div>
+
+            {/* Fee breakdown for card */}
+            {paymentMethod === 'card' && feeBreakdown && Number(amount) >= 100 && (
+              <div className="p-3 rounded border border-warning-subtle bg-warning bg-opacity-10 mt-3">
+                <p className="small fw-bold mb-2 text-warning-emphasis">Transaction Breakdown</p>
+                <div className="d-flex justify-content-between small mb-1">
+                  <span className="text-muted">Wallet credit</span>
+                  <span className="fw-semibold">{currency}{feeBreakdown.target_amount.toLocaleString('en-NG', { minimumFractionDigits: 2 })}</span>
+                </div>
+                <div className="d-flex justify-content-between small mb-1">
+                  <span className="text-muted">Paystack processing fee</span>
+                  <span className="fw-semibold text-danger">+{currency}{feeBreakdown.paystack_fee.toLocaleString('en-NG', { minimumFractionDigits: 2 })}</span>
+                </div>
+                <div className="d-flex justify-content-between small border-top pt-2 mt-1">
+                  <span className="fw-bold">You will be charged</span>
+                  <span className="fw-bold text-primary">{currency}{feeBreakdown.charge_amount.toLocaleString('en-NG', { minimumFractionDigits: 2 })}</span>
+                </div>
+              </div>
+            )}
+
+            {/* DVA info */}
+            {paymentMethod === 'dva' && dvaDetails && (
+              <div className="p-3 rounded border border-success-subtle bg-success bg-opacity-10 mt-3">
+                <p className="small fw-bold mb-2 text-success-emphasis">Transfer to your virtual account</p>
+                <div className="d-flex justify-content-between align-items-center">
+                  <div>
+                    <p className="small text-muted mb-0">Account Number</p>
+                    <p className="fw-bold mb-0 font-monospace">{dvaDetails.account_number}</p>
+                    <p className="small text-muted mb-0">{dvaDetails.bank_name} — {dvaDetails.account_name}</p>
+                  </div>
+                  <Button variant="link" className="p-0 text-success" onClick={() => copyToClipboard(dvaDetails.account_number)}>
+                    <BsCopy size={16} />
+                  </Button>
+                </div>
+                {feeBreakdown && Number(amount) >= 100 && (
+                  <div className="mt-2 pt-2 border-top border-success-subtle">
+                    <div className="d-flex justify-content-between small mb-1">
+                      <span className="text-muted">Wallet credit</span>
+                      <span className="fw-semibold">{currency}{feeBreakdown.target_amount.toLocaleString('en-NG', { minimumFractionDigits: 2 })}</span>
+                    </div>
+                    <div className="d-flex justify-content-between small mb-1">
+                      <span className="text-muted">Paystack DVA fee (1%, max ₦300)</span>
+                      <span className="fw-semibold text-danger">+{currency}{feeBreakdown.paystack_fee.toLocaleString('en-NG', { minimumFractionDigits: 2 })}</span>
+                    </div>
+                    <div className="d-flex justify-content-between small fw-bold">
+                      <span>Transfer exactly</span>
+                      <span className="text-success">{currency}{feeBreakdown.charge_amount.toLocaleString('en-NG', { minimumFractionDigits: 2 })}</span>
+                    </div>
+                  </div>
+                )}
+                {!feeBreakdown && <p className="small text-muted mt-2 mb-0">Enter an amount above to see the exact transfer amount.</p>}
+              </div>
+            )}
           </Modal.Body>
           <Modal.Footer className="border-0 p-4 pt-0">
-            <Button variant="white" onClick={() => setShowTopUp(false)} disabled={isProcessing}>
+            <Button variant="white" onClick={() => { setShowTopUp(false); setAmount(''); setFeeBreakdown(null); }} disabled={isProcessing}>
               Cancel
             </Button>
             <Button variant="primary" type="submit" disabled={isProcessing || !amount}>
-              {isProcessing ? 'Processing...' : 'Proceed to Pay'}
+              {isProcessing ? 'Processing...' : paymentMethod === 'dva' ? `Transfer ${feeBreakdown ? `${currency}${feeBreakdown.charge_amount.toLocaleString('en-NG', { minimumFractionDigits: 2 })}` : 'amount'}` : `Pay ${feeBreakdown ? `${currency}${feeBreakdown.charge_amount.toLocaleString('en-NG', { minimumFractionDigits: 2 })}` : ''}`}
             </Button>
           </Modal.Footer>
         </Form>
