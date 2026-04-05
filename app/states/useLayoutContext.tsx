@@ -1,9 +1,17 @@
 'use client';
 
-import { changeHTMLAttribute } from '@/app/utils/html-layout';
-import { signOut } from '@/app/helpers/auth';
+import { type ReactNode, useEffect, useCallback } from 'react';
+import { useAppDispatch, useAppSelector } from '@/lib/store/hooks';
+import { setTheme, setDir } from '@/lib/store/slices/themeSlice';
+import { updateHotelStats as updateHotelStatsAction } from '@/lib/store/slices/hotelStatsSlice';
+import { clearCredentials, setCredentials } from '@/lib/store/slices/authSlice';
+import {
+  apiService,
+  useSignOutMutation,
+  useGetAccountDetailsQuery,
+} from '@/lib/store/services/apiService';
 import { useRouter } from 'next/navigation';
-import { type ReactNode, createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { getStoredUser, getStoredToken, clearAuthSession, signOut } from '@/app/helpers/auth';
 
 export type LayoutState = {
   theme: 'light' | 'dark' | 'auto';
@@ -24,142 +32,97 @@ type LayoutType = LayoutState & {
   refreshAccount: () => Promise<void>;
 };
 
-const LayoutContext = createContext<LayoutType | undefined>(undefined);
+export function useLayoutContext(): LayoutType {
+  const dispatch = useAppDispatch();
+  const router = useRouter();
+  const [signOutMutation] = useSignOutMutation();
 
-export function useLayoutContext() {
-  const context = useContext(LayoutContext);
-  if (context === undefined) {
-    throw new Error('useLayoutContext must be used within a LayoutProvider');
-  }
-  return context;
-}
+  const theme = useAppSelector((s) => s.theme.theme);
+  const dir = useAppSelector((s) => s.theme.dir);
+  const isAuthenticated = useAppSelector((s) => s.auth.isAuthenticated);
+  const authUser = useAppSelector((s) => s.auth.user);
+  const isAccountLoading = useAppSelector((s) => s.auth.isAccountLoading);
+  const hotelCount = useAppSelector((s) => s.hotelStats.hotelCount);
+  const hotelLocation = useAppSelector((s) => s.hotelStats.hotelLocation);
 
-const themeKey = 'data-bs-theme';
-
-export const LayoutProvider = ({ children }: { children: ReactNode }) => {
-  const [settings, setSettings] = useState<LayoutState>({
-    theme: 'light', // Default initial state
-    dir: 'ltr',
-    hotelCount: null,
-    hotelLocation: null,
-    isAuthenticated: false,
-    account: null,
-    isAccountLoading: true,
+  // Use the full profile from RTK Query cache — it has all fields (email_verified,
+  // avatar_url, emer_*, etc.) that the slim StoredUser in auth slice lacks.
+  const { data: fullProfile, isLoading: profileLoading } = useGetAccountDetailsQuery(undefined, {
+    skip: !isAuthenticated,
   });
 
-  const updateSettings = useCallback((newSettings: Partial<LayoutState>) => {
-    setSettings((prev) => ({ ...prev, ...newSettings }));
-  }, []);
+  // Merge: prefer full profile when available, fall back to auth slice user
+  const account = fullProfile ?? authUser;
 
-  const updateHotelStats = useCallback((count: number, location: string | null) => {
-    updateSettings({ hotelCount: count, hotelLocation: location });
-  }, [updateSettings]);
+  // Sync legacy session on mount if Redux is empty but localStorage has data
+  useEffect(() => {
+    if (!isAuthenticated) {
+      const user = getStoredUser();
+      const token = getStoredToken();
+      if (user && token) {
+        dispatch(setCredentials({ user, token }));
+      }
+    }
+  }, [isAuthenticated, dispatch]);
+
+  // Stable callbacks — dispatch is stable, so these never change reference
+  const updateTheme = useCallback(
+    (t: LayoutState['theme']) => dispatch(setTheme(t)),
+    [dispatch]
+  );
+
+  const updateDir = useCallback(
+    (d: LayoutState['dir']) => dispatch(setDir(d)),
+    [dispatch]
+  );
+
+  const updateHotelStats = useCallback(
+    (count: number, location: string | null) =>
+      dispatch(updateHotelStatsAction({ count, location })),
+    [dispatch]
+  );
 
   const refreshAuth = useCallback(() => {
-    const token = localStorage.getItem('token');
-    const user = localStorage.getItem('user');
-    updateSettings({ isAuthenticated: !!(token && user) });
-  }, [updateSettings]);
-
-  const router = useRouter();
+    const user = getStoredUser();
+    const token = getStoredToken();
+    if (user && token) {
+      dispatch(setCredentials({ user, token }));
+    }
+  }, [dispatch]);
 
   const logout = useCallback(async () => {
-    await signOut(); // revokes JWT on server, then clears localStorage
-    updateSettings({ isAuthenticated: false, account: null });
+    await signOut();
+    await signOutMutation();
+    dispatch(clearCredentials());
+    clearAuthSession();
     router.push('/auth/sign-in');
-  }, [updateSettings, router]);
+  }, [dispatch, signOutMutation, router]);
 
   const refreshAccount = useCallback(async () => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      updateSettings({ isAccountLoading: false });
-      return;
-    }
+    await dispatch(apiService.endpoints.getAccountDetails.initiate(undefined, { forceRefetch: true }));
+  }, [dispatch]);
 
-    updateSettings({ isAccountLoading: true });
-    try {
-      const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
-      const res = await fetch(`${API_URL}/account_details`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json().catch(() => ({}));
-      if (res.ok && data?.status?.code === 200) {
-        localStorage.setItem('user', JSON.stringify(data.data));
-        updateSettings({ account: data.data, isAccountLoading: false });
-      } else if (res.status === 401) {
-        // Token expired or invalid - force logout to avoid loop
-        await logout();
-      } else {
-        updateSettings({ account: null, isAccountLoading: false });
-      }
-    } catch (err) {
-      console.error('refreshAccount error:', err);
-      updateSettings({ account: null, isAccountLoading: false });
-    }
-  }, [updateSettings]);
-
-  // Effect to automatically fetch account when authenticated
-  useEffect(() => {
-    if (settings.isAuthenticated && !settings.account && !settings.isAccountLoading) {
-      const token = localStorage.getItem('token');
-      if (token) refreshAccount();
-    } else if (!settings.isAuthenticated && settings.account) {
-      updateSettings({ account: null });
-    }
-  }, [settings.isAuthenticated, settings.account, settings.isAccountLoading, refreshAccount, updateSettings]);
-
-  useEffect(() => {
-    const foundTheme = localStorage.getItem(themeKey) as LayoutState['theme'] | null;
-    const preferredTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-
-    let initialTheme: LayoutState['theme'] = 'light';
-    if (foundTheme) {
-      if (foundTheme === 'auto') {
-        changeHTMLAttribute(themeKey, preferredTheme);
-        initialTheme = 'auto';
-      } else {
-        changeHTMLAttribute(themeKey, foundTheme);
-        initialTheme = foundTheme;
-      }
-    } else {
-      localStorage.setItem(themeKey, 'auto');
-      changeHTMLAttribute(themeKey, preferredTheme);
-      initialTheme = 'auto';
-    }
-
-    setSettings(prev => ({ ...prev, theme: initialTheme }));
-    refreshAuth();
-    refreshAccount();
-  }, [refreshAuth, refreshAccount]);
-
-  const updateTheme = (newTheme: LayoutState['theme']) => {
-    const preferredTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-    if (newTheme === 'auto') {
-      changeHTMLAttribute(themeKey, preferredTheme);
-    } else {
-      changeHTMLAttribute(themeKey, newTheme);
-    }
-    localStorage.setItem(themeKey, newTheme);
-    updateSettings({ theme: newTheme });
+  return {
+    theme,
+    dir,
+    isAuthenticated,
+    account,
+    // Show loading while auth slice is loading OR while the full profile is being fetched
+    isAccountLoading: isAccountLoading || (isAuthenticated && profileLoading && !fullProfile),
+    hotelCount,
+    hotelLocation,
+    updateTheme,
+    updateDir,
+    updateHotelStats,
+    refreshAuth,
+    logout,
+    refreshAccount,
   };
+}
 
-  const updateDir = (newDir: LayoutState['dir']) => {
-    updateSettings({ dir: newDir });
-  };
+// LayoutProvider becomes a no-op passthrough
+export const LayoutProvider = ({ children }: { children: ReactNode }) => (
+  <>{children}</>
+);
 
-  return (
-    <LayoutContext.Provider
-      value={{
-        ...settings,
-        updateTheme,
-        updateDir,
-        updateHotelStats,
-        refreshAuth,
-        logout,
-        refreshAccount,
-      }}
-    >
-      {children}
-    </LayoutContext.Provider>
-  );
-};
+export default useLayoutContext;

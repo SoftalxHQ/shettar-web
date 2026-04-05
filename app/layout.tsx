@@ -7,9 +7,8 @@ export const metadata: Metadata = {
   keywords: ["hotels", "booking", "accommodation", "travel", "vacation"],
 };
 
-import { LayoutProvider } from "./states";
-import { NotificationProvider } from "./context/NotificationContext";
 import { Toaster } from 'react-hot-toast';
+import ReduxProvider from '@/lib/store/ReduxProvider';
 
 export default function RootLayout({
   children,
@@ -64,11 +63,9 @@ export default function RootLayout({
             },
           }}
         />
-        <LayoutProvider>
-          <NotificationProvider>
-              {children}
-          </NotificationProvider>
-        </LayoutProvider>
+        <ReduxProvider>
+          {children}
+        </ReduxProvider>
       </body>
     </html>
   );

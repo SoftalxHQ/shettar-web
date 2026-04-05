@@ -1,5 +1,12 @@
 'use client';
 
+/**
+ * @deprecated Use RTK Query endpoints from `@/lib/store/services/apiService` instead.
+ * This hook is retained only for components not yet migrated to Redux Toolkit.
+ * 401 handling is now centralised in `lib/store/services/apiService.ts` via
+ * `baseQueryWithReauth` — no need for this wrapper in new code.
+ */
+
 import { useCallback } from 'react';
 import { useLayoutContext } from '@/app/states';
 
