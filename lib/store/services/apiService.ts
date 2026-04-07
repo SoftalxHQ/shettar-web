@@ -301,6 +301,9 @@ export const apiService = createApi({
 
     getNotifications: builder.query<NotificationItem[], void>({
       query: () => "/api/v1/notifications",
+      // API returns { notifications: [...] } — unwrap it
+      transformResponse: (response: { notifications: NotificationItem[] }) =>
+        response.notifications ?? [],
       providesTags: ["Notifications"],
     }),
 

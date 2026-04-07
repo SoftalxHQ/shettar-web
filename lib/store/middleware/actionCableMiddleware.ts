@@ -4,6 +4,7 @@ import {
   type Subscription,
 } from "@rails/actioncable";
 import type { Middleware } from "@reduxjs/toolkit";
+import toast from "react-hot-toast";
 import { addNotification } from "../slices/notificationsSlice";
 import { setCredentials, clearCredentials } from "../slices/authSlice";
 
@@ -36,6 +37,15 @@ export const actionCableMiddleware: Middleware = (store) => {
               created_at: data.created_at || new Date().toISOString(),
             }),
           );
+
+          // Show toast for real-time notifications unless suppressed
+          // (suppress_toast is set by WalletChannel which shows its own toast)
+          if (!data.suppress_toast) {
+            toast.success(data.message || data.title || "New notification", {
+              icon: "🔔",
+              duration: 5000,
+            });
+          }
         },
         connected() {
           retryCount = 0;
