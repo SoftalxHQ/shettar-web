@@ -173,7 +173,12 @@ export default function Header() {
 
             <ul className="nav flex-row align-items-center list-unstyled">
               <Dropdown className="nav-item ms-3 dropdown" id="themeMenu">
-                <DropdownToggle as={Link} href="#" className="arrow-none nav-link p-0" id="themeDropdown" role="button">
+                <DropdownToggle
+                  as="button"
+                  className="arrow-none nav-link p-0 btn btn-link border-0 bg-transparent"
+                  id="themeDropdown"
+                  role="button"
+                >
                   {theme === 'light' ? <BsSun className="fs-5" /> : theme === 'dark' ? <BsMoonStars className="fs-5" /> : <BsCircleHalf className="fs-5" />}
                 </DropdownToggle>
                 <DropdownMenu
@@ -207,7 +212,12 @@ export default function Header() {
               {isAuthenticated ? (
                 <>
                   <Dropdown className="nav-item ms-3" id="notificationMenu">
-                    <DropdownToggle as={Link} href="#" className="arrow-none nav-link p-0 position-relative" id="notificationDropdown" role="button">
+                    <DropdownToggle
+                      as="button"
+                      className="arrow-none nav-link p-0 position-relative btn btn-link border-0 bg-transparent"
+                      id="notificationDropdown"
+                      role="button"
+                    >
                       <BsBellFill className="fs-5" />
                       {unreadCount > 0 && <span className="notif-badge animation-blink" />}
                     </DropdownToggle>
@@ -274,7 +284,12 @@ export default function Header() {
                   </Dropdown>
 
                   <Dropdown className="nav-item ms-3 dropdown" id="profileMenu">
-                    <DropdownToggle as={Link} href="#" className="arrow-none avatar avatar-xs p-0" id="profileDropdown" role="button">
+                    <DropdownToggle
+                      as="button"
+                      className="arrow-none avatar avatar-xs p-0 btn btn-link border-0 bg-transparent"
+                      id="profileDropdown"
+                      role="button"
+                    >
                       {account?.avatar_url ? (
                         <Image className="avatar-img rounded-3 border border-primary shadow-sm" src={avatar} alt="avatar" width={24} height={24} />
                       ) : (
