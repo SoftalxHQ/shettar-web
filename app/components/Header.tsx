@@ -96,7 +96,6 @@ export default function Header() {
   const { isOpen, toggle } = useToggle();
   const { scrollY } = useScrollEvent();
   const headerRef = useRef<HTMLElement>(null);
-  const [headerHeight, setHeaderHeight] = useState(0);
   const router = useRouter();
   const [isSendingCode, setIsSendingCode] = useState(false);
 
@@ -119,18 +118,12 @@ export default function Header() {
     }
   };
 
-  useEffect(() => {
-    if (headerRef.current) {
-      setHeaderHeight(headerRef.current.offsetHeight);
-    }
-  }, []);
-
   const fullName = account ? `${account.first_name} ${account.last_name}` : 'User';
   const email = account?.email || '';
   const avatar = account?.avatar_url || '/images/avatar/01.jpg';
 
   return (
-    <div style={{ minHeight: scrollY >= 400 ? headerHeight : 'auto' }}>
+    <div ref={headerRef}>
       {isAuthenticated && account && !account.email_verified && (
         <div className="bg-warning bg-opacity-10 border-bottom border-warning text-dark text-center py-2 px-3 small">
           <BsInfoCircle className="me-2 text-warning mb-1" />

@@ -41,9 +41,17 @@ const baseQuery = fetchBaseQuery({
 const baseQueryWithReauth: BaseQueryFn = async (args, api, extraOptions) => {
   const result = await baseQuery(args, api, extraOptions);
   if (result.error?.status === 401) {
-    api.dispatch(clearCredentials());
-    if (typeof window !== "undefined") {
-      window.location.href = "/auth/sign-in";
+    // Only redirect if we actually had a token — prevents redirect loops during
+    // redux-persist rehydration when the store is temporarily empty.
+    const token = (api.getState() as RootState).auth.token;
+    if (token) {
+      api.dispatch(clearCredentials());
+      if (typeof window !== "undefined") {
+        window.location.href = "/auth/sign-in";
+      }
+    } else {
+      // No token — just clear credentials silently, no redirect
+      api.dispatch(clearCredentials());
     }
   }
   return result;
