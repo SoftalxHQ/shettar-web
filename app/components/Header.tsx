@@ -95,7 +95,7 @@ export default function Header() {
   const { notifications, unreadCount, markAsRead } = useNotifications();
   const { isOpen, toggle } = useToggle();
   const { scrollY } = useScrollEvent();
-  const headerRef = useRef<HTMLElement>(null);
+  const headerRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const [isSendingCode, setIsSendingCode] = useState(false);
 

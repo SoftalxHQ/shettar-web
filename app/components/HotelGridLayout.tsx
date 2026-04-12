@@ -11,6 +11,13 @@ import { Hotel } from '@/app/types/hotel';
 import { useLayoutContext } from '@/app/states/useLayoutContext';
 import { getStoredToken } from '@/app/helpers/auth';
 
+// const formatDateToLocalISO = (date: Date) => {
+//   const year = date.getFullYear();
+//   const month = String(date.getMonth() + 1).padStart(2, '0');
+//   const day = String(date.getDate()).padStart(2, '0');
+//   return `${year}-${month}-${day}`;
+// };
+
 const HotelGridLayout = () => {
   const [hotels, setHotels] = useState<Hotel[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -39,6 +46,23 @@ const HotelGridLayout = () => {
           query.append(key, value);
         }
       });
+
+      // // Inject default dates (today → tomorrow) when none are in the URL
+      // // so the API applies availability filtering even on the initial page load
+      // if (!query.has('start_date')) {
+      //   query.set('start_date', formatDateToLocalISO(new Date()));
+      // }
+      // if (!query.has('end_date')) {
+      //   const tomorrow = new Date();
+      //   tomorrow.setDate(tomorrow.getDate() + 1);
+      //   query.set('end_date', formatDateToLocalISO(tomorrow));
+      // }
+      // if (!query.has('number_of_rooms')) {
+      //   query.set('number_of_rooms', '1');
+      // }
+      // if (!query.has('adults')) {
+      //   query.set('adults', '2');
+      // }
 
       const response = await fetch(`${API_URL}/api/v1/businesses?${query.toString()}`, {
         headers: {
