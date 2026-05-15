@@ -1,9 +1,10 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import type { BaseQueryFn } from "@reduxjs/toolkit/query";
 import type { RootState } from "../store";
-import { clearCredentials, setCredentials } from "../slices/authSlice";
+import { clearCredentials, setCredentials, setUser } from "../slices/authSlice";
 import type { StoredUser } from "@/app/helpers/auth";
-import type { NotificationItem } from "@/app/context/NotificationContext";
+import { wipeAllClientAuthStorage } from "@/app/helpers/auth";
+import type { NotificationItem } from "@/lib/store/slices/notificationsSlice";
 
 // ─── AccountProfile type (mirrors app/hooks/useAccountProfile.tsx) ────────────
 export interface AccountProfile {
@@ -41,17 +42,16 @@ const baseQuery = fetchBaseQuery({
 const baseQueryWithReauth: BaseQueryFn = async (args, api, extraOptions) => {
   const result = await baseQuery(args, api, extraOptions);
   if (result.error?.status === 401) {
-    // Only redirect if we actually had a token — prevents redirect loops during
-    // redux-persist rehydration when the store is temporarily empty.
-    const token = (api.getState() as RootState).auth.token;
-    if (token) {
-      api.dispatch(clearCredentials());
-      if (typeof window !== "undefined") {
-        window.location.href = "/auth/sign-in";
-      }
-    } else {
-      // No token — just clear credentials silently, no redirect
-      api.dispatch(clearCredentials());
+    const hadToken = !!(api.getState() as RootState).auth.token;
+    // Clear legacy + persisted Redux auth before dispatch so no effect can re-inject stale credentials.
+    wipeAllClientAuthStorage();
+    api.dispatch(clearCredentials());
+    if (
+      hadToken &&
+      typeof window !== "undefined" &&
+      !window.location.pathname.startsWith("/auth")
+    ) {
+      window.location.href = "/auth/sign-in";
     }
   }
   return result;
@@ -251,13 +251,10 @@ export const apiService = createApi({
       transformResponse: (response: { status: { code: number }; data: AccountProfile }) =>
         response.data,
       providesTags: ["AccountProfile"],
-      async onQueryStarted(_args, { dispatch, queryFulfilled, getState }) {
+      async onQueryStarted(_args, { dispatch, queryFulfilled }) {
         try {
           const { data } = await queryFulfilled;
-          const token = (getState() as RootState).auth.token;
-          if (token) {
-            dispatch(setCredentials({ token, user: data as unknown as StoredUser }));
-          }
+          dispatch(setUser(data as unknown as StoredUser));
         } catch {
           // query failed — do nothing
         }
@@ -533,6 +530,27 @@ export const apiService = createApi({
       }),
       invalidatesTags: ["Wishlists"],
     }),
+
+    // ── Promo Codes ───────────────────────────────────────────────────────────
+    validatePromoCode: builder.mutation<
+      { 
+        valid: boolean; 
+        code: string; 
+        discount_amount: number; 
+        funded_by: string; 
+        customer_pays: number;
+        discount_type: string;
+        discount_value: number;
+        error?: string;
+      }, 
+      { code: string; business_id: number | string; subtotal: number }
+    >({
+      query: (body) => ({
+        url: "/api/v1/promo_codes/validate",
+        method: "POST",
+        body,
+      }),
+    }),
   }),
 });
 
@@ -587,4 +605,5 @@ export const {
   useAddWishlistMutation,
   useRemoveWishlistMutation,
   useClearWishlistsMutation,
+  useValidatePromoCodeMutation,
 } = apiService;

@@ -32,6 +32,11 @@ const authSlice = createSlice({
       state.user = action.payload.user;
       state.isAuthenticated = true;
     },
+    /** Profile refresh — updates user without reconnecting Action Cable (see actionCableMiddleware). */
+    setUser(state, action: PayloadAction<StoredUser>) {
+      state.user = action.payload;
+      state.isAuthenticated = true;
+    },
     clearCredentials(state) {
       state.token = null;
       state.user = null;
@@ -44,7 +49,7 @@ const authSlice = createSlice({
   },
 });
 
-export const { setCredentials, clearCredentials, setAccountLoading } =
+export const { setCredentials, setUser, clearCredentials, setAccountLoading } =
   authSlice.actions;
 
 export const selectToken = (state: SelectorState) => state.auth.token;

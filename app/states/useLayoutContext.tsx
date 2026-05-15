@@ -10,8 +10,8 @@ import {
   useSignOutMutation,
   useGetAccountDetailsQuery,
 } from '@/lib/store/services/apiService';
-import { useRouter } from 'next/navigation';
-import { getStoredUser, getStoredToken, clearAuthSession, signOut } from '@/app/helpers/auth';
+import { useRouter, usePathname } from 'next/navigation';
+import { getStoredUser, getStoredToken, signOut, wipeAllClientAuthStorage } from '@/app/helpers/auth';
 
 export type LayoutState = {
   theme: 'light' | 'dark' | 'auto';
@@ -35,6 +35,8 @@ type LayoutType = LayoutState & {
 export function useLayoutContext(): LayoutType {
   const dispatch = useAppDispatch();
   const router = useRouter();
+  const pathname = usePathname();
+  const onAuthRoute = pathname?.startsWith('/auth') ?? false;
   const [signOutMutation] = useSignOutMutation();
 
   const theme = useAppSelector((s) => s.theme.theme);
@@ -48,7 +50,8 @@ export function useLayoutContext(): LayoutType {
   // Use the full profile from RTK Query cache — it has all fields (email_verified,
   // avatar_url, emer_*, etc.) that the slim StoredUser in auth slice lacks.
   const { data: fullProfile, isLoading: profileLoading } = useGetAccountDetailsQuery(undefined, {
-    skip: !isAuthenticated,
+    // Avoid account_details while on auth pages — stale persisted JWT + 401 + redirect was reloading /auth/sign-in in a loop.
+    skip: !isAuthenticated || onAuthRoute,
   });
 
   // Merge: prefer full profile when available, fall back to auth slice user
@@ -94,7 +97,7 @@ export function useLayoutContext(): LayoutType {
     await signOut();
     await signOutMutation();
     dispatch(clearCredentials());
-    clearAuthSession();
+    wipeAllClientAuthStorage();
     router.push('/auth/sign-in');
   }, [dispatch, signOutMutation, router]);
 

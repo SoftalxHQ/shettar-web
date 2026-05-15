@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { Card, CardBody, CardFooter, CardHeader, CardTitle } from 'react-bootstrap';
 
@@ -9,13 +9,15 @@ const PriceSummary = ({
   hotel,
   startDate,
   endDate,
-  roomsCount
+  roomsCount,
+  appliedPromo
 }: {
   room: any,
   hotel: any,
   startDate: string | null,
   endDate: string | null,
-  roomsCount: string | null
+  roomsCount: string | null,
+  appliedPromo?: any
 }) => {
   const price = room?.price || 0;
   const actualRoomsCount = parseInt(roomsCount || '1');
@@ -32,9 +34,9 @@ const PriceSummary = ({
   const nights = calculateNights();
   const baseCharges = price * nights;
   const roomCharges = baseCharges * actualRoomsCount;
-  const discount = 0;
+  const promoDiscount = appliedPromo?.discount_amount || 0;
   const taxes = 0; // No tax applied
-  const total = roomCharges - discount + taxes;
+  const total = roomCharges - promoDiscount + taxes;
 
   return (
     <Card className="shadow rounded-2 border-0">
@@ -55,10 +57,15 @@ const PriceSummary = ({
               <span className="h6 mb-0">x {actualRoomsCount}</span>
             </li>
           )}
-          <li className="list-group-item d-flex justify-content-between align-items-center px-0">
-            <span className="h6 fw-light mb-0">Total Discount</span>
-            <span className="h6 mb-0 text-success">-{currency}{discount.toLocaleString()}</span>
-          </li>
+          {promoDiscount > 0 && (
+            <li className="list-group-item d-flex justify-content-between align-items-center px-0">
+              <div className="flex flex-col">
+                <span className="h6 fw-light mb-0">Coupon Discount</span>
+                <span className="text-[10px] uppercase font-bold text-success tracking-tighter">{appliedPromo?.code} Applied</span>
+              </div>
+              <span className="h6 mb-0 text-success">-{currency}{promoDiscount.toLocaleString()}</span>
+            </li>
+          )}
           <li className="list-group-item d-flex justify-content-between align-items-center px-0">
             <span className="h6 fw-light mb-0">Taxes &amp; Fees</span>
             <span className="h6 mb-0">{currency}{taxes.toLocaleString()}</span>

@@ -65,6 +65,19 @@ export const clearAuthSession = () => {
   localStorage.removeItem('user');
 };
 
+const REDUX_PERSIST_AUTH_KEY = 'persist:auth';
+
+/** Clears legacy `token` / `user` and the redux-persist auth snapshot so a dead JWT cannot be re-applied. */
+export function wipeAllClientAuthStorage() {
+  clearAuthSession();
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.removeItem(REDUX_PERSIST_AUTH_KEY);
+  } catch {
+    /* ignore private mode / quota */
+  }
+}
+
 /**
  * DELETE /accounts/sign_out
  * Revokes the JWT on the server (via Devise-JWT JTI matcher) so the token
@@ -88,7 +101,7 @@ export async function signOut(): Promise<void> {
       // Network failure — local session will still be cleared below.
     }
   }
-  clearAuthSession();
+  wipeAllClientAuthStorage();
 }
 
 export const getStoredUser = (): StoredUser | null => {

@@ -44,7 +44,8 @@ const PaymentOptions = ({
   setValue,
   startDate,
   endDate,
-  roomsCount
+  roomsCount,
+  appliedPromo
 }: {
   room: any,
   hotel: any,
@@ -54,7 +55,8 @@ const PaymentOptions = ({
   setValue: any,
   startDate: string | null,
   endDate: string | null,
-  roomsCount: string | null
+  roomsCount: string | null,
+  appliedPromo?: any
 }) => {
   const params = useParams();
   const searchParams = useSearchParams();
@@ -123,7 +125,11 @@ const PaymentOptions = ({
 
   const price = room?.price || 0;
   const nights = calculateNights();
-  const total = price * nights * parseInt(actualRoomsCount); // No tax applied
+  const subtotal = price * nights * parseInt(actualRoomsCount); // Base price before discount
+  
+  // Use appliedPromo passed from parent
+  const discountAmount = appliedPromo?.discount_amount || 0;
+  const customerPayTotal = subtotal - discountAmount;
 
   const createReservation = async (data: any, paystackReference?: string) => {
     const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
@@ -161,6 +167,10 @@ const PaymentOptions = ({
       reservationData.emer_phone_number = data.emer_phone_number;
     }
 
+    if (appliedPromo) {
+      reservationData.promo_code = appliedPromo.code;
+    }
+
     const payload = {
       reservation: reservationData
     };
@@ -182,6 +192,14 @@ const PaymentOptions = ({
     }
 
     return result;
+  };
+
+  const showBookingSuccessToast = (bookingId: string) => {
+    toast.success('Your booking has been confirmed!', {
+      id: `booking-confirmed-${bookingId}`,
+      duration: 5000,
+      icon: '🎉',
+    });
   };
 
   const handleTopUp = async (e: React.FormEvent) => {
@@ -292,8 +310,8 @@ const PaymentOptions = ({
           }
           return Math.round(gross * 100) / 100;
         };
-        const grossAmount = calculateGross(total);
-        const paystackFee = Math.round((grossAmount - total) * 100) / 100;
+        const grossAmount = calculateGross(customerPayTotal);
+        const paystackFee = Math.round((grossAmount - customerPayTotal) * 100) / 100;
 
         // Initialize payment through backend
         const initResponse = await apiFetch(`${API_URL}/api/v1/payment_initializations`, {
@@ -308,7 +326,7 @@ const PaymentOptions = ({
               amount: grossAmount,
               reference: customReference,
               metadata: {
-                target_amount: total,
+                target_amount: customerPayTotal,
                 paystack_fee: paystackFee,
                 booking_data: {
                   start_date: startDate,
@@ -317,7 +335,8 @@ const PaymentOptions = ({
                   children: children,
                   number_of_room: actualRoomsCount,
                   hotel_id: hotel.id,
-                  room_type_id: room.id
+                  room_type_id: room.id,
+                  promo_code: appliedPromo?.code
                 }
               }
             }
@@ -339,7 +358,9 @@ const PaymentOptions = ({
           onSuccess: (transaction: any) => {
             createReservation(data, transaction.reference)
               .then((result: any) => {
-                router.push(`/hotel/${hotelSlug}/roomtype/${roomSlug}/booking-confirmed?booking_id=${result.reservations[0].booking_id}`);
+                const confirmedBookingId = result.reservations[0].booking_id;
+                showBookingSuccessToast(confirmedBookingId);
+                router.push(`/hotel/${hotelSlug}/roomtype/${roomSlug}/booking-confirmed?booking_id=${confirmedBookingId}`);
               })
               .catch((err: any) => {
                 setError(err.message || 'Payment successful but booking failed. Please contact support.');
@@ -354,7 +375,9 @@ const PaymentOptions = ({
       } else {
         // Wallet payment - direct backend call
         const result = await createReservation(data);
-        router.push(`/hotel/${hotelSlug}/roomtype/${roomSlug}/booking-confirmed?booking_id=${result.reservations[0].booking_id}`);
+        const confirmedBookingId = result.reservations[0].booking_id;
+        showBookingSuccessToast(confirmedBookingId);
+        router.push(`/hotel/${hotelSlug}/roomtype/${roomSlug}/booking-confirmed?booking_id=${confirmedBookingId}`);
       }
     } catch (err: any) {
       console.error('Booking error:', err);
@@ -377,6 +400,7 @@ const PaymentOptions = ({
             {error}
           </Alert>
         )}
+        
         <Accordion
           activeKey={paymentMethod === 'wallet' ? '1' : '2'}
           onSelect={(key: any) => setValue('payment_method', key === '1' ? 'wallet' : 'card')}
@@ -396,7 +420,7 @@ const PaymentOptions = ({
                       <h6 className="mb-1 fw-normal text-primary opacity-75">Available Balance</h6>
                       <h3 className="mb-0 text-primary fw-bold">{currency}{account?.wallet_balance?.toLocaleString() ?? '0.00'}</h3>
                     </div>
-                    {Number(account?.wallet_balance || 0) < total && (
+                    {Number(account?.wallet_balance || 0) < customerPayTotal && (
                       <Button variant="primary" size="sm" className="px-3" onClick={() => setShowTopUp(true)}>
                         Add Funds
                       </Button>
@@ -408,9 +432,9 @@ const PaymentOptions = ({
                   variant="primary"
                   className="w-100 mb-0"
                   onClick={handleSubmit(onSubmit)}
-                  disabled={isSubmitting || isEmergencyMissing || isEmailUnverified || Number(account?.wallet_balance || 0) < total}
+                  disabled={isSubmitting || isEmergencyMissing || isEmailUnverified || Number(account?.wallet_balance || 0) < customerPayTotal}
                 >
-                  {isSubmitting ? 'Processing...' : isEmailUnverified ? 'Verify Email to Book' : isEmergencyMissing ? 'Update Profile to Book' : Number(account?.wallet_balance || 0) < total ? 'Insufficient Balance' : `Pay ${currency}${total.toLocaleString()} Now`}
+                  {isSubmitting ? 'Processing...' : isEmailUnverified ? 'Verify Email to Book' : isEmergencyMissing ? 'Update Profile to Book' : Number(account?.wallet_balance || 0) < customerPayTotal ? 'Insufficient Balance' : `Pay ${currency}${customerPayTotal.toLocaleString()} Now`}
                 </Button>
               </AccordionBody>
             </AccordionItem>
@@ -427,18 +451,27 @@ const PaymentOptions = ({
                 <Image src="/images/element/expresscard.svg" className="h-30px" alt="express" />
                 <p className="mt-3 mb-3 opacity-75">You will be redirected to Paystack to complete your payment securely.</p>
                 {/* Fee breakdown */}
-                {total > 0 && (() => {
+                {customerPayTotal > 0 && (() => {
                   let gross: number;
-                  if (total < 2500) { gross = total / (1 - 0.015); }
-                  else { gross = (total + 100) / (1 - 0.015); if (gross - total > 2000) gross = total + 2000; }
+                  if (customerPayTotal < 2500) { gross = customerPayTotal / (1 - 0.015); }
+                  else { gross = (customerPayTotal + 100) / (1 - 0.015); if (gross - customerPayTotal > 2000) gross = customerPayTotal + 2000; }
                   gross = Math.round(gross * 100) / 100;
-                  const fee = Math.round((gross - total) * 100) / 100;
+                  const fee = Math.round((gross - customerPayTotal) * 100) / 100;
                   return (
                     <div className="bg-warning bg-opacity-10 border border-warning border-opacity-25 rounded p-3 mb-3 text-start">
                       <p className="small fw-bold mb-2">Payment Breakdown</p>
                       <div className="d-flex justify-content-between small mb-1">
                         <span className="text-muted">Booking amount</span>
-                        <span>{currency}{total.toLocaleString('en-NG', { minimumFractionDigits: 2 })}</span>
+                        <span>
+                          {appliedPromo ? (
+                            <>
+                              <span className="text-decoration-line-through opacity-50 me-2">{currency}{subtotal.toLocaleString('en-NG', { minimumFractionDigits: 2 })}</span>
+                              <span>{currency}{customerPayTotal.toLocaleString('en-NG', { minimumFractionDigits: 2 })}</span>
+                            </>
+                          ) : (
+                            <span>{currency}{customerPayTotal.toLocaleString('en-NG', { minimumFractionDigits: 2 })}</span>
+                          )}
+                        </span>
                       </div>
                       <div className="d-flex justify-content-between small mb-1">
                         <span className="text-muted">Paystack processing fee</span>

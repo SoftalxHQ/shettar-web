@@ -1,4 +1,6 @@
-import { useEffect } from 'react';
+"use client";
+
+import { useEffect, useState } from 'react';
 import { Col, Container, Row } from 'react-bootstrap';
 import { useForm } from 'react-hook-form';
 import GuestDetails from './GuestDetails';
@@ -8,6 +10,7 @@ import OfferAndDiscounts from './OfferAndDiscounts';
 import PaymentOptions from './PaymentOptions';
 import { useLayoutContext } from '@/app/states';
 import PriceSummary from './PriceSummary';
+import type { AppliedPromo } from '@/app/helpers/promo';
 
 const BookingDetails = ({
   room,
@@ -23,6 +26,8 @@ const BookingDetails = ({
   roomsCount: string | null
 }) => {
   const { account } = useLayoutContext();
+  const [appliedPromo, setAppliedPromo] = useState<AppliedPromo | null>(null);
+
   const { control, handleSubmit, setValue, watch } = useForm({
     defaultValues: {
       first_name: '',
@@ -48,6 +53,27 @@ const BookingDetails = ({
       setValue('emer_phone_number', account.emer_phone_number || '');
     }
   }, [account, setValue, watch('option')]);
+
+  // Calculate Subtotal for promo validation
+  const calculateSubtotal = () => {
+    const price = parseFloat(room?.price || '0');
+    const actualRoomsCount = parseInt(roomsCount || '1', 10);
+    
+    const calculateNights = () => {
+      if (!startDate || !endDate) return 1;
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      const diffTime = Math.abs(end.getTime() - start.getTime());
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      return diffDays > 0 ? diffDays : 1;
+    };
+
+    const nights = calculateNights();
+    const result = price * nights * actualRoomsCount;
+    return isNaN(result) ? 0 : result;
+  };
+
+  const subtotal = calculateSubtotal();
 
   return (
     <section className="pt-4">
@@ -79,6 +105,7 @@ const BookingDetails = ({
                 startDate={startDate}
                 endDate={endDate}
                 roomsCount={roomsCount}
+                appliedPromo={appliedPromo}
               />
             </div>
           </Col>
@@ -91,10 +118,17 @@ const BookingDetails = ({
                   startDate={startDate}
                   endDate={endDate}
                   roomsCount={roomsCount}
+                  appliedPromo={appliedPromo}
                 />
               </Col>
               <Col md={6} xl={12}>
-                <OfferAndDiscounts />
+                <OfferAndDiscounts 
+                  businessId={hotel?.id}
+                  subtotal={subtotal}
+                  appliedPromo={appliedPromo}
+                  onApply={setAppliedPromo}
+                  onRemove={() => setAppliedPromo(null)}
+                />
               </Col>
               <Col md={6} xl={12}>
                 <LoginAdvantages />

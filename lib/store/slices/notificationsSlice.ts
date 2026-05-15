@@ -27,17 +27,40 @@ const initialState: NotificationsState = {
   loading: false,
 };
 
+function dedupeNotifications(list: NotificationItem[]): NotificationItem[] {
+  const seen = new Set<number>();
+  return list.filter((n) => {
+    if (seen.has(n.id)) return false;
+    seen.add(n.id);
+    return true;
+  });
+}
+
 const notificationsSlice = createSlice({
   name: "notifications",
   initialState,
   reducers: {
     setNotifications(state, action: PayloadAction<NotificationItem[]>) {
-      state.notifications = action.payload;
-      state.unreadCount = action.payload.filter((n) => !n.read_at).length;
+      state.notifications = dedupeNotifications(action.payload);
+      state.unreadCount = state.notifications.filter((n) => !n.read_at).length;
     },
     addNotification(state, action: PayloadAction<NotificationItem>) {
+      const existing = state.notifications.findIndex((n) => n.id === action.payload.id);
+      if (existing >= 0) {
+        const wasUnread = !state.notifications[existing].read_at;
+        state.notifications[existing] = {
+          ...state.notifications[existing],
+          ...action.payload,
+        };
+        if (!wasUnread && !action.payload.read_at) {
+          state.unreadCount += 1;
+        }
+        return;
+      }
       state.notifications.unshift(action.payload);
-      state.unreadCount += 1;
+      if (!action.payload.read_at) {
+        state.unreadCount += 1;
+      }
     },
     markNotificationRead(state, action: PayloadAction<number | "all">) {
       const id = action.payload;

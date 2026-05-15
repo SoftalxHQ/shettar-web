@@ -13,12 +13,15 @@ const API_URL = (
 ).replace(/\/$/, "");
 const MAX_RETRIES = 3;
 const RETRY_DELAY_MS = 5000;
+/** Tracks notification toasts already shown (independent of Redux list / API refetch). */
+const toastedNotificationKeys = new Set<string>();
 
 export const actionCableMiddleware: Middleware = (store) => {
   let consumer: Consumer | null = null;
   let subscription: Subscription | null = null;
   let retryCount = 0;
   let retryTimer: ReturnType<typeof setTimeout> | null = null;
+  let activeToken: string | null = null;
 
   function connect(token: string) {
     const wsUrl = `${API_URL.replace(/^http/, "ws")}/cable?token=${token}`;
@@ -26,22 +29,36 @@ export const actionCableMiddleware: Middleware = (store) => {
     subscription = consumer.subscriptions.create(
       { channel: "AccountNotificationsChannel" },
       {
-        received(data: any) {
+        received(data: {
+          notification_id?: number;
+          title?: string;
+          message?: string;
+          data?: unknown;
+          created_at?: string;
+          suppress_toast?: boolean;
+        }) {
+          const notificationId = data.notification_id ?? -Date.now();
+          const toastKey = `notification-${notificationId}`;
+
           store.dispatch(
             addNotification({
-              id: data.notification_id,
-              title: data.title,
-              message: data.message,
+              id: notificationId,
+              title: data.title ?? "Notification",
+              message: data.message ?? "",
               data: data.data,
               read_at: undefined,
               created_at: data.created_at || new Date().toISOString(),
             }),
           );
 
-          // Show toast for real-time notifications unless suppressed
-          // (suppress_toast is set by WalletChannel which shows its own toast)
-          if (!data.suppress_toast) {
+          if (!data.suppress_toast && !toastedNotificationKeys.has(toastKey)) {
+            toastedNotificationKeys.add(toastKey);
+            if (toastedNotificationKeys.size > 200) {
+              const oldest = toastedNotificationKeys.values().next().value;
+              if (oldest) toastedNotificationKeys.delete(oldest);
+            }
             toast.success(data.message || data.title || "New notification", {
+              id: toastKey,
               icon: "🔔",
               duration: 5000,
             });
@@ -54,7 +71,7 @@ export const actionCableMiddleware: Middleware = (store) => {
           if (retryCount < MAX_RETRIES) {
             retryCount++;
             retryTimer = setTimeout(() => {
-              const token = store.getState().auth.token;
+              const token = (store.getState() as { auth: { token: string | null } }).auth.token;
               if (token) connect(token);
             }, RETRY_DELAY_MS);
           }
@@ -73,13 +90,18 @@ export const actionCableMiddleware: Middleware = (store) => {
     consumer = null;
     subscription = null;
     retryCount = 0;
+    activeToken = null;
   }
 
   return (next) => (action) => {
     const result = next(action);
     if (setCredentials.match(action)) {
-      disconnect();
-      connect(action.payload.token);
+      const token = action.payload.token;
+      if (token && token !== activeToken) {
+        disconnect();
+        activeToken = token;
+        connect(token);
+      }
     }
     if (clearCredentials.match(action)) {
       disconnect();

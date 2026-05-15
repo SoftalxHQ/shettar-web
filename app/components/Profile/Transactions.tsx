@@ -10,15 +10,40 @@ import { useApi } from '@/app/hooks/useApi';
 import Pagination from '../Pagination';
 import toast from 'react-hot-toast';
 
+interface TransactionMetadata {
+  business_name?: string;
+  booking_id?: string;
+  amount_charged?: number;
+  promo_code?: string;
+  promo_discount_amount?: number;
+  subtotal_before_discount?: number;
+}
+
 interface Transaction {
   id: number;
   amount: string | number;
   transaction_type: string;
   status: string;
   description: string;
-  metadata: any;
+  metadata?: TransactionMetadata | null;
   payment_method: string;
   created_at: string;
+}
+
+function getPromoBreakdown(txn: Transaction) {
+  const meta = txn.metadata;
+  if (!meta?.promo_code) return null;
+
+  const discount = Number(meta.promo_discount_amount ?? 0);
+  const subtotal = Number(meta.subtotal_before_discount ?? 0);
+  if (!discount || discount <= 0) return null;
+
+  return {
+    code: meta.promo_code,
+    subtotal: subtotal > 0 ? subtotal : Number(txn.amount) + discount,
+    discount,
+    charged: Number(meta.amount_charged ?? txn.amount),
+  };
 }
 
 const Transactions = () => {
@@ -170,10 +195,24 @@ const Transactions = () => {
               ) : (
                 transactions.map((txn) => {
                   const status = getStatusBadge(txn.status);
+                  const promo = getPromoBreakdown(txn);
                   return (
                     <tr key={txn.id}>
                       <td className="px-4">
                         <div className="fw-bold text-dark">{txn.description}</div>
+                        {promo && (
+                          <div className="small mt-1 d-flex flex-wrap align-items-center gap-2">
+                            <span className="text-muted text-decoration-line-through">
+                              {currency}{promo.subtotal.toLocaleString('en-NG', { minimumFractionDigits: 2 })}
+                            </span>
+                            <Badge bg="success" className="bg-opacity-10 text-success border-0 fw-semibold">
+                              −{currency}{promo.discount.toLocaleString('en-NG', { minimumFractionDigits: 2 })} · {promo.code}
+                            </Badge>
+                            <span className="text-muted">
+                              Paid {currency}{promo.charged.toLocaleString('en-NG', { minimumFractionDigits: 2 })}
+                            </span>
+                          </div>
+                        )}
                       </td>
                       <td>
                         {txn.payment_method ? (
