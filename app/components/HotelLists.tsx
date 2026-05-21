@@ -100,24 +100,7 @@ const HotelLists = () => {
       <Container>
         <Row className="mb-4">
           <Col xs={12}>
-            <Alert
-              show={alertVisible}
-              variant="danger"
-              className="d-flex justify-content-between align-items-center rounded-3 fade show mb-4 mb-0 pe-2 py-3"
-              role="alert"
-            >
-              <div className="d-flex align-items-center">
-                <span className="alert-heading h5 mb-0 me-2">
-                  <BsExclamationOctagonFill />
-                </span>
-                <span>
-                  <strong className="alert-heading me-2">Covid Policy:</strong>You may require to present an RT-PCR negative test report at the hotel
-                </span>
-              </div>
-              <Button variant="link" onClick={hideAlert} type="button" className="pb-0 pt-1 text-end" data-bs-dismiss="alert" aria-label="Close">
-                <BsXLg className="text-inherit" />
-              </Button>
-            </Alert>
+            
 
             <div className="hstack gap-3 justify-content-between justify-content-md-end">
               <Button

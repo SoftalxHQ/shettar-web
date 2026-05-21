@@ -1,8 +1,9 @@
 'use client';
 
 import { useToggle } from '@/app/hooks';
-import { Alert, Button, Card, Col, Container, Dropdown, DropdownItem, DropdownMenu, DropdownToggle, Modal, ModalHeader, Row, Spinner } from 'react-bootstrap';
-import { BsExclamationOctagonFill, BsEyeFill, BsFullscreen, BsGeoAlt, BsPinMapFill, BsXLg } from 'react-icons/bs';
+import { Button, Card, Col, Container, Dropdown, DropdownItem, DropdownMenu, DropdownToggle, Modal, ModalHeader, Row, Spinner } from 'react-bootstrap';
+import { BsEyeFill, BsFullscreen, BsGeoAlt, BsPinMapFill } from 'react-icons/bs';
+import GuestNoticesBanner from './GuestNoticesBanner';
 import { FaFacebookSquare, FaShareAlt } from 'react-icons/fa';
 import { FaCopy, FaLinkedin, FaXTwitter } from 'react-icons/fa6';
 import { useRouter } from 'next/navigation';
@@ -15,7 +16,6 @@ import { toast } from 'react-hot-toast';
 
 const HotelGallery = ({ hotel }: { hotel: any }) => {
   const { isOpen, toggle } = useToggle();
-  const { isOpen: alertVisible, hide: hideAlert } = useToggle(true);
   const { isAuthenticated } = useLayoutContext();
   const router = useRouter();
   const [isMapLoading, setIsMapLoading] = useState(true);
@@ -107,24 +107,7 @@ const HotelGallery = ({ hotel }: { hotel: any }) => {
               </div>
             </Col>
           </Row>
-          <Alert
-            show={alertVisible}
-            variant="danger"
-            className="d-flex justify-content-between align-items-center rounded-3 fade show mb-4 mb-0 pe-2 py-3"
-            role="alert"
-          >
-            <div className="items-center">
-              <span className="alert-heading h5 mb-0 me-2">
-                <BsExclamationOctagonFill />
-              </span>
-              <span>
-                <strong className="alert-heading me-2">Notice:</strong>Please follow all health and safety guidelines during your stay.
-              </span>
-            </div>
-            <Button variant="link" onClick={hideAlert} type="button" className="pb-0 pt-1 text-end">
-              <BsXLg className="text-reset" />
-            </Button>
-          </Alert>
+          <GuestNoticesBanner notices={hotel.guest_notices} />
         </Container>
       </section>
 

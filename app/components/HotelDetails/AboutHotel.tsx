@@ -150,7 +150,7 @@ const AboutHotel = ({ hotel, onRefresh }: { hotel: any; onRefresh?: () => void }
                 onReviewPosted={onRefresh}
               />
 
-              <HotelPolicies checkIn={hotel.check_in} checkOut={hotel.check_out} />
+              <HotelPolicies hotel={hotel} />
             </div>
           </Col>
           <Col as={'aside'} lg={5} className="order-lg-2">

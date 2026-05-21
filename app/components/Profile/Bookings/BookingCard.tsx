@@ -9,6 +9,7 @@ import { getStoredToken } from '@/app/helpers/auth';
 import { useApi } from '@/app/hooks/useApi';
 
 import Link from 'next/link';
+import { businessPublicId, hotelDetailPath, roomServicePath } from '@/app/helpers/bookings';
 
 interface Reservation {
   id: number;
@@ -18,14 +19,26 @@ interface Reservation {
   total_amount: string | number;
   cancelled: boolean;
   status?: string; // 'upcoming' | 'active' | 'past' | 'cancelled' — sent by the backend
+  occupied?: boolean;
+  checked_in_at?: string | null;
+  checked_out_at?: string | null;
+  can_order_room_service?: boolean;
+  room_number?: string;
+  payment_method_label?: string;
+  booked_at?: string;
+  created_at?: string;
   business?: {
+    id?: number;
     name: string;
     address: string;
-    slug: string;
+    slug?: string | null;
+    business_unique_id?: string;
     check_in: string;
     check_out: string;
+    restaurant_enabled?: boolean;
   };
   room?: {
+    number?: string;
     room_type: {
       name: string;
     }
@@ -62,6 +75,7 @@ const CANCELLATION_REASONS = [
 const BookingCard = ({ booking, onSuccess }: BookingCardProps) => {
   const { id, booking_id, start_date, end_date, cancelled, business, room, total_amount } = booking;
   const statusBadge = getStatusBadge(booking);
+  const hotelPath = hotelDetailPath(business);
 
   const [showModal, setShowModal] = useState(false);
   const [selectedReason, setSelectedReason] = useState(CANCELLATION_REASONS[0]);
@@ -175,7 +189,13 @@ const BookingCard = ({ booking, onSuccess }: BookingCardProps) => {
             </div>
             <ul className="nav nav-divider small mt-1">
               <li className="nav-item">Booking ID: <span className="text-dark fw-bold">{booking_id}</span></li>
-              <li className="nav-item">{room?.room_type?.name || 'Standard Room'}</li>
+              <li className="nav-item">
+                {(booking.room_number || room?.number)
+                  ? `Room ${booking.room_number || room?.number}`
+                  : 'Room TBA'}
+                {' · '}
+                {room?.room_type?.name || 'Standard Room'}
+              </li>
             </ul>
           </div>
         </div>
@@ -214,11 +234,32 @@ const BookingCard = ({ booking, onSuccess }: BookingCardProps) => {
             </div>
           </Col>
           <Col sm={12} md={6} className="text-md-end align-self-center">
-            <div className="d-flex flex-wrap gap-2 justify-content-md-end mt-3 mt-md-0">
-              {business?.slug && (
-                <Link href={`/hotel/${business.slug}`} passHref>
-                  <Button variant="outline-primary" size="sm" className="mb-0">
-                    <BsInfoCircle className="me-1" /> View Details
+            <div className="d-flex flex-wrap gap-1 justify-content-md-end mt-3 mt-md-0">
+              <Link href={`/user/bookings/${booking_id}`} passHref>
+                <Button variant="outline-primary" size="sm" className="mb-0 py-1 px-2">
+                  <BsInfoCircle className="me-1" /> Booking
+                </Button>
+              </Link>
+
+              {booking.can_order_room_service && businessPublicId(business) && (
+                <Link
+                  href={roomServicePath(booking_id, {
+                    businessUniqueId: businessPublicId(business)!,
+                    reservationId: id,
+                    roomNumber: booking.room_number || room?.number || '',
+                  })}
+                  passHref
+                >
+                  <Button variant="primary" size="sm" className="mb-0 py-1 px-2">
+                    Room service
+                  </Button>
+                </Link>
+              )}
+
+              {hotelPath && (
+                <Link href={hotelPath} passHref>
+                  <Button variant="outline-secondary" size="sm" className="mb-0 py-1 px-2">
+                    Hotel
                   </Button>
                 </Link>
               )}
@@ -227,10 +268,10 @@ const BookingCard = ({ booking, onSuccess }: BookingCardProps) => {
                 <Button
                   variant="outline-danger"
                   size="sm"
-                  className="mb-0"
+                  className="mb-0 py-1 px-2"
                   onClick={openModal}
                 >
-                  <BsXCircle className="me-1" /> Cancel Booking
+                  <BsXCircle className="me-1" /> Cancel
                 </Button>
               )}
             </div>
