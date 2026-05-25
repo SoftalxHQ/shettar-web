@@ -164,6 +164,21 @@ export default function BookingDetailPage() {
                 Room service
               </Link>
             )}
+            {!booking.can_order_room_service &&
+              booking.has_room_service_orders &&
+              businessPublicId(booking.business) && (
+              <Link
+                href={roomServicePath(booking.booking_id, {
+                  businessUniqueId: businessPublicId(booking.business)!,
+                  reservationId: booking.id,
+                  roomNumber: roomNum,
+                  historyOnly: true,
+                })}
+                className="btn btn-outline-primary btn-sm"
+              >
+                View orders
+              </Link>
+            )}
             {hotelPath && (
               <Link href={hotelPath} className="btn btn-outline-primary btn-sm">
                 View hotel

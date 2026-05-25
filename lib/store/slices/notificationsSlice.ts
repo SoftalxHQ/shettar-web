@@ -44,6 +44,20 @@ const notificationsSlice = createSlice({
       state.notifications = dedupeNotifications(action.payload);
       state.unreadCount = state.notifications.filter((n) => !n.read_at).length;
     },
+    /** Merge API fetch into Redux without dropping cable-only rows. */
+    mergeNotificationsFromApi(state, action: PayloadAction<NotificationItem[]>) {
+      const byId = new Map<number, NotificationItem>();
+      for (const n of state.notifications) byId.set(n.id, n);
+      for (const n of action.payload) {
+        const prev = byId.get(n.id);
+        byId.set(n.id, prev ? { ...prev, ...n } : n);
+      }
+      const merged = Array.from(byId.values()).sort(
+        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+      state.notifications = dedupeNotifications(merged);
+      state.unreadCount = state.notifications.filter((n) => !n.read_at).length;
+    },
     addNotification(state, action: PayloadAction<NotificationItem>) {
       const existing = state.notifications.findIndex((n) => n.id === action.payload.id);
       if (existing >= 0) {
@@ -105,6 +119,7 @@ const notificationsSlice = createSlice({
 
 export const {
   setNotifications,
+  mergeNotificationsFromApi,
   addNotification,
   markNotificationRead,
   removeNotification,

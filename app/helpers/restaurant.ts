@@ -30,6 +30,16 @@ export type GuestRestaurantOrder = {
   created_at: string;
 };
 
+export function upsertGuestOrder(list: GuestRestaurantOrder[], incoming: GuestRestaurantOrder) {
+  const index = list.findIndex((o) => o.id === incoming.id);
+  if (index >= 0) {
+    const next = [...list];
+    next[index] = incoming;
+    return next;
+  }
+  return [incoming, ...list];
+}
+
 function authHeaders() {
   const token = getStoredToken();
   return {

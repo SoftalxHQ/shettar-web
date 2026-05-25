@@ -13,6 +13,8 @@ export type GuestReservation = {
   checked_in_at?: string | null;
   checked_out_at?: string | null;
   can_order_room_service?: boolean;
+  has_room_service_orders?: boolean;
+  can_view_room_service_orders?: boolean;
   room_number?: string;
   qr_code_url?: string;
   payment_method?: string;
@@ -70,12 +72,13 @@ export function businessPublicId(business?: GuestReservation['business']) {
 
 export function roomServicePath(
   bookingId: string,
-  opts: { businessUniqueId: string; reservationId: number; roomNumber?: string }
+  opts: { businessUniqueId: string; reservationId: number; roomNumber?: string; historyOnly?: boolean }
 ) {
   const qs = new URLSearchParams({
     businessId: opts.businessUniqueId,
     reservationId: String(opts.reservationId),
   });
   if (opts.roomNumber) qs.set('roomNumber', opts.roomNumber);
+  if (opts.historyOnly) qs.set('historyOnly', '1');
   return `/user/bookings/${encodeURIComponent(bookingId)}/room-service?${qs.toString()}`;
 }

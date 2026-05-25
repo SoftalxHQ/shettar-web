@@ -35,10 +35,10 @@ const UserLayout = ({ children }: { children: ReactNode }) => {
   }
 
   return (
-    <>
+    <div className="user-dashboard-layout d-flex flex-column">
       <Header />
 
-      <main>
+      <main className="flex-grow-1">
         <section className="pt-3">
           <Container>
             <Row>
@@ -81,7 +81,7 @@ const UserLayout = ({ children }: { children: ReactNode }) => {
       </main>
 
       <Footer />
-    </>
+    </div>
   );
 };
 

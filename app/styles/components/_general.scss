@@ -200,9 +200,9 @@
   content: "\f06e" !important;
 }
 
-// Minimum height to fix footer at bottom in dashboard pages
-body.dashboard main{
-  min-height: calc(100vh - 160px);
+// User dashboard: flex column keeps footer at the bottom without volatile 100vh min-height
+.user-dashboard-layout {
+  min-height: 100dvh;
 }
 
 //Upload remove button

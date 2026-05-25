@@ -4,7 +4,7 @@ import React, { useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { useAppDispatch, useAppSelector } from '@/lib/store/hooks';
 import {
-  setNotifications,
+  mergeNotificationsFromApi,
   markNotificationRead,
   removeNotification,
   type NotificationItem,
@@ -38,10 +38,10 @@ export function useNotifications(): NotificationContextType {
     skip: !isAuthenticated,
   });
 
-  // Sync RTK Query cache into the notifications slice whenever data arrives
+  // Merge API data so live cable rows are not wiped on refetch
   useEffect(() => {
     if (data) {
-      dispatch(setNotifications(data));
+      dispatch(mergeNotificationsFromApi(data));
     }
   }, [data, dispatch]);
 
@@ -51,7 +51,7 @@ export function useNotifications(): NotificationContextType {
   const refreshNotifications = async () => {
     const result = await refetch();
     if (result.data) {
-      dispatch(setNotifications(result.data));
+      dispatch(mergeNotificationsFromApi(result.data));
     }
   };
 

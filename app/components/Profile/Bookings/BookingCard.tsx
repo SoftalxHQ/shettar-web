@@ -23,6 +23,8 @@ interface Reservation {
   checked_in_at?: string | null;
   checked_out_at?: string | null;
   can_order_room_service?: boolean;
+  has_room_service_orders?: boolean;
+  can_view_room_service_orders?: boolean;
   room_number?: string;
   payment_method_label?: string;
   booked_at?: string;
@@ -248,19 +250,31 @@ const BookingCard = ({ booking, onSuccess }: BookingCardProps) => {
                     reservationId: id,
                     roomNumber: booking.room_number || room?.number || '',
                   })}
-                  passHref
+                  className="btn btn-primary btn-sm mb-0 py-1 px-2"
                 >
-                  <Button variant="primary" size="sm" className="mb-0 py-1 px-2">
-                    Room service
-                  </Button>
+                  Room service
+                </Link>
+              )}
+
+              {!booking.can_order_room_service &&
+                booking.has_room_service_orders &&
+                businessPublicId(business) && (
+                <Link
+                  href={roomServicePath(booking_id, {
+                    businessUniqueId: businessPublicId(business)!,
+                    reservationId: id,
+                    roomNumber: booking.room_number || room?.number || '',
+                    historyOnly: true,
+                  })}
+                  className="btn btn-outline-primary btn-sm mb-0 py-1 px-2"
+                >
+                  View orders
                 </Link>
               )}
 
               {hotelPath && (
-                <Link href={hotelPath} passHref>
-                  <Button variant="outline-secondary" size="sm" className="mb-0 py-1 px-2">
-                    Hotel
-                  </Button>
+                <Link href={hotelPath} className="btn btn-outline-secondary btn-sm mb-0 py-1 px-2">
+                  Hotel
                 </Link>
               )}
 

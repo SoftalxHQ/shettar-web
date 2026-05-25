@@ -3,13 +3,14 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import UserLayout from '@/app/components/layouts/UserLayout';
-import { Button, Card, Form, Spinner, Nav, Tab, Row, Col } from 'react-bootstrap';
+import { Button, Card, Form, Spinner, Nav, Tab, Row, Col, Modal } from 'react-bootstrap';
 import Link from 'next/link';
 import { toast } from 'react-hot-toast';
 import {
   createGuestOrder,
   fetchGuestMenu,
   fetchGuestOrders,
+  upsertGuestOrder,
   type GuestMenuCategory,
   type GuestMenuItem,
   type GuestRestaurantOrder,
@@ -21,8 +22,12 @@ import {
   roomServicePath,
   reservationRoomNumber,
 } from '@/app/helpers/bookings';
+import { orderStatusVariant, subscribeRestaurantReservation } from '@/app/helpers/restaurant-cable';
+import { calculatePaystackCardFee } from '@/app/helpers/paystack-fees';
 
 type CartLine = { menu_item_id: number; name: string; price: number; quantity: number };
+
+type SubmitPhase = 'idle' | 'paystack' | 'verifying' | 'placing';
 
 export default function RoomServicePage() {
   const params = useParams();
@@ -32,54 +37,113 @@ export default function RoomServicePage() {
   const businessKey = searchParams.get('businessId')?.trim() || '';
   const reservationId = Number(searchParams.get('reservationId'));
   const roomNumber = searchParams.get('roomNumber') || '';
+  const historyOnly = searchParams.get('historyOnly') === '1' || searchParams.get('historyOnly') === 'true';
+
+  const [canOrder, setCanOrder] = useState(!historyOnly);
+  const [canViewOrders, setCanViewOrders] = useState(true);
 
   const [menu, setMenu] = useState<GuestMenuCategory[]>([]);
   const [orders, setOrders] = useState<GuestRestaurantOrder[]>([]);
   const [cart, setCart] = useState<CartLine[]>([]);
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
-  const [activeTab, setActiveTab] = useState('order');
+  const [submitPhase, setSubmitPhase] = useState<SubmitPhase>('idle');
+  const [activeTab, setActiveTab] = useState(historyOnly ? 'history' : 'order');
   const [paymentMethod, setPaymentMethod] = useState<'wallet' | 'card' | 'offline'>('offline');
   const [menuSearch, setMenuSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [menuView, setMenuView] = useState<'grid' | 'list'>('grid');
+  const [previewItem, setPreviewItem] = useState<GuestMenuItem | null>(null);
   const { data: account } = useGetAccountDetailsQuery();
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (options?: { silent?: boolean }) => {
     if (!businessKey || !reservationId) return;
-    setLoading(true);
+    if (!options?.silent) setLoading(true);
     try {
-      const [categories, orderList] = await Promise.all([
-        fetchGuestMenu(businessKey),
-        fetchGuestOrders(businessKey, reservationId),
-      ]);
-      setMenu(categories);
+      const orderList = await fetchGuestOrders(businessKey, reservationId);
       setOrders(orderList);
+      if (canOrder) {
+        const categories = await fetchGuestMenu(businessKey);
+        setMenu(categories);
+      } else {
+        setMenu([]);
+      }
     } catch (e: unknown) {
       toast.error(e instanceof Error ? e.message : 'Failed to load');
     } finally {
       setLoading(false);
     }
-  }, [businessKey, reservationId]);
+  }, [businessKey, reservationId, canOrder]);
 
   useEffect(() => {
     load();
   }, [load]);
 
   useEffect(() => {
+    if (!businessKey || !reservationId) return;
+    return subscribeRestaurantReservation(businessKey, reservationId, (msg) => {
+      if (msg.event === 'menu_item_availability_changed') {
+        const item = msg.payload?.item as GuestMenuItem | undefined;
+        const available = msg.payload?.available as boolean | undefined;
+        const itemId = item?.id;
+
+        if (itemId != null && available === false) {
+          setMenu((prev) =>
+            prev.map((cat) => ({
+              ...cat,
+              items: (cat.items || []).filter((i) => i.id !== itemId),
+            }))
+          );
+          setCart((prev) => prev.filter((line) => line.menu_item_id !== itemId));
+        } else {
+          fetchGuestMenu(businessKey).then(setMenu).catch(() => {});
+        }
+        return;
+      }
+
+      if (
+        msg.event === 'order_status_changed' ||
+        msg.event === 'order_created' ||
+        msg.event === 'order_paid'
+      ) {
+        const order = msg.payload?.order as GuestRestaurantOrder | undefined;
+        if (order?.id) {
+          setOrders((prev) => upsertGuestOrder(prev, order));
+          if (msg.event === 'order_status_changed' && order.status) {
+            toast.success(`Order ${(order.order_number || '').replace(/\s+/g, '')} is now ${order.status}`);
+          }
+        } else {
+          fetchGuestOrders(businessKey, reservationId).then(setOrders).catch(() => {});
+        }
+      }
+    });
+  }, [businessKey, reservationId]);
+
+  useEffect(() => {
     if (!bookingId) return;
     fetchGuestReservation(bookingId)
       .then((r) => {
-        if (!r.can_order_room_service) {
+        const orderAllowed = !!r.can_order_room_service;
+        const viewAllowed = orderAllowed || !!r.has_room_service_orders;
+        setCanOrder(orderAllowed);
+        setCanViewOrders(viewAllowed);
+
+        if (!orderAllowed && !viewAllowed) {
           toast.error(
             r.checked_out_at
               ? 'Room service is not available after check-out'
-              : 'Room service is only available while you are checked in'
+              : r.checked_in_at
+                ? 'Room service ordering closed after checkout time'
+                : 'Room service is only available while you are checked in'
           );
           router.replace(`/user/bookings/${bookingId}`);
           return;
         }
+
+        if (!orderAllowed) {
+          setActiveTab('history');
+        }
+
         const expectedKey = businessPublicId(r.business);
         if (expectedKey && businessKey && businessKey !== expectedKey && String(r.business?.id) !== businessKey) {
           router.replace(
@@ -87,6 +151,7 @@ export default function RoomServicePage() {
               businessUniqueId: expectedKey,
               reservationId: r.id,
               roomNumber: reservationRoomNumber(r) || roomNumber,
+              historyOnly: !orderAllowed,
             })
           );
         }
@@ -131,6 +196,7 @@ export default function RoomServicePage() {
       }
       return [...prev, { menu_item_id: item.id, name: item.name, price: item.price, quantity: 1 }];
     });
+    toast.success(`${item.name} added to cart`);
   };
 
   const adjustQty = (id: number, delta: number) => {
@@ -143,8 +209,26 @@ export default function RoomServicePage() {
 
   const cartTotal = cart.reduce((s, l) => s + l.price * l.quantity, 0);
 
+  const cardFee = useMemo(
+    () => (paymentMethod === 'card' && cartTotal > 0 ? calculatePaystackCardFee(cartTotal) : null),
+    [paymentMethod, cartTotal]
+  );
+
+  const amountDue = cardFee?.charge_amount ?? cartTotal;
+
+  const submitting = submitPhase !== 'idle';
+
+  const submitButtonLabel =
+    submitPhase === 'paystack'
+      ? 'Opening payment…'
+      : submitPhase === 'verifying'
+        ? 'Verifying payment…'
+        : submitPhase === 'placing'
+          ? 'Placing order…'
+          : 'Place order';
+
   const placeOrder = async (paystackReference?: string) => {
-    await createGuestOrder(businessKey, reservationId, {
+    const order = await createGuestOrder(businessKey, reservationId, {
       notes: notes.trim() || undefined,
       payment_method: paymentMethod,
       paystack_reference: paystackReference,
@@ -153,11 +237,15 @@ export default function RoomServicePage() {
     toast.success('Order placed');
     setCart([]);
     setNotes('');
-    await load();
+    setOrders((prev) => upsertGuestOrder(prev, order));
     setActiveTab('history');
   };
 
   const submit = async () => {
+    if (!canOrder) {
+      toast.error('New room service orders are not available after checkout time');
+      return;
+    }
     if (cart.length === 0) {
       toast.error('Add at least one item');
       return;
@@ -169,40 +257,53 @@ export default function RoomServicePage() {
         return;
       }
     }
-    setSubmitting(true);
     try {
       if (paymentMethod === 'card') {
         const key = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY;
-        if (!key || !(window as any).PaystackPop) {
+        const PaystackPop = (window as typeof window & { PaystackPop?: new () => { newTransaction: (o: Record<string, unknown>) => void } }).PaystackPop;
+        if (!key || !PaystackPop) {
           toast.error('Card payments are not available');
-          setSubmitting(false);
           return;
         }
+        const breakdown = calculatePaystackCardFee(cartTotal);
         const ref = `RS${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
-        const handler = (window as any).PaystackPop.setup({
+        setSubmitPhase('paystack');
+        const paystack = new PaystackPop();
+        paystack.newTransaction({
           key,
           email: account?.email || 'guest@shettar.com',
-          amount: Math.round(cartTotal * 100),
+          amount: Math.round(breakdown.charge_amount * 100),
           ref,
-          callback: async (response: { reference: string }) => {
+          onSuccess: async (transaction: { reference?: string }) => {
+            const reference = transaction?.reference;
+            if (!reference) {
+              toast.error('Payment reference missing');
+              setSubmitPhase('idle');
+              return;
+            }
+            setSubmitPhase('verifying');
             try {
-              await placeOrder(response.reference);
+              setSubmitPhase('placing');
+              await placeOrder(reference);
             } catch (e: unknown) {
               toast.error(e instanceof Error ? e.message : 'Failed to place order');
             } finally {
-              setSubmitting(false);
+              setSubmitPhase('idle');
             }
           },
-          onClose: () => setSubmitting(false),
+          onCancel: () => {
+            toast.error('Payment cancelled');
+            setSubmitPhase('idle');
+          },
         });
-        handler.openIframe();
         return;
       }
+      setSubmitPhase('placing');
       await placeOrder();
     } catch (e: unknown) {
       toast.error(e instanceof Error ? e.message : 'Failed to place order');
     } finally {
-      setSubmitting(false);
+      setSubmitPhase('idle');
     }
   };
 
@@ -221,14 +322,18 @@ export default function RoomServicePage() {
         <Button variant="link" className="p-0 mb-2" onClick={() => router.back()}>
           ← Back
         </Button>
-        <h4 className="mb-0">Room service</h4>
+        <h4 className="mb-0">{canOrder ? 'Room service' : 'My orders'}</h4>
         <p className="text-secondary small mb-0">
           Booking {bookingId}
           {roomNumber ? ` · Room ${roomNumber}` : ''}
         </p>
       </div>
 
+      {!canViewOrders ? (
+        <p className="text-secondary">No room service orders for this stay.</p>
+      ) : (
       <Tab.Container activeKey={activeTab} onSelect={(k) => k && setActiveTab(k)}>
+        {canOrder ? (
         <Nav variant="tabs" className="mb-4">
           <Nav.Item>
             <Nav.Link eventKey="order">Order</Nav.Link>
@@ -237,9 +342,11 @@ export default function RoomServicePage() {
             <Nav.Link eventKey="history">My orders</Nav.Link>
           </Nav.Item>
         </Nav>
+        ) : null}
 
         <Tab.Content>
-          <Tab.Pane eventKey="order">
+          {canOrder ? (
+          <Tab.Pane eventKey="order" mountOnEnter unmountOnExit>
             {loading ? (
               <div className="text-center py-5">
                 <Spinner animation="border" />
@@ -293,19 +400,36 @@ export default function RoomServicePage() {
                         <div className="row g-2">
                           {filteredMenuItems.map((item) => (
                             <div key={item.id} className="col-6 col-md-4">
-                              <button
-                                type="button"
+                              <div
+                                role="button"
+                                tabIndex={0}
                                 className="w-100 text-start border rounded p-2 h-100 bg-white hover-shadow"
                                 onClick={() => addItem(item)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter' || e.key === ' ') {
+                                    e.preventDefault();
+                                    addItem(item);
+                                  }
+                                }}
                                 style={{ cursor: 'pointer' }}
                               >
                                 {item.image_url ? (
-                                  <img
-                                    src={item.image_url}
-                                    alt=""
-                                    className="w-100 rounded mb-2"
-                                    style={{ height: 72, objectFit: 'cover' }}
-                                  />
+                                  <button
+                                    type="button"
+                                    className="w-100 p-0 border-0 bg-transparent d-block mb-2"
+                                    aria-label={`View ${item.name}`}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setPreviewItem(item);
+                                    }}
+                                  >
+                                    <img
+                                      src={item.image_url}
+                                      alt={item.name}
+                                      className="w-100 rounded"
+                                      style={{ height: 72, objectFit: 'cover' }}
+                                    />
+                                  </button>
                                 ) : (
                                   <div
                                     className="w-100 bg-light rounded mb-2 d-flex align-items-center justify-content-center text-muted small"
@@ -318,7 +442,7 @@ export default function RoomServicePage() {
                                 <div className="small text-primary">
                                   ₦{Number(item.price).toLocaleString()} +
                                 </div>
-                              </button>
+                              </div>
                             </div>
                           ))}
                         </div>
@@ -327,27 +451,42 @@ export default function RoomServicePage() {
                           {filteredMenuItems.map((item) => (
                             <div
                               key={item.id}
+                              role="button"
+                              tabIndex={0}
                               className="d-flex align-items-center gap-3 border rounded p-2"
+                              onClick={() => addItem(item)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                  e.preventDefault();
+                                  addItem(item);
+                                }
+                              }}
+                              style={{ cursor: 'pointer' }}
                             >
                               {item.image_url ? (
-                                <img
-                                  src={item.image_url}
-                                  alt=""
-                                  className="rounded flex-shrink-0"
-                                  style={{ width: 56, height: 56, objectFit: 'cover' }}
-                                />
+                                <button
+                                  type="button"
+                                  className="p-0 border-0 bg-transparent flex-shrink-0"
+                                  aria-label={`View ${item.name}`}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setPreviewItem(item);
+                                  }}
+                                >
+                                  <img
+                                    src={item.image_url}
+                                    alt={item.name}
+                                    className="rounded"
+                                    style={{ width: 56, height: 56, objectFit: 'cover' }}
+                                  />
+                                </button>
                               ) : null}
                               <div className="flex-grow-1 min-w-0">
                                 <div className="fw-semibold">{item.name}</div>
-                                {item.description && (
-                                  <div className="small text-secondary text-truncate">
-                                    {item.description}
-                                  </div>
-                                )}
                               </div>
-                              <Button size="sm" variant="outline-primary" onClick={() => addItem(item)}>
+                              <span className="btn btn-sm btn-outline-primary">
                                 ₦{Number(item.price).toLocaleString()} +
-                              </Button>
+                              </span>
                             </div>
                           ))}
                         </div>
@@ -423,9 +562,30 @@ export default function RoomServicePage() {
                             />
                           </div>
                         </Form.Group>
-                        <p className="fw-bold mt-3 mb-3">Total: ₦{cartTotal.toLocaleString()}</p>
-                        <Button variant="primary" className="w-100" onClick={submit} disabled={submitting}>
-                          {submitting ? <Spinner size="sm" animation="border" /> : 'Place order'}
+                        <div className="mt-3 mb-3 small">
+                          <div className="d-flex justify-content-between">
+                            <span className="text-secondary">Subtotal</span>
+                            <span>₦{cartTotal.toLocaleString()}</span>
+                          </div>
+                          {cardFee && (
+                            <div className="d-flex justify-content-between text-danger">
+                              <span>Paystack fee</span>
+                              <span>+₦{cardFee.paystack_fee.toLocaleString()}</span>
+                            </div>
+                          )}
+                          <div className="d-flex justify-content-between fw-bold mt-1 pt-1 border-top">
+                            <span>{paymentMethod === 'card' ? 'Total to pay' : 'Total'}</span>
+                            <span>₦{amountDue.toLocaleString()}</span>
+                          </div>
+                        </div>
+                        <Button
+                          variant="primary"
+                          className="w-100 d-flex align-items-center justify-content-center gap-2"
+                          onClick={submit}
+                          disabled={submitting}
+                        >
+                          {submitting && <Spinner size="sm" animation="border" />}
+                          {submitButtonLabel}
                         </Button>
                       </Card.Body>
                     </Card>
@@ -440,34 +600,57 @@ export default function RoomServicePage() {
               </Row>
             )}
           </Tab.Pane>
+          ) : null}
 
-          <Tab.Pane eventKey="history">
-            {loading ? (
+          <Tab.Pane eventKey="history" mountOnEnter>
+            {loading && orders.length === 0 ? (
               <div className="text-center py-5">
                 <Spinner animation="border" />
               </div>
             ) : orders.length === 0 ? (
-              <p className="text-secondary">No orders yet.</p>
+              <Card className="border-0 bg-light">
+                <Card.Body className="text-center text-secondary py-5">
+                  {canOrder ? 'No orders yet. Place an order from the Order tab.' : 'No orders for this stay.'}
+                </Card.Body>
+              </Card>
             ) : (
               <div className="vstack gap-3">
                 {orders.map((o) => (
-                  <Card key={o.id}>
+                  <Card key={o.id} className="shadow-sm">
                     <Card.Body>
-                      <div className="d-flex justify-content-between">
-                        <h6 className="mb-0 font-monospace">
-                          {(o.order_number || `Order #${o.id}`).replace(/\s+/g, '')}
-                        </h6>
-                        <span className="badge bg-secondary text-capitalize">{o.status}</span>
-                      </div>
-                      <p className="small text-secondary mb-2">
-                        ₦{Number(o.subtotal).toLocaleString()}
-                        {o.payment_status ? ` · ${o.payment_status}` : ''}
-                      </p>
-                      {o.items?.map((item) => (
-                        <div key={item.id} className="small">
-                          {item.quantity}× {item.name}
+                      <div className="d-flex justify-content-between align-items-start gap-2">
+                        <div>
+                          <h6 className="mb-1 font-monospace">
+                            {(o.order_number || `Order #${o.id}`).replace(/\s+/g, '')}
+                          </h6>
+                          <p className="small text-secondary mb-0">
+                            {new Date(o.created_at).toLocaleString()}
+                          </p>
                         </div>
-                      ))}
+                        <span className={`badge bg-${orderStatusVariant(o.status)} text-capitalize`}>
+                          {o.status}
+                        </span>
+                      </div>
+                      <hr className="my-2" />
+                      <div className="vstack gap-1 mb-2">
+                        {o.items?.map((item) => (
+                          <div key={item.id} className="small d-flex justify-content-between">
+                            <span>
+                              {item.quantity}× {item.name}
+                            </span>
+                            <span>₦{Number(item.line_total).toLocaleString()}</span>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="d-flex justify-content-between fw-semibold">
+                        <span>Total</span>
+                        <span>₦{Number(o.subtotal).toLocaleString()}</span>
+                      </div>
+                      {o.payment_status && (
+                        <p className="small text-secondary mb-0 mt-1 text-capitalize">
+                          Payment: {o.payment_status.replace(/_/g, ' ')}
+                        </p>
+                      )}
                     </Card.Body>
                   </Card>
                 ))}
@@ -476,6 +659,46 @@ export default function RoomServicePage() {
           </Tab.Pane>
         </Tab.Content>
       </Tab.Container>
+      )}
+
+      <Modal
+        show={!!previewItem}
+        onHide={() => setPreviewItem(null)}
+        centered
+        size="lg"
+        contentClassName="overflow-hidden border-0"
+      >
+        {previewItem?.image_url && (
+          <div style={{ height: 'min(70vh, 480px)', width: '100%' }}>
+            <img
+              src={previewItem.image_url}
+              alt={previewItem.name}
+              className="w-100 h-100 d-block"
+              style={{ objectFit: 'cover' }}
+            />
+          </div>
+        )}
+        <Modal.Body>
+          <h5 className="mb-1">{previewItem?.name}</h5>
+          <p className="text-primary fw-semibold mb-0">
+            ₦{Number(previewItem?.price ?? 0).toLocaleString()}
+          </p>
+        </Modal.Body>
+        <Modal.Footer className="border-top-0 pt-0">
+          <Button variant="link" className="text-secondary" onClick={() => setPreviewItem(null)}>
+            Close
+          </Button>
+          <Button
+            variant="primary"
+            onClick={() => {
+              if (previewItem) addItem(previewItem);
+              setPreviewItem(null);
+            }}
+          >
+            Add to cart
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </UserLayout>
   );
 }

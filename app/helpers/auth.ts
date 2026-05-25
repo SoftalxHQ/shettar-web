@@ -135,7 +135,10 @@ export async function signIn(payload: SignInPayload): Promise<AuthResult> {
 
     if (res.ok && data?.status?.code === 200) {
       const authHeader = res.headers.get('Authorization');
-      const token = authHeader?.replace('Bearer ', '') ?? '';
+      const token = authHeader?.replace(/^Bearer\s+/i, '').trim() ?? '';
+      if (!token) {
+        return { ok: false, message: 'Sign-in succeeded but no session token was returned.' };
+      }
 
       const raw = data.data;
       const user: StoredUser = {

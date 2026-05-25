@@ -30,6 +30,7 @@ function timeAgo(dateString: string) {
 function getNotificationIcon(title: string, message: string) {
   const content = (title + ' ' + message).toLowerCase();
   if (content.includes('booking')) return { icon: BsCalendarCheckFill, color: 'text-success', bg: 'bg-success' };
+  if (content.includes('room service') || content.includes('order')) return { icon: BsBellFill, color: 'text-info', bg: 'bg-info' };
   if (content.includes('wallet') || content.includes('payment') || content.includes('funded')) return { icon: BsWalletFill, color: 'text-primary', bg: 'bg-primary' };
   if (content.includes('airtime') || content.includes('data')) return { icon: BsLightningChargeFill, color: 'text-warning', bg: 'bg-warning' };
   return { icon: BsBellFill, color: 'text-info', bg: 'bg-info' };

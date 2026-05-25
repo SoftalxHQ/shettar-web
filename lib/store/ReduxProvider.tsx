@@ -16,6 +16,7 @@ import notificationsReducer from './slices/notificationsSlice';
 import hotelStatsReducer from './slices/hotelStatsSlice';
 import { apiService } from './services/apiService';
 import { actionCableMiddleware } from './middleware/actionCableMiddleware';
+import AccountNotificationsSync from '@/app/components/AccountNotificationsSync';
 import { changeHTMLAttribute } from '@/app/utils/html-layout';
 import type { RootState, AppDispatch } from './store';
 
@@ -75,6 +76,7 @@ export default function ReduxProvider({ children }: { children: React.ReactNode 
     <Provider store={store}>
       <PersistGate loading={null} persistor={persistor}>
         <ThemeSync />
+        <AccountNotificationsSync />
         {children}
       </PersistGate>
     </Provider>

@@ -5,7 +5,7 @@ import { useScrollEvent, useToggle } from '@/app/hooks';
 import { useLayoutContext } from '@/app/states';
 import clsx from 'clsx';
 import { useEffect, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import { resendVerification } from '@/app/helpers/auth';
 import {
@@ -95,8 +95,10 @@ export default function Header() {
   const { notifications, unreadCount, markAsRead } = useNotifications();
   const { isOpen, toggle } = useToggle();
   const { scrollY } = useScrollEvent();
+  const pathname = usePathname();
   const headerRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+  const isUserDashboard = pathname?.startsWith('/user') ?? false;
   const [isSendingCode, setIsSendingCode] = useState(false);
 
   const handleVerifyClick = async () => {
@@ -139,7 +141,9 @@ export default function Header() {
       )}
       <header
         ref={headerRef}
-        className={clsx('navbar-light header-sticky bg-mode border-bottom mb-3', { 'header-sticky-on': scrollY >= 400 })}
+        className={clsx('navbar-light header-sticky bg-mode border-bottom mb-3', {
+          'header-sticky-on': !isUserDashboard && scrollY >= 400,
+        })}
       >
         <Navbar expand="lg">
           <Container>
