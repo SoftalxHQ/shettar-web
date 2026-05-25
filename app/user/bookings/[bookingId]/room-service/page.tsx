@@ -24,6 +24,8 @@ import {
 } from '@/app/helpers/bookings';
 import { orderStatusVariant, subscribeRestaurantReservation } from '@/app/helpers/restaurant-cable';
 import { calculatePaystackCardFee } from '@/app/helpers/paystack-fees';
+import { BsArrowClockwise } from 'react-icons/bs';
+import MenuItemImage from '@/app/components/MenuItemImage';
 
 type CartLine = { menu_item_id: number; name: string; price: number; quantity: number };
 
@@ -47,6 +49,7 @@ export default function RoomServicePage() {
   const [cart, setCart] = useState<CartLine[]>([]);
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [submitPhase, setSubmitPhase] = useState<SubmitPhase>('idle');
   const [activeTab, setActiveTab] = useState(historyOnly ? 'history' : 'order');
   const [paymentMethod, setPaymentMethod] = useState<'wallet' | 'card' | 'offline'>('offline');
@@ -74,6 +77,15 @@ export default function RoomServicePage() {
       setLoading(false);
     }
   }, [businessKey, reservationId, canOrder]);
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await load({ silent: true });
+    } finally {
+      setRefreshing(false);
+    }
+  }, [load]);
 
   useEffect(() => {
     load();
@@ -319,14 +331,29 @@ export default function RoomServicePage() {
   return (
     <UserLayout>
       <div className="mb-4">
-        <Button variant="link" className="p-0 mb-2" onClick={() => router.back()}>
-          ← Back
-        </Button>
-        <h4 className="mb-0">{canOrder ? 'Room service' : 'My orders'}</h4>
-        <p className="text-secondary small mb-0">
-          Booking {bookingId}
-          {roomNumber ? ` · Room ${roomNumber}` : ''}
-        </p>
+        <div className="d-flex justify-content-between align-items-start gap-3">
+          <div>
+            <Button variant="link" className="p-0 mb-2" onClick={() => router.back()}>
+              ← Back
+            </Button>
+            <h4 className="mb-0">{canOrder ? 'Room service' : 'My orders'}</h4>
+            <p className="text-secondary small mb-0">
+              Booking {bookingId}
+              {roomNumber ? ` · Room ${roomNumber}` : ''}
+            </p>
+          </div>
+          <Button
+            variant="outline-secondary"
+            size="sm"
+            className="d-flex align-items-center justify-content-center"
+            onClick={handleRefresh}
+            disabled={refreshing || loading}
+            aria-label="Refresh room service"
+            title="Refresh"
+          >
+            <BsArrowClockwise size={18} className={refreshing ? 'spin' : ''} />
+          </Button>
+        </div>
       </div>
 
       {!canViewOrders ? (
@@ -423,11 +450,11 @@ export default function RoomServicePage() {
                                       setPreviewItem(item);
                                     }}
                                   >
-                                    <img
+                                    <MenuItemImage
                                       src={item.image_url}
                                       alt={item.name}
-                                      className="w-100 rounded"
-                                      style={{ height: 72, objectFit: 'cover' }}
+                                      className="rounded"
+                                      style={{ height: 72 }}
                                     />
                                   </button>
                                 ) : (
@@ -473,11 +500,11 @@ export default function RoomServicePage() {
                                     setPreviewItem(item);
                                   }}
                                 >
-                                  <img
+                                  <MenuItemImage
                                     src={item.image_url}
                                     alt={item.name}
                                     className="rounded"
-                                    style={{ width: 56, height: 56, objectFit: 'cover' }}
+                                    style={{ width: 56, height: 56 }}
                                   />
                                 </button>
                               ) : null}
@@ -670,11 +697,10 @@ export default function RoomServicePage() {
       >
         {previewItem?.image_url && (
           <div style={{ height: 'min(70vh, 480px)', width: '100%' }}>
-            <img
+            <MenuItemImage
               src={previewItem.image_url}
               alt={previewItem.name}
-              className="w-100 h-100 d-block"
-              style={{ objectFit: 'cover' }}
+              style={{ height: 'min(70vh, 480px)', width: '100%' }}
             />
           </div>
         )}
