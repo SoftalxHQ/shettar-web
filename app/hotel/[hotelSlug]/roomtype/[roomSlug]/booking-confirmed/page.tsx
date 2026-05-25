@@ -259,7 +259,7 @@ export default function BookingConfirmedPage() {
                       <Col xs={12} md={4}>
                         <h6 className="text-uppercase small fw-bold text-primary mb-2" style={{ letterSpacing: '0.5px' }}>Stay Duration</h6>
                         <p className="h6 mb-1 text-body fw-bold">{nights} {nights > 1 ? 'Nights' : 'Night'}</p>
-                        <small className="text-body-secondary fw-semibold">Abri Managed Stay</small>
+                        <small className="text-primary fw-bold text-uppercase">{nights} {nights > 1 ? 'Nights' : 'Night'} stay</small>
                       </Col>
                     </Row>
                   </div>
