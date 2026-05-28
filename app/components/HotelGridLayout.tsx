@@ -7,55 +7,13 @@ import { useSearchParams } from 'next/navigation';
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { Hotel } from '@/app/types/hotel';
 import { useLayoutContext } from '@/app/states/useLayoutContext';
-import { getStoredToken } from '@/app/helpers/auth';
+import {
+  fetchBusinesses,
+  hasActiveBusinessSearch,
+  mapBusinessToHotel,
+} from '@/app/helpers/businesses';
 
 const PAGE_LIMIT = 20;
-
-function mapBusinessToHotel(b: Record<string, unknown>): Hotel {
-  const features = Object.entries((b.amenities as Record<string, boolean>) || {})
-    .filter(([, value]) => value === true)
-    .map(([key]) =>
-      key.split('_').map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')
-    )
-    .slice(0, 4);
-
-  const price = parseFloat(String(b.starting_from)) || 0;
-  const oldPrice = parseFloat(String(b.old_price)) || 0;
-  const sale =
-    oldPrice > price ? `${Math.round(((oldPrice - price) / oldPrice) * 100)}% Off` : undefined;
-
-  return {
-    id: b.id as number,
-    slug: b.slug as string,
-    name: b.name as string,
-    address: `${b.address}, ${b.city}, ${b.state}`,
-    images: (b.images_url as string[]) || [],
-    price,
-    old_price: oldPrice,
-    rating: parseFloat(String(b.average_rating)) || 0,
-    feature: features.length > 0 ? features : ['Standard Room'],
-    features: features.length > 0 ? features : ['Standard Room'],
-    sale,
-    is_favorite: Boolean(b.is_favorite),
-  };
-}
-
-function parseListPayload(json: unknown): {
-  rows: Record<string, unknown>[];
-  meta: { current_page: number; total_pages: number; total_count: number; per_page: number } | null;
-} {
-  if (Array.isArray(json)) {
-    return { rows: json as Record<string, unknown>[], meta: null };
-  }
-  if (json && typeof json === 'object' && 'businesses' in json) {
-    const o = json as {
-      businesses: Record<string, unknown>[];
-      meta?: { current_page: number; total_pages: number; total_count: number; per_page: number };
-    };
-    return { rows: o.businesses || [], meta: o.meta ?? null };
-  }
-  return { rows: [], meta: null };
-}
 
 const HotelGridLayout = () => {
   const [hotels, setHotels] = useState<Hotel[]>([]);
@@ -64,6 +22,7 @@ const HotelGridLayout = () => {
   const [error, setError] = useState<string | null>(null);
   const [meta, setMeta] = useState<{ current_page: number; total_pages: number; total_count: number; per_page: number } | null>(null);
   const searchParams = useSearchParams();
+  const hasSearch = hasActiveBusinessSearch(searchParams);
   const { updateHotelStats } = useLayoutContext();
 
   const updateHotelStatsRef = useRef(updateHotelStats);
@@ -71,44 +30,28 @@ const HotelGridLayout = () => {
     updateHotelStatsRef.current = updateHotelStats;
   }, [updateHotelStats]);
 
-  const buildQueryString = useCallback(
-    (pageNum: number, limit: number) => {
-      const query = new URLSearchParams();
-      searchParams.forEach((value, key) => {
-        if (['page', 'limit', 'featured', 'exclude_featured'].includes(key)) return;
-        if (key === 'rooms') {
-          query.append('number_of_rooms', value);
-        } else {
-          query.append(key, value);
-        }
+  const fetchBusinessPage = useCallback(
+    async (pageNum: number, limit: number) => {
+      return fetchBusinesses({
+        searchParams,
+        page: pageNum,
+        limit,
+        excludeFeatured: true,
       });
-      query.set('page', String(pageNum));
-      query.set('limit', String(limit));
-      return query.toString();
     },
     [searchParams]
   );
 
-  const fetchBusinessPage = useCallback(
-    async (pageNum: number, limit: number) => {
-      const rawUrl = process.env.NEXT_PUBLIC_API_URL;
-      const baseUrl = rawUrl && rawUrl !== 'undefined' ? rawUrl : 'http://127.0.0.1:3000';
-      const API_URL = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
-      const token = getStoredToken();
-      const qs = buildQueryString(pageNum, limit);
-      const response = await fetch(`${API_URL}/api/v1/businesses?${qs}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!response.ok) {
-        throw new Error('Failed to fetch hotels');
-      }
-      const json = await response.json();
-      return parseListPayload(json);
-    },
-    [buildQueryString]
-  );
-
   useEffect(() => {
+    if (!hasSearch) {
+      setHotels([]);
+      setMeta(null);
+      setError(null);
+      setIsLoading(false);
+      updateHotelStatsRef.current(0, '');
+      return;
+    }
+
     let cancelled = false;
     (async () => {
       setIsLoading(true);
@@ -131,7 +74,7 @@ const HotelGridLayout = () => {
     return () => {
       cancelled = true;
     };
-  }, [fetchBusinessPage, searchParams]);
+  }, [fetchBusinessPage, hasSearch, searchParams]);
 
   const hasMore = meta ? meta.current_page < meta.total_pages : false;
 
@@ -162,6 +105,10 @@ const HotelGridLayout = () => {
       setLoadingMore(false);
     }
   };
+
+  if (!hasSearch) {
+    return null;
+  }
 
   return (
     <section className="pt-0">

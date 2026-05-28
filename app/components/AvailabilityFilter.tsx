@@ -120,9 +120,11 @@ const AvailabilityFilter = () => {
       query.set('location', formValue.location);
     }
 
-    // Determine target page: keep grid if already on grid or if on the root page (which is grid by default)
-    const targetPage = (pathname.includes('/hotel/grid') || pathname === '/') ? '/hotel/grid' : '/hotel/list';
-    console.log(`Searching: ${targetPage}?${query.toString()}`);
+    const targetPage = pathname === '/'
+      ? '/'
+      : pathname.includes('/hotel/list')
+        ? '/hotel/list'
+        : '/hotel/grid';
     router.push(`${targetPage}?${query.toString()}`);
   };
 

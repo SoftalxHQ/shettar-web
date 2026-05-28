@@ -1,0 +1,212 @@
+'use client';
+
+import FeaturedHotelCard from '@/app/components/FeaturedHotelCard';
+import {
+  FeaturedHotel,
+  fetchBusinesses,
+  hasActiveBusinessSearch,
+  mapBusinessToFeaturedHotel,
+} from '@/app/helpers/businesses';
+import useEmblaCarousel from 'embla-carousel-react';
+import { useSearchParams } from 'next/navigation';
+import { useCallback, useEffect, useState } from 'react';
+import { Card, Col, Container, Row } from 'react-bootstrap';
+import { BsArrowLeft, BsArrowRight } from 'react-icons/bs';
+
+const FEATURED_LIMIT = 12;
+
+function FeaturedHotelCardSkeleton() {
+  return (
+    <Card className="card-img-scale overflow-hidden bg-transparent">
+      <div className="placeholder-glow">
+        <div className="placeholder card-img rounded-3 w-100 featured-hotels__image-fallback" />
+        <div className="card-body px-2">
+          <div className="placeholder col-8 rounded mb-2" style={{ height: 24 }} />
+          <div className="placeholder col-10 rounded" style={{ height: 20 }} />
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+const FeaturedHotels = () => {
+  const searchParams = useSearchParams();
+  const [hotels, setHotels] = useState<FeaturedHotel[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isMobile, setIsMobile] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.matchMedia('(max-width: 575.98px)').matches;
+  });
+
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 575.98px)');
+    const update = () => setIsMobile(mq.matches);
+    update();
+    mq.addEventListener('change', update);
+    return () => mq.removeEventListener('change', update);
+  }, []);
+
+  const useCarousel = hotels.length > 4 || (isMobile && hotels.length > 1);
+  const canScroll = hotels.length > (isMobile ? 1 : 4);
+
+  const [emblaRef, emblaApi] = useEmblaCarousel({
+    align: 'start',
+    containScroll: 'trimSnaps',
+    dragFree: false,
+    watchDrag: useCarousel,
+  });
+
+  const [prevEnabled, setPrevEnabled] = useState(false);
+  const [nextEnabled, setNextEnabled] = useState(false);
+
+  const onSelect = useCallback(() => {
+    if (!emblaApi) return;
+    setPrevEnabled(emblaApi.canScrollPrev());
+    setNextEnabled(emblaApi.canScrollNext());
+  }, [emblaApi]);
+
+  useEffect(() => {
+    if (!emblaApi) return;
+    onSelect();
+    emblaApi.on('select', onSelect);
+    emblaApi.on('reInit', onSelect);
+    return () => {
+      emblaApi.off('select', onSelect);
+      emblaApi.off('reInit', onSelect);
+    };
+  }, [emblaApi, onSelect]);
+
+  useEffect(() => {
+    emblaApi?.reInit();
+  }, [emblaApi, hotels.length, isMobile, useCarousel]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setIsLoading(true);
+      try {
+        const { rows } = await fetchBusinesses({
+          searchParams: hasActiveBusinessSearch(searchParams)
+            ? searchParams
+            : (new URLSearchParams() as unknown as typeof searchParams),
+          page: 1,
+          limit: FEATURED_LIMIT,
+          featured: true,
+        });
+        if (cancelled) return;
+        setHotels(rows.map(mapBusinessToFeaturedHotel));
+      } catch (e) {
+        if (!cancelled) {
+          console.error('Error fetching featured hotels:', e);
+          setHotels([]);
+        }
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [searchParams]);
+
+  const scrollPrev = useCallback(() => {
+    emblaApi?.scrollPrev();
+  }, [emblaApi]);
+
+  const scrollNext = useCallback(() => {
+    emblaApi?.scrollNext();
+  }, [emblaApi]);
+
+  if (!isLoading && hotels.length === 0) {
+    return null;
+  }
+
+  const showArrows = useCarousel && !isMobile && canScroll;
+
+  return (
+    <section className="featured-hotels">
+      <Container>
+        <Row className="mb-4">
+          <Col xs={12} className="text-center">
+            <h2 className="mb-0">Featured Hotels</h2>
+          </Col>
+        </Row>
+
+        {isLoading ? (
+          <Row className="g-4">
+            {[...Array(4)].map((_, i) => (
+              <Col key={i} sm={6} xl={3}>
+                <FeaturedHotelCardSkeleton />
+              </Col>
+            ))}
+          </Row>
+        ) : useCarousel ? (
+          <div className="featured-hotels__carousel position-relative">
+            {showArrows && (
+              <>
+                <button
+                  type="button"
+                  className="featured-hotels__arrow featured-hotels__arrow--prev"
+                  onClick={scrollPrev}
+                  disabled={!prevEnabled}
+                  aria-label="Previous featured hotels"
+                >
+                  <BsArrowLeft size={16} />
+                </button>
+                <button
+                  type="button"
+                  className="featured-hotels__arrow featured-hotels__arrow--next"
+                  onClick={scrollNext}
+                  disabled={!nextEnabled}
+                  aria-label="Next featured hotels"
+                >
+                  <BsArrowRight size={16} />
+                </button>
+              </>
+            )}
+
+            <div className="featured-hotels__viewport" ref={emblaRef}>
+              <div className="featured-hotels__track">
+                {hotels.map((hotel) => (
+                  <div key={hotel.id} className="featured-hotels__slide">
+                    <FeaturedHotelCard
+                      id={hotel.id}
+                      slug={hotel.slug}
+                      name={hotel.name}
+                      city={hotel.city}
+                      state={hotel.state}
+                      address={hotel.address}
+                      images={hotel.images}
+                      price={hotel.price}
+                      rating={hotel.rating}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        ) : (
+          <Row className="g-4">
+            {hotels.map((hotel) => (
+              <Col key={hotel.id} sm={6} xl={3}>
+                <FeaturedHotelCard
+                  id={hotel.id}
+                  slug={hotel.slug}
+                  name={hotel.name}
+                  city={hotel.city}
+                  state={hotel.state}
+                  address={hotel.address}
+                  images={hotel.images}
+                  price={hotel.price}
+                  rating={hotel.rating}
+                />
+              </Col>
+            ))}
+          </Row>
+        )}
+      </Container>
+    </section>
+  );
+};
+
+export default FeaturedHotels;

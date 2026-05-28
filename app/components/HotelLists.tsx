@@ -13,6 +13,7 @@ import HotelListCard from './HotelListCard';
 import HotelListFilter from './HotelListFilter';
 import { HotelListSkeleton } from './index';
 import { getStoredToken } from '@/app/helpers/auth';
+import { hasActiveBusinessSearch } from '@/app/helpers/businesses';
 
 // Types
 import { Hotel } from '@/app/types/hotel';
@@ -21,12 +22,20 @@ const HotelLists = () => {
   const { isOpen, toggle } = useToggle();
   const { isOpen: alertVisible, hide: hideAlert } = useToggle(true);
   const searchParams = useSearchParams();
+  const hasSearch = hasActiveBusinessSearch(searchParams);
 
   const [hotels, setHotels] = useState<Hotel[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchHotels = useCallback(async () => {
+    if (!hasSearch) {
+      setHotels([]);
+      setError(null);
+      setIsLoading(false);
+      return;
+    }
+
     setIsLoading(true);
     try {
       const rawUrl = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:3000";
@@ -89,11 +98,15 @@ const HotelLists = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [searchParams]);
+  }, [hasSearch, searchParams]);
 
   useEffect(() => {
     fetchHotels();
   }, [fetchHotels]);
+
+  if (!hasSearch) {
+    return null;
+  }
 
   return (
     <section className="pt-0">

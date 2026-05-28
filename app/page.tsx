@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import { Header, Hero, HotelGridFilter, HotelGridLayout, Footer } from '@/app/components';
+import { Header, Hero, HotelGridFilter, FeaturedHotels, HotelGridLayout, Footer } from '@/app/components';
 
 export default function Home() {
   return (
@@ -12,6 +12,9 @@ export default function Home() {
         </Suspense>
         <Suspense fallback={<div>Loading filters...</div>}>
           <HotelGridFilter />
+        </Suspense>
+        <Suspense fallback={<div>Loading featured hotels...</div>}>
+          <FeaturedHotels />
         </Suspense>
         <Suspense fallback={<div>Loading hotels...</div>}>
           <HotelGridLayout />

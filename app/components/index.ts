@@ -6,6 +6,7 @@ export { default as Hero } from './Hero';
 export { default as AvailabilityFilter } from './AvailabilityFilter';
 export { default as HotelListFilter } from './HotelListFilter';
 export { default as HotelGridFilter } from './HotelGridFilter';
+export { default as FeaturedHotels } from './FeaturedHotels';
 export { default as HotelGridLayout } from './HotelGridLayout';
 export { default as HotelGridCard } from './HotelGridCard';
 export { default as HotelLists } from './HotelLists';

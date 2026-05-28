@@ -29,3 +29,91 @@
 .choices__item.choices__item--selectable[data-value="-1"]{
   @extend .choices__placeholder;
 }
+
+// Featured Hotels — template grid + optional carousel when >4 or mobile peek
+.featured-hotels {
+  .card.card-img-scale {
+    position: relative;
+  }
+
+  .card-img-scale-wrapper {
+    aspect-ratio: 3 / 4;
+  }
+
+  img.card-img,
+  &__image-fallback {
+    width: 100%;
+    height: 100%;
+    min-height: 280px;
+    object-fit: cover;
+  }
+
+  &__carousel {
+    padding-inline: 0;
+
+    @media (min-width: 1200px) {
+      padding-inline: 2.75rem;
+    }
+  }
+
+  &__viewport {
+    overflow: hidden;
+    margin-inline: calc(var(--bs-gutter-x) * -0.5);
+  }
+
+  &__track {
+    display: flex;
+    touch-action: pan-y pinch-zoom;
+  }
+
+  &__slide {
+    flex: 0 0 calc(100% / 1.5);
+    min-width: 0;
+    padding-inline: calc(var(--bs-gutter-x) * 0.5);
+
+    @media (min-width: 576px) {
+      flex: 0 0 50%;
+    }
+
+    @media (min-width: 1200px) {
+      flex: 0 0 25%;
+    }
+  }
+
+  &__arrow {
+    display: none;
+    position: absolute;
+    top: 38%;
+    z-index: 2;
+    width: 2.5rem;
+    height: 2.5rem;
+    border: none;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.55);
+    color: #fff;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s ease, opacity 0.2s ease;
+
+    @media (min-width: 1200px) {
+      display: flex;
+    }
+
+    &:hover:not(:disabled) {
+      background: rgba(0, 0, 0, 0.8);
+    }
+
+    &:disabled {
+      opacity: 0.35;
+      cursor: default;
+    }
+
+    &--prev {
+      left: 0;
+    }
+
+    &--next {
+      right: 0;
+    }
+  }
+}
