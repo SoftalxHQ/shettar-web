@@ -6,6 +6,8 @@ import { BsCalendar, BsDashCircle, BsGeoAlt, BsPerson, BsPlusCircle, BsSearch } 
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import SelectFormInput from './form/SelectFormInput';
 import Flatpicker from './form/Flatpicker';
+import { persistRecentSearch } from '@/app/helpers/ad-viewer-context';
+import { useHomeSearchOptional } from '@/app/contexts/HomeSearchContext';
 
 type AvailabilityFormType = {
   location: string;
@@ -35,6 +37,7 @@ const AvailabilityFilter = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const pathname = usePathname();
+  const homeSearch = useHomeSearchOptional();
 
   const getInitialValue = (): AvailabilityFormType => {
     const start_date_str = searchParams.get('start_date');
@@ -118,6 +121,7 @@ const AvailabilityFilter = () => {
 
     if (formValue.location) {
       query.set('location', formValue.location);
+      persistRecentSearch(formValue.location);
     }
 
     const targetPage = pathname === '/'
@@ -126,6 +130,7 @@ const AvailabilityFilter = () => {
         ? '/hotel/list'
         : '/hotel/grid';
     router.push(`${targetPage}?${query.toString()}`);
+    homeSearch?.markSearched();
   };
 
   const updateGuests = (type: keyof AvailabilityFormType['guests'], increase: boolean = true) => {

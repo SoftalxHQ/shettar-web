@@ -15,6 +15,7 @@ import SelectFormInput from './form/SelectFormInput';
 import TextFormInput from './form/TextFormInput';
 
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
+import { useHomeSearchOptional } from '@/app/contexts/HomeSearchContext';
 
 const filterAmenities = [
   { label: 'Air Conditioning', value: 'ac' },
@@ -33,6 +34,7 @@ const HotelGridFilter = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const pathname = usePathname();
+  const homeSearch = useHomeSearchOptional();
 
   const { isOpen, toggle } = useToggle();
   const [priceRange, setPriceRange] = useState<string[]>(['0', '500000']);
@@ -121,6 +123,7 @@ const HotelGridFilter = () => {
     else params.delete('sort_by');
 
     router.push(`${pathname}?${params.toString()}`);
+    homeSearch?.markSearched();
   };
 
   const handleAmenityChange = (value: string) => {

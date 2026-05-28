@@ -12,6 +12,10 @@ import {
   hasActiveBusinessSearch,
   mapBusinessToHotel,
 } from '@/app/helpers/businesses';
+import { fetchSponsoredListings, viewerContextToFetchParams } from '@/app/helpers/sponsored-listings';
+import { resolveAdViewerContext } from '@/app/helpers/ad-viewer-context';
+import { getStoredToken } from '@/app/helpers/auth';
+import { useHomeSearchOptional } from '@/app/contexts/HomeSearchContext';
 
 const PAGE_LIMIT = 20;
 
@@ -22,7 +26,8 @@ const HotelGridLayout = () => {
   const [error, setError] = useState<string | null>(null);
   const [meta, setMeta] = useState<{ current_page: number; total_pages: number; total_count: number; per_page: number } | null>(null);
   const searchParams = useSearchParams();
-  const hasSearch = hasActiveBusinessSearch(searchParams);
+  const homeSearch = useHomeSearchOptional();
+  const hasSearch = homeSearch ? homeSearch.hasSearched : hasActiveBusinessSearch(searchParams);
   const { updateHotelStats } = useLayoutContext();
 
   const updateHotelStatsRef = useRef(updateHotelStats);
@@ -36,7 +41,6 @@ const HotelGridLayout = () => {
         searchParams,
         page: pageNum,
         limit,
-        excludeFeatured: true,
       });
     },
     [searchParams]
@@ -59,9 +63,34 @@ const HotelGridLayout = () => {
       try {
         const { rows, meta: m } = await fetchBusinessPage(1, PAGE_LIMIT);
         if (cancelled) return;
-        setHotels(rows.map(mapBusinessToHotel));
+
+        let merged = rows.map(mapBusinessToHotel);
+        const location = searchParams.get('location');
+        if (location) {
+          const token = getStoredToken();
+          const viewer = await resolveAdViewerContext({ activeLocation: location, token });
+          try {
+            const sponsored = await fetchSponsoredListings({
+              placement: 'search_results',
+              limit: 4,
+              ...viewerContextToFetchParams(viewer),
+            });
+            const organicIds = new Set(merged.map((h) => h.id));
+            const sponsoredRows = sponsored
+              .filter((s) => !organicIds.has(s.id))
+              .map((s) => ({
+                ...s,
+                feature: ['Sponsored'],
+              }));
+            merged = [...sponsoredRows, ...merged];
+          } catch {
+            /* sponsored blend is best-effort */
+          }
+        }
+
+        setHotels(merged);
         setMeta(m);
-        updateHotelStatsRef.current(rows.length, searchParams.get('location') || '');
+        updateHotelStatsRef.current(merged.length, searchParams.get('location') || '');
       } catch (e) {
         if (!cancelled) {
           console.error('Error fetching hotels:', e);

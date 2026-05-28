@@ -25,6 +25,7 @@ import { useLayoutContext } from '@/app/states';
 import { useApi } from '@/app/hooks/useApi';
 import { toast } from 'react-hot-toast';
 import { getStoredToken } from '@/app/helpers/auth';
+import { getAttributionToken } from '@/app/hooks/useSponsoredListingTracking';
 import { createConsumer } from '@rails/actioncable';
 
 const currency = '₦';
@@ -169,6 +170,11 @@ const PaymentOptions = ({
 
     if (appliedPromo) {
       reservationData.promo_code = appliedPromo.code;
+    }
+
+    const adToken = getAttributionToken();
+    if (adToken) {
+      reservationData.ad_attribution_token = adToken;
     }
 
     const payload = {

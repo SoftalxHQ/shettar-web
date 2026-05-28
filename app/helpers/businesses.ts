@@ -48,10 +48,66 @@ export function hasActiveBusinessSearch(searchParams: ReadonlyURLSearchParams): 
   return false;
 }
 
+function formatDateLocal(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+function getDefaultStayDates(): { start_date: string; end_date: string } {
+  const today = new Date();
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  return {
+    start_date: formatDateLocal(today),
+    end_date: formatDateLocal(tomorrow),
+  };
+}
+
+export function ensureFutureStayDatesFromSearchParams(
+  searchParams: ReadonlyURLSearchParams
+): { start_date: string; end_date: string } {
+  const defaults = getDefaultStayDates();
+  const today = defaults.start_date;
+  let start_date = searchParams.get('start_date') || defaults.start_date;
+  let end_date = searchParams.get('end_date') || defaults.end_date;
+
+  if (start_date < today) {
+    start_date = defaults.start_date;
+    end_date = defaults.end_date;
+  } else if (end_date <= start_date) {
+    end_date = defaults.end_date;
+  }
+
+  return { start_date, end_date };
+}
+
 export function getApiBaseUrl(): string {
   const rawUrl = process.env.NEXT_PUBLIC_API_URL;
   const baseUrl = rawUrl && rawUrl !== 'undefined' ? rawUrl : 'http://127.0.0.1:3000';
   return baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+}
+
+export function normalizeApiMediaUrl(url: string | undefined | null): string {
+  if (!url) return '';
+  try {
+    const api = new URL(getApiBaseUrl());
+    const parsed = new URL(url);
+    if (parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1') {
+      parsed.protocol = api.protocol;
+      parsed.hostname = api.hostname;
+      parsed.port = api.port;
+      return parsed.toString();
+    }
+  } catch {
+    return url;
+  }
+  return url;
+}
+
+export function normalizeApiMediaUrls(urls: string[] | undefined | null): string[] {
+  return (urls || []).map(normalizeApiMediaUrl).filter(Boolean);
 }
 
 export function mapBusinessToHotel(b: Record<string, unknown>): Hotel {
@@ -72,7 +128,7 @@ export function mapBusinessToHotel(b: Record<string, unknown>): Hotel {
     slug: b.slug as string,
     name: b.name as string,
     address: `${b.address}, ${b.city}, ${b.state}`,
-    images: (b.images_url as string[]) || [],
+    images: normalizeApiMediaUrls(b.images_url as string[]),
     price,
     old_price: oldPrice,
     rating: parseFloat(String(b.average_rating)) || 0,
@@ -122,10 +178,13 @@ export function buildBusinessQueryString(
     if (RESERVED_QUERY_KEYS.includes(key)) return;
     if (key === 'rooms') {
       query.append('number_of_rooms', value);
-    } else {
+    } else if (key !== 'start_date' && key !== 'end_date') {
       query.append(key, value);
     }
   });
+  const stayDates = ensureFutureStayDatesFromSearchParams(searchParams);
+  query.set('start_date', stayDates.start_date);
+  query.set('end_date', stayDates.end_date);
   query.set('page', String(options.page));
   query.set('limit', String(options.limit));
   if (options.featured) {

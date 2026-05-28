@@ -1,8 +1,10 @@
 'use client';
 
 import { currency } from '@/app/states';
+import { useSponsoredListingTracking } from '@/app/hooks/useSponsoredListingTracking';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
+import { useEffect, useMemo, useState } from 'react';
 import { Card } from 'react-bootstrap';
 import { BsGeoAlt } from 'react-icons/bs';
 import { FaStar } from 'react-icons/fa6';
@@ -17,6 +19,10 @@ export interface FeaturedHotelCardProps {
   images: string[];
   price: number;
   rating: number;
+  sponsored?: boolean;
+  adCampaignId?: number | null;
+  adPlacement?: string;
+  impressionKey?: string;
 }
 
 function locationLabel(city?: string, state?: string, address?: string): string {
@@ -24,6 +30,28 @@ function locationLabel(city?: string, state?: string, address?: string): string 
   if (state) return state;
   if (address) return address.split(',')[0]?.trim() || address;
   return 'Location';
+}
+
+function useAutoSlideImages(images: string[], intervalMs = 3500) {
+  const slides = useMemo(
+    () => images.filter(Boolean),
+    [images]
+  );
+  const [index, setIndex] = useState(0);
+
+  useEffect(() => {
+    setIndex(0);
+  }, [slides.join('|')]);
+
+  useEffect(() => {
+    if (slides.length <= 1) return;
+    const timer = window.setInterval(() => {
+      setIndex((current) => (current + 1) % slides.length);
+    }, intervalMs);
+    return () => window.clearInterval(timer);
+  }, [slides, intervalMs]);
+
+  return { slides, index };
 }
 
 const FeaturedHotelCard = ({
@@ -36,18 +64,57 @@ const FeaturedHotelCard = ({
   images,
   price,
   rating,
+  sponsored,
+  adCampaignId,
+  adPlacement,
+  impressionKey,
 }: FeaturedHotelCardProps) => {
   const searchParams = useSearchParams();
   const searchQuery = searchParams.toString();
   const hotelDetailLink = `/hotel/${slug || id}${searchQuery ? `?${searchQuery}` : ''}`;
-  const imageSrc = images[0];
-  const displayRating = rating > 0 ? rating.toFixed(1).replace(/\.0$/, '') : '—';
+  const { slides, index } = useAutoSlideImages(images);
+  const hasRating = rating > 0;
+  const displayRating = hasRating ? rating.toFixed(1).replace(/\.0$/, '') : null;
+
+  const { ref, trackClick } = useSponsoredListingTracking(
+    adCampaignId
+      ? {
+          ad_campaign_id: adCampaignId,
+          business_id: id,
+          ad_placement: adPlacement,
+          impression_key: impressionKey,
+        }
+      : null
+  );
 
   return (
-    <Card className="card-img-scale overflow-hidden bg-transparent">
-      <div className="card-img-scale-wrapper rounded-3">
-        {imageSrc ? (
-          <img src={imageSrc} className="card-img" alt={name} />
+    <div ref={ref}>
+      <Card className="card-img-scale overflow-hidden bg-transparent">
+        <div className="card-img-scale-wrapper rounded-3 position-relative">
+        {sponsored && adCampaignId && (
+          <span className="badge bg-secondary position-absolute top-0 end-0 m-2 z-1">Sponsored</span>
+        )}
+        {slides.length > 0 ? (
+          <div className="featured-hotels__image-slideshow">
+            {slides.map((src, slideIndex) => (
+              <img
+                key={`${src}-${slideIndex}`}
+                src={src}
+                className={`card-img featured-hotels__slide-image${slideIndex === index ? ' is-active' : ''}`}
+                alt={name}
+              />
+            ))}
+            {slides.length > 1 && (
+              <div className="featured-hotels__slide-dots" aria-hidden="true">
+                {slides.slice(0, 8).map((_, dotIndex) => (
+                  <span
+                    key={dotIndex}
+                    className={`featured-hotels__slide-dot${dotIndex === index ? ' is-active' : ''}`}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
         ) : (
           <div className="card-img bg-light d-flex align-items-center justify-content-center featured-hotels__image-fallback">
             <span className="text-secondary small opacity-50">No image</span>
@@ -63,7 +130,13 @@ const FeaturedHotelCard = ({
 
       <div className="card-body px-2">
         <h5 className="card-title">
-          <Link href={hotelDetailLink} className="stretched-link">
+          <Link
+            href={hotelDetailLink}
+            className="stretched-link"
+            onClick={() => {
+              if (sponsored && adCampaignId) trackClick();
+            }}
+          >
             {name}
           </Link>
         </h5>
@@ -72,13 +145,16 @@ const FeaturedHotelCard = ({
             {currency}
             {price.toLocaleString()} <small className="fw-light">/starting at</small>{' '}
           </h6>
-          <h6 className="mb-0 d-flex">
-            {displayRating}
-            <FaStar size={18} className="text-warning ms-1" />
-          </h6>
+          {hasRating && (
+            <h6 className="mb-0 d-flex">
+              {displayRating}
+              <FaStar size={18} className="text-warning ms-1" />
+            </h6>
+          )}
         </div>
       </div>
     </Card>
+    </div>
   );
 };
 

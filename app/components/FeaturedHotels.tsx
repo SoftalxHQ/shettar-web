@@ -1,14 +1,11 @@
 'use client';
 
 import FeaturedHotelCard from '@/app/components/FeaturedHotelCard';
-import {
-  FeaturedHotel,
-  fetchBusinesses,
-  hasActiveBusinessSearch,
-  mapBusinessToFeaturedHotel,
-} from '@/app/helpers/businesses';
+import { fetchSponsoredListings, type SponsoredHotel } from '@/app/helpers/sponsored-listings';
+import { resolveAdViewerContext } from '@/app/helpers/ad-viewer-context';
+import { getStoredToken } from '@/app/helpers/auth';
+import { useHomeSearch } from '@/app/contexts/HomeSearchContext';
 import useEmblaCarousel from 'embla-carousel-react';
-import { useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 import { Card, Col, Container, Row } from 'react-bootstrap';
 import { BsArrowLeft, BsArrowRight } from 'react-icons/bs';
@@ -30,8 +27,8 @@ function FeaturedHotelCardSkeleton() {
 }
 
 const FeaturedHotels = () => {
-  const searchParams = useSearchParams();
-  const [hotels, setHotels] = useState<FeaturedHotel[]>([]);
+  const { hasSearched } = useHomeSearch();
+  const [hotels, setHotels] = useState<SponsoredHotel[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isMobile, setIsMobile] = useState(() => {
     if (typeof window === 'undefined') return false;
@@ -81,20 +78,24 @@ const FeaturedHotels = () => {
   }, [emblaApi, hotels.length, isMobile, useCarousel]);
 
   useEffect(() => {
+    if (hasSearched) {
+      setHotels([]);
+      setIsLoading(false);
+      return;
+    }
+
     let cancelled = false;
     (async () => {
       setIsLoading(true);
       try {
-        const { rows } = await fetchBusinesses({
-          searchParams: hasActiveBusinessSearch(searchParams)
-            ? searchParams
-            : (new URLSearchParams() as unknown as typeof searchParams),
-          page: 1,
+        const token = getStoredToken();
+        await resolveAdViewerContext({ token });
+        const rows = await fetchSponsoredListings({
+          placement: 'homepage_featured',
           limit: FEATURED_LIMIT,
-          featured: true,
         });
         if (cancelled) return;
-        setHotels(rows.map(mapBusinessToFeaturedHotel));
+        setHotels(rows);
       } catch (e) {
         if (!cancelled) {
           console.error('Error fetching featured hotels:', e);
@@ -107,7 +108,7 @@ const FeaturedHotels = () => {
     return () => {
       cancelled = true;
     };
-  }, [searchParams]);
+  }, [hasSearched]);
 
   const scrollPrev = useCallback(() => {
     emblaApi?.scrollPrev();
@@ -117,7 +118,7 @@ const FeaturedHotels = () => {
     emblaApi?.scrollNext();
   }, [emblaApi]);
 
-  if (!isLoading && hotels.length === 0) {
+  if (hasSearched || (!isLoading && hotels.length === 0)) {
     return null;
   }
 
@@ -179,6 +180,10 @@ const FeaturedHotels = () => {
                       images={hotel.images}
                       price={hotel.price}
                       rating={hotel.rating}
+                      sponsored={hotel.sponsored}
+                      adCampaignId={hotel.ad_campaign_id}
+                      adPlacement={hotel.ad_placement}
+                      impressionKey={hotel.impression_key}
                     />
                   </div>
                 ))}
@@ -199,6 +204,10 @@ const FeaturedHotels = () => {
                   images={hotel.images}
                   price={hotel.price}
                   rating={hotel.rating}
+                  sponsored={hotel.sponsored}
+                  adCampaignId={hotel.ad_campaign_id}
+                  adPlacement={hotel.ad_placement}
+                  impressionKey={hotel.impression_key}
                 />
               </Col>
             ))}
