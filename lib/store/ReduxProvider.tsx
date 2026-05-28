@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Provider, useSelector } from 'react-redux';
 import { PersistGate } from 'redux-persist/integration/react';
 import { configureStore, combineReducers } from '@reduxjs/toolkit';
@@ -17,6 +17,7 @@ import hotelStatsReducer from './slices/hotelStatsSlice';
 import { apiService } from './services/apiService';
 import { actionCableMiddleware } from './middleware/actionCableMiddleware';
 import AccountNotificationsSync from '@/app/components/AccountNotificationsSync';
+import PushNotificationRegistrar from '@/app/components/PushNotificationRegistrar';
 import { changeHTMLAttribute } from '@/app/utils/html-layout';
 import type { RootState, AppDispatch } from './store';
 
@@ -66,17 +67,14 @@ function ThemeSync() {
 }
 
 export default function ReduxProvider({ children }: { children: React.ReactNode }) {
-  const storeRef = useRef<ReturnType<typeof makeStore> | null>(null);
-  if (!storeRef.current) {
-    storeRef.current = makeStore();
-  }
-  const { store, persistor } = storeRef.current;
+  const [{ store, persistor }] = useState(makeStore);
 
   return (
     <Provider store={store}>
       <PersistGate loading={null} persistor={persistor}>
         <ThemeSync />
         <AccountNotificationsSync />
+        <PushNotificationRegistrar />
         {children}
       </PersistGate>
     </Provider>

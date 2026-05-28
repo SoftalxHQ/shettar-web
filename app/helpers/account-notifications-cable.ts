@@ -98,7 +98,7 @@ function teardownSocket() {
 
 function ensureSocket(tokenOverride?: string | null) {
   const token = tokenOverride ?? getStoredToken();
-  if (!isCableJwtUsable(token)) return;
+  if (!token || !isCableJwtUsable(token)) return;
   if (rejectedToken === token) return;
 
   if (sharedSocket && socketToken === token) {

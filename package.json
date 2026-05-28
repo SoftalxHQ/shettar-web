@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "firebase": "^11.6.0",
     "@hookform/resolvers": "^5.2.2",
     "@popperjs/core": "^2.11.8",
     "@rails/actioncable": "^8.1.200",
