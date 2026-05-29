@@ -75,20 +75,12 @@ async function flushEvents(events: Record<string, unknown>[]) {
     events: events.map(withSearchContext),
   });
 
-  // #region agent log
-  fetch('http://127.0.0.1:7490/ingest/c52fee08-c9da-4ed1-bb4e-e7584b57c63c',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'cbde49'},body:JSON.stringify({sessionId:'cbde49',runId:'post-fix',hypothesisId:'H6',location:'useSponsoredListingTracking.ts:flushEvents',message:'flush_start',data:{eventCount:events.length,eventTypes:events.map((e)=>e.event_type)},timestamp:Date.now()})}).catch(()=>{});
-  // #endregion
-
   const res = await fetch(`${getApiBaseUrl()}/api/v1/ad_events/batch`, {
     method: 'POST',
     headers,
     body,
     keepalive: true,
   });
-
-  // #region agent log
-  fetch('http://127.0.0.1:7490/ingest/c52fee08-c9da-4ed1-bb4e-e7584b57c63c',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'cbde49'},body:JSON.stringify({sessionId:'cbde49',runId:'post-fix',hypothesisId:'H6',location:'useSponsoredListingTracking.ts:flushEvents',message:'fetch_result',data:{status:res.status,ok:res.ok,eventTypes:events.map((e)=>e.event_type)},timestamp:Date.now()})}).catch(()=>{});
-  // #endregion
 
   if (!res.ok) return null;
   try {
@@ -164,15 +156,9 @@ export function useSponsoredListingTracking(payload: TrackingPayload | null) {
           if (entry.intersectionRatio >= 0.5) {
             if (!visibleSince.current) visibleSince.current = Date.now();
             const dwellMs = visibleSince.current ? Date.now() - visibleSince.current : 0;
-            // #region agent log
-            fetch('http://127.0.0.1:7490/ingest/c52fee08-c9da-4ed1-bb4e-e7584b57c63c',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'cbde49'},body:JSON.stringify({sessionId:'cbde49',runId:'pre-fix',hypothesisId:'H4',location:'useSponsoredListingTracking.ts:observer',message:'intersection_visible',data:{campaignId:payload.ad_campaign_id,dwellMs,sent:sent.current,ratio:entry.intersectionRatio},timestamp:Date.now()})}).catch(()=>{});
-            // #endregion
             if (visibleSince.current && dwellMs >= 1000 && !sent.current) {
               sent.current = true;
               markSent(dedupeKey);
-              // #region agent log
-              fetch('http://127.0.0.1:7490/ingest/c52fee08-c9da-4ed1-bb4e-e7584b57c63c',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'cbde49'},body:JSON.stringify({sessionId:'cbde49',runId:'pre-fix',hypothesisId:'H4',location:'useSponsoredListingTracking.ts:observer',message:'impression_enqueued',data:{campaignId:payload.ad_campaign_id,dedupeKey},timestamp:Date.now()})}).catch(()=>{});
-              // #endregion
               enqueue({
                 event_type: 'impression',
                 ad_campaign_id: payload.ad_campaign_id,
