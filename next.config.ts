@@ -27,7 +27,7 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: 'https',
-        hostname: 'api.prd.shettar.com',
+        hostname: 'api-v1.shettar.com',
         port: '',
         pathname: '/**',
       },

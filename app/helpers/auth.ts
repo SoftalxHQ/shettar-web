@@ -1,7 +1,7 @@
 /**
  * auth.ts
  *
- * All auth calls in abri-web use the ACCOUNT model (consumer/guest), not the
+ * All auth calls in shettar-web use the ACCOUNT model (consumer/guest), not the
  * User (hotel-staff) model. Protected endpoints like reviews, reservations,
  * and the wallet all use `authenticate_account!`.
  *
