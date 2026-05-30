@@ -3,7 +3,7 @@
 import { initializeApp, getApps } from 'firebase/app';
 import { getMessaging, getToken, isSupported, onMessage, type Messaging } from 'firebase/messaging';
 import { getApiBaseUrl } from '@/app/helpers/businesses';
-import { getStoredToken } from '@/app/helpers/auth';
+import { getOrCreateGuestId } from '@/app/helpers/guest-id';
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -13,6 +13,8 @@ const firebaseConfig = {
   messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
+
+export type WebPushPermissionStatus = 'granted' | 'denied' | 'default';
 
 function isConfigured() {
   return Boolean(
@@ -55,10 +57,30 @@ async function getMessagingInstance(): Promise<Messaging | null> {
   return messagingInstance;
 }
 
-export async function registerWebPushDevice(authToken?: string | null): Promise<string | null> {
-  const token = authToken ?? getStoredToken();
-  if (!token) return null;
+export function getWebPushPermissionStatus(): WebPushPermissionStatus {
+  if (typeof window === 'undefined' || !('Notification' in window)) return 'denied';
+  const permission = Notification.permission;
+  if (permission === 'granted') return 'granted';
+  if (permission === 'denied') return 'denied';
+  return 'default';
+}
 
+export type RegisterWebPushOptions = {
+  authToken?: string | null;
+  guestId?: string | null;
+};
+
+/** Register only when permission is already granted (no browser prompt). */
+export async function registerWebPushDevice(options: RegisterWebPushOptions = {}): Promise<string | null> {
+  if (getWebPushPermissionStatus() !== 'granted') return null;
+  const fcmToken = await fetchFcmToken();
+  if (!fcmToken) return null;
+  await submitWebPushRegistration(fcmToken, options);
+  return fcmToken;
+}
+
+/** Request permission, then register guest or account device. */
+export async function requestWebPushPermissionAndRegister(options: RegisterWebPushOptions = {}): Promise<string | null> {
   const messaging = await getMessagingInstance();
   if (!messaging) return null;
 
@@ -69,31 +91,60 @@ export async function registerWebPushDevice(authToken?: string | null): Promise<
     return null;
   }
 
+  const fcmToken = await fetchFcmToken();
+  if (!fcmToken) return null;
+
+  await submitWebPushRegistration(fcmToken, options);
+  return fcmToken;
+}
+
+async function fetchFcmToken(): Promise<string | null> {
+  const messaging = await getMessagingInstance();
+  if (!messaging) return null;
+
   const vapidKey = process.env.NEXT_PUBLIC_FCM_VAPID_KEY;
   if (!vapidKey) return null;
 
   const registration = await registerMessagingServiceWorker();
-  const fcmToken = await getToken(messaging, { vapidKey, serviceWorkerRegistration: registration });
+  return getToken(messaging, { vapidKey, serviceWorkerRegistration: registration });
+}
 
-  if (!fcmToken) return null;
+async function submitWebPushRegistration(fcmToken: string, options: RegisterWebPushOptions): Promise<void> {
+  const guestId = options.guestId ?? getOrCreateGuestId();
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (options.authToken) {
+    headers.Authorization = `Bearer ${options.authToken}`;
+  }
 
   await fetch(`${getApiBaseUrl()}/api/v1/push_devices`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify({ token: fcmToken, platform: 'web' }),
+    headers,
+    body: JSON.stringify({ token: fcmToken, platform: 'web', guest_id: guestId }),
   });
-
-  return fcmToken;
 }
 
-export async function unregisterWebPushDevice(authToken: string | null, fcmToken: string): Promise<void> {
-  if (!authToken || !fcmToken) return;
-  await fetch(`${getApiBaseUrl()}/api/v1/push_devices/${encodeURIComponent(fcmToken)}`, {
+export async function unregisterWebPushDevice(options: {
+  authToken?: string | null;
+  guestId?: string | null;
+  fcmToken: string;
+}): Promise<void> {
+  const { fcmToken } = options;
+  if (!fcmToken) return;
+
+  const guestId = options.guestId ?? getOrCreateGuestId();
+  const headers: Record<string, string> = {};
+  if (options.authToken) {
+    headers.Authorization = `Bearer ${options.authToken}`;
+  }
+
+  const url = new URL(`${getApiBaseUrl()}/api/v1/push_devices/${encodeURIComponent(fcmToken)}`);
+  if (!options.authToken && guestId) {
+    url.searchParams.set('guest_id', guestId);
+  }
+
+  await fetch(url.toString(), {
     method: 'DELETE',
-    headers: { Authorization: `Bearer ${authToken}` },
+    headers,
   }).catch(() => {});
 }
 
