@@ -1,36 +1,70 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Shettar Web
 
-## Getting Started
+Guest-facing website: search hotels, book stays, manage reservations and wallet, reviews, wishlists, in-stay restaurant ordering, and push notifications.
 
-First, run the development server:
+Uses **shettar-api** (`/api/v1` + Action Cable).
+
+## Stack
+
+- Next.js 16 (App Router)
+- React 19, Redux Toolkit
+- Bootstrap 5, React Bootstrap
+- Firebase (web push / FCM)
+- Google OAuth (guest sign-in)
+
+## Prerequisites
+
+- Node.js 20+
+- pnpm (or npm)
+- Running **shettar-api** on port 3000
+
+## Local development
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+pnpm install
+cp .env.example .env.local
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+App: **http://localhost:3000**
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Environment
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Variable | Required | Notes |
+|----------|----------|--------|
+| `NEXT_PUBLIC_API_URL` | Yes | No trailing slash; local: `http://127.0.0.1:3000` |
+| `NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY` | For payments | Guest wallet / checkout |
+| `NEXT_PUBLIC_GOOGLE_CLIENT_ID` | For Google login | OAuth client for web |
+| `NEXT_PUBLIC_FIREBASE_*` | For push | Firebase web app config |
+| `NEXT_PUBLIC_FCM_VAPID_KEY` | For push | Web Push key pair from Firebase |
 
-## Learn More
+Staging and production URLs are documented in `.env.example` (e.g. `https://api.stg.shettar.com`, `https://api-v1.shettar.com`).
 
-To learn more about Next.js, take a look at the following resources:
+## Scripts
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+| Command | Description |
+|---------|-------------|
+| `pnpm dev` | Development server |
+| `pnpm build` | Production build |
+| `pnpm start` | Serve production build |
+| `pnpm lint` | ESLint |
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Notable behaviour
 
-## Deploy on Vercel
+- **Sponsored listings** — Homepage featured hotels and search placements; ad impressions/clicks batch to `POST /api/v1/ad_events/batch` with viewer location context (search history, bookings, optional browser geolocation opt-in).
+- **Notifications** — Optional banner on the home page after search; registers FCM before or after login (guest device merge on sign-in).
+- **Real-time** — Wallet balance and in-app notifications via Action Cable.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Project layout
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `app/` — pages, layouts, helpers, contexts
+- `app/components/` — UI (search, hotel grid, booking flow, prompts)
+- `lib/store/` — Redux slices
+
+## Related apps
+
+| App | Role |
+|-----|------|
+| [shettar-api](../shettar-api) | Backend |
+| [shettar-mobile](../shettar-mobile) | Same product on iOS/Android |
+| [shettar-business](../shettar-business) | Hotel operator dashboard |

@@ -135,6 +135,11 @@ export function setDeviceGeoOptIn(enabled: boolean) {
   localStorage.setItem(DEVICE_OPT_IN_KEY, enabled ? 'true' : 'false');
 }
 
+export function getDeviceGeoOptIn(): boolean {
+  if (typeof window === 'undefined') return false;
+  return localStorage.getItem(DEVICE_OPT_IN_KEY) === 'true';
+}
+
 async function reverseGeocode(lat: number, lng: number): Promise<{ country?: string; state?: string; city?: string } | null> {
   try {
     const res = await fetch(

@@ -3,18 +3,33 @@
 import { FavoriteButton } from '@/app/components';
 import { ImageSlider } from '@/app/components/ImageSlider';
 import { currency, useLayoutContext } from '@/app/states';
-import { Fragment, useMemo } from 'react';
+import { useSponsoredListingTracking } from '@/app/hooks/useSponsoredListingTracking';
+import { Fragment } from 'react';
 import { Card, CardBody, Col, Dropdown, DropdownItem, DropdownMenu, DropdownToggle, Row } from 'react-bootstrap';
 import { BsGeoAlt, BsPatchCheckFill } from 'react-icons/bs';
 import { FaFacebookSquare, FaLinkedin, FaShareAlt, FaStarHalfAlt, FaRegStar, FaTwitterSquare } from 'react-icons/fa';
-import { FaCopy, FaHeart, FaStar } from 'react-icons/fa6';
+import { FaCopy, FaStar } from 'react-icons/fa6';
 import { type Hotel } from '@/app/types/hotel';
 import Link from 'next/link';
 import { toast } from 'react-hot-toast';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 const HotelListCard = ({ hotel }: { hotel: Hotel }) => {
-  const { address, features, images, name, price, rating, sale, schemes, old_price } = hotel;
+  const {
+    address,
+    features,
+    images,
+    name,
+    price,
+    rating,
+    sale,
+    schemes,
+    old_price,
+    sponsored,
+    ad_campaign_id,
+    ad_placement,
+    impression_key,
+  } = hotel;
   const { isAuthenticated } = useLayoutContext();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -22,142 +37,204 @@ const HotelListCard = ({ hotel }: { hotel: Hotel }) => {
   const searchQuery = searchParams.toString();
   const hotelDetailLink = `/hotel/${hotel.slug || hotel.id}${searchQuery ? `?${searchQuery}` : ''}`;
 
-  return (
-    <Card className="shadow p-2">
-      <Row className="g-0">
-        <Col md={5} className="position-relative">
-          {sale && (
-            <div className="position-absolute top-0 start-0 z-index-2 m-2">
-              <div className="badge text-bg-danger">{sale}</div>
-            </div>
-          )}
+  const { ref, trackClick } = useSponsoredListingTracking(
+    sponsored && ad_campaign_id
+      ? {
+          ad_campaign_id,
+          business_id: hotel.id,
+          ad_placement: ad_placement || 'search_results',
+          impression_key: impression_key,
+        }
+      : null
+  );
 
-          <ImageSlider images={images} height="250px" alt={name} />
-        </Col>
-        <Col md={7}>
-          <CardBody className="py-md-2 d-flex flex-column h-100 position-relative">
-            <div className="d-flex justify-content-between align-items-center">
-              <ul className="list-inline mb-1">
-                {Array.from(new Array(Math.floor(rating))).map((_star, idx) => (
-                  <li key={idx} className="list-inline-item me-1 small">
-                    <FaStar size={15} className="text-warning" />
-                  </li>
-                ))}
-                {!Number.isInteger(rating) && (
-                  <li className="list-inline-item me-1 small">
-                    <FaStarHalfAlt size={15} className="text-warning" />
-                  </li>
-                )}
-                {rating < 5 &&
-                  Array.from(new Array(5 - Math.ceil(rating))).map((_val, idx) => (
+  const handleSelectRoom = () => {
+    if (sponsored && ad_campaign_id) {
+      trackClick();
+    }
+    router.push(hotelDetailLink);
+  };
+
+  const displayFeatures = (features ?? hotel.feature ?? []).filter((f) => f !== 'Sponsored');
+
+  return (
+    <div ref={ref}>
+      <Card className="shadow p-2">
+        <Row className="g-0">
+          <Col md={5} className="position-relative">
+            {sale && (
+              <div className="position-absolute top-0 start-0 z-index-2 m-2" style={{ zIndex: 5 }}>
+                <div className="badge text-bg-danger">{sale}</div>
+              </div>
+            )}
+
+            {sponsored && ad_campaign_id && (
+              <div
+                className="position-absolute top-0 start-0 z-index-2 m-2"
+                style={{ zIndex: sponsored && sale ? 6 : 5 }}
+              >
+                <div className="badge bg-secondary">Sponsored</div>
+              </div>
+            )}
+
+            <ImageSlider images={images} height="250px" alt={name} />
+          </Col>
+          <Col md={7}>
+            <CardBody className="py-md-2 d-flex flex-column h-100 position-relative">
+              <div className="d-flex justify-content-between align-items-center">
+                <ul className="list-inline mb-1">
+                  {Array.from(new Array(Math.floor(rating))).map((_star, idx) => (
                     <li key={idx} className="list-inline-item me-1 small">
-                      <FaRegStar size={15} />
+                      <FaStar size={15} className="text-warning" />
                     </li>
                   ))}
-              </ul>
-              <ul className="list-inline mb-0 z-index-2">
-                <li className="list-inline-item">
-                  <FavoriteButton businessId={Number(hotel.id)} initialIsWishlisted={hotel.is_favorite} />
-                </li>
-                <Dropdown className="list-inline-item dropdown">
-                  <DropdownToggle
-                    className="arrow-none btn btn-sm btn-light btn-round"
-                    role="button"
-                    id="dropdownShare"
-                  >
-                    <FaShareAlt className="fa-fw" />
-                  </DropdownToggle>
-                  <DropdownMenu className="dropdown-menu-end min-w-auto shadow rounded" aria-labelledby="dropdownShare">
-                    <DropdownItem onClick={() => {
-                      const url = `${window.location.origin}/hotel/${hotel.slug || hotel.id}`;
-                      const text = `Check out ${hotel.name} on Abri!`;
-                      window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, '_blank');
-                    }}>
-                      <FaTwitterSquare className="me-2 text-info" />
-                      Twitter
-                    </DropdownItem>
-
-                    <DropdownItem onClick={() => {
-                      const url = `${window.location.origin}/hotel/${hotel.slug || hotel.id}`;
-                      window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank');
-                    }}>
-                      <FaFacebookSquare className="me-2 text-primary" />
-                      Facebook
-                    </DropdownItem>
-
-                    <DropdownItem onClick={() => {
-                      const url = `${window.location.origin}/hotel/${hotel.slug || hotel.id}`;
-                      window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`, '_blank');
-                    }}>
-                      <FaLinkedin className="me-2 text-primary" />
-                      LinkedIn
-                    </DropdownItem>
-
-                    <DropdownItem onClick={() => {
-                      const url = `${window.location.origin}/hotel/${hotel.slug || hotel.id}`;
-                      navigator.clipboard.writeText(url);
-                      toast.success('Link copied to clipboard!');
-                    }}>
-                      <FaCopy className="me-2" />
-                      Copy link
-                    </DropdownItem>
-                  </DropdownMenu>
-                </Dropdown>
-              </ul>
-            </div>
-            <h5 className="card-title mb-1">
-              <Link href={hotelDetailLink} className="text-inherit">{name}</Link>
-            </h5>
-            <small className="d-flex align-items-center opacity-75">
-              <BsGeoAlt className="me-2 text-primary" />
-              {address}
-            </small>
-            <ul className="nav nav-divider mt-3">
-              {features?.map((feature, idx) => (
-                <li key={idx} className="nav-item opacity-75">
-                  {feature}
-                </li>
-              ))}
-            </ul>
-            <ul className="list-group list-group-borderless small mb-0 mt-2">
-              {schemes ? (
-                <Fragment>
-                  {schemes.map((scheme, idx) => {
-                    return (
-                      <li key={idx} className="list-group-item d-flex text-success p-0 align-items-center bg-transparent border-0">
-                        <BsPatchCheckFill className="me-2" />
-                        {scheme}
+                  {!Number.isInteger(rating) && (
+                    <li className="list-inline-item me-1 small">
+                      <FaStarHalfAlt size={15} className="text-warning" />
+                    </li>
+                  )}
+                  {rating < 5 &&
+                    Array.from(new Array(5 - Math.ceil(rating))).map((_val, idx) => (
+                      <li key={idx} className="list-inline-item me-1 small">
+                        <FaRegStar size={15} />
                       </li>
-                    )
-                  })}
-                </Fragment>
-              ) : (
-                <li className="list-group-item d-flex text-danger p-0 align-items-center bg-transparent border-0">
-                  <BsPatchCheckFill className="me-2" />
-                  Non Refundable
-                </li>
-              )}
-            </ul>
-            <div className="d-sm-flex justify-content-sm-between align-items-center mt-3 mt-md-auto">
-              <div className="d-flex align-items-center">
-                <h5 className="fw-bold mb-0 me-1">
-                  {currency}
-                  {price?.toLocaleString()}
-                </h5>
-                <span className="mb-0 me-2 small opacity-50">/day</span>
-                {sale && old_price && <span className="text-decoration-line-through mb-0 small opacity-50">{currency}{old_price.toLocaleString()}</span>}
-              </div>
-              <div className="mt-3 mt-sm-0">
-                <Link href={hotelDetailLink} className="btn btn-sm btn-dark mb-0 w-100 shadow-sm">
-                  Select Room
-                </Link>
-              </div>
-            </div>
-          </CardBody>
-        </Col>
-      </Row>
-    </Card>
-  )
-}
+                    ))}
+                </ul>
+                <ul className="list-inline mb-0 z-index-2">
+                  <li className="list-inline-item">
+                    <FavoriteButton businessId={Number(hotel.id)} initialIsWishlisted={hotel.is_favorite} />
+                  </li>
+                  <Dropdown className="list-inline-item dropdown">
+                    <DropdownToggle
+                      className="arrow-none btn btn-sm btn-light btn-round"
+                      role="button"
+                      id="dropdownShare"
+                    >
+                      <FaShareAlt className="fa-fw" />
+                    </DropdownToggle>
+                    <DropdownMenu className="dropdown-menu-end min-w-auto shadow rounded" aria-labelledby="dropdownShare">
+                      <DropdownItem
+                        onClick={() => {
+                          const url = `${window.location.origin}/hotel/${hotel.slug || hotel.id}`;
+                          const text = `Check out ${hotel.name} on Shettar!`;
+                          window.open(
+                            `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`,
+                            '_blank'
+                          );
+                        }}
+                      >
+                        <FaTwitterSquare className="me-2 text-info" />
+                        Twitter
+                      </DropdownItem>
 
-export default HotelListCard
+                      <DropdownItem
+                        onClick={() => {
+                          const url = `${window.location.origin}/hotel/${hotel.slug || hotel.id}`;
+                          window.open(
+                            `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,
+                            '_blank'
+                          );
+                        }}
+                      >
+                        <FaFacebookSquare className="me-2 text-primary" />
+                        Facebook
+                      </DropdownItem>
+
+                      <DropdownItem
+                        onClick={() => {
+                          const url = `${window.location.origin}/hotel/${hotel.slug || hotel.id}`;
+                          window.open(
+                            `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`,
+                            '_blank'
+                          );
+                        }}
+                      >
+                        <FaLinkedin className="me-2 text-primary" />
+                        LinkedIn
+                      </DropdownItem>
+
+                      <DropdownItem
+                        onClick={() => {
+                          const url = `${window.location.origin}/hotel/${hotel.slug || hotel.id}`;
+                          navigator.clipboard.writeText(url);
+                          toast.success('Link copied to clipboard!');
+                        }}
+                      >
+                        <FaCopy className="me-2" />
+                        Copy link
+                      </DropdownItem>
+                    </DropdownMenu>
+                  </Dropdown>
+                </ul>
+              </div>
+              <h5 className="card-title mb-1">
+                <Link href={hotelDetailLink} className="text-inherit">
+                  {name}
+                </Link>
+              </h5>
+              <small className="d-flex align-items-center opacity-75">
+                <BsGeoAlt className="me-2 text-primary" />
+                {address}
+              </small>
+              <ul className="nav nav-divider mt-3">
+                {displayFeatures.map((feature, idx) => (
+                  <li key={idx} className="nav-item opacity-75">
+                    {feature}
+                  </li>
+                ))}
+              </ul>
+              <ul className="list-group list-group-borderless small mb-0 mt-2">
+                {schemes ? (
+                  <Fragment>
+                    {schemes.map((scheme, idx) => {
+                      return (
+                        <li
+                          key={idx}
+                          className="list-group-item d-flex text-success p-0 align-items-center bg-transparent border-0"
+                        >
+                          <BsPatchCheckFill className="me-2" />
+                          {scheme}
+                        </li>
+                      );
+                    })}
+                  </Fragment>
+                ) : (
+                  <li className="list-group-item d-flex text-danger p-0 align-items-center bg-transparent border-0">
+                    <BsPatchCheckFill className="me-2" />
+                    Non Refundable
+                  </li>
+                )}
+              </ul>
+              <div className="d-sm-flex justify-content-sm-between align-items-center mt-3 mt-md-auto">
+                <div className="d-flex align-items-center">
+                  <h5 className="fw-bold mb-0 me-1">
+                    {currency}
+                    {price?.toLocaleString()}
+                  </h5>
+                  <span className="mb-0 me-2 small opacity-50">/night</span>
+                  {sale && old_price && (
+                    <span className="text-decoration-line-through mb-0 small opacity-50">
+                      {currency}
+                      {old_price.toLocaleString()}
+                    </span>
+                  )}
+                </div>
+                <div className="mt-3 mt-sm-0">
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-dark mb-0 w-100 shadow-sm"
+                    onClick={handleSelectRoom}
+                  >
+                    Select Room
+                  </button>
+                </div>
+              </div>
+            </CardBody>
+          </Col>
+        </Row>
+      </Card>
+    </div>
+  );
+};
+
+export default HotelListCard;

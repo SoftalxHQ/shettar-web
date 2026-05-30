@@ -12,15 +12,29 @@ import {
   hasActiveBusinessSearch,
   mapBusinessToHotel,
 } from '@/app/helpers/businesses';
-import { fetchSponsoredListings, viewerContextToFetchParams } from '@/app/helpers/sponsored-listings';
+import {
+  fetchSponsoredListings,
+  searchStayParamsFromSearchParams,
+  viewerContextToFetchParams,
+} from '@/app/helpers/sponsored-listings';
 import { resolveAdViewerContext } from '@/app/helpers/ad-viewer-context';
 import { getStoredToken } from '@/app/helpers/auth';
 import { useHomeSearchOptional } from '@/app/contexts/HomeSearchContext';
+import type { SponsoredHotel } from '@/app/helpers/sponsored-listings';
 
 const PAGE_LIMIT = 20;
 
+function mapSponsoredToHotel(s: SponsoredHotel): Hotel {
+  return {
+    ...s,
+    feature: ['Sponsored'],
+    is_favorite: s.is_favorite,
+  };
+}
+
 const HotelGridLayout = () => {
-  const [hotels, setHotels] = useState<Hotel[]>([]);
+  const [sponsoredHotels, setSponsoredHotels] = useState<Hotel[]>([]);
+  const [organicHotels, setOrganicHotels] = useState<Hotel[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -48,7 +62,8 @@ const HotelGridLayout = () => {
 
   useEffect(() => {
     if (!hasSearch) {
-      setHotels([]);
+      setSponsoredHotels([]);
+      setOrganicHotels([]);
       setMeta(null);
       setError(null);
       setIsLoading(false);
@@ -64,33 +79,34 @@ const HotelGridLayout = () => {
         const { rows, meta: m } = await fetchBusinessPage(1, PAGE_LIMIT);
         if (cancelled) return;
 
-        let merged = rows.map(mapBusinessToHotel);
+        const organic = rows.map(mapBusinessToHotel);
         const location = searchParams.get('location');
+        let sponsored: Hotel[] = [];
+
         if (location) {
           const token = getStoredToken();
           const viewer = await resolveAdViewerContext({ activeLocation: location, token });
           try {
-            const sponsored = await fetchSponsoredListings({
+            const sponsoredRows = await fetchSponsoredListings({
               placement: 'search_results',
-              limit: 4,
               ...viewerContextToFetchParams(viewer),
+              ...searchStayParamsFromSearchParams(searchParams),
             });
-            const organicIds = new Set(merged.map((h) => h.id));
-            const sponsoredRows = sponsored
+            const organicIds = new Set(organic.map((h) => h.id));
+            sponsored = sponsoredRows
               .filter((s) => !organicIds.has(s.id))
-              .map((s) => ({
-                ...s,
-                feature: ['Sponsored'],
-              }));
-            merged = [...sponsoredRows, ...merged];
+              .map(mapSponsoredToHotel);
           } catch {
-            /* sponsored blend is best-effort */
+            /* sponsored is best-effort */
           }
         }
 
-        setHotels(merged);
-        setMeta(m);
-        updateHotelStatsRef.current(merged.length, searchParams.get('location') || '');
+        if (!cancelled) {
+          setSponsoredHotels(sponsored);
+          setOrganicHotels(organic);
+          setMeta(m);
+          updateHotelStatsRef.current(sponsored.length + organic.length, searchParams.get('location') || '');
+        }
       } catch (e) {
         if (!cancelled) {
           console.error('Error fetching hotels:', e);
@@ -106,6 +122,8 @@ const HotelGridLayout = () => {
   }, [fetchBusinessPage, hasSearch, searchParams]);
 
   const hasMore = meta ? meta.current_page < meta.total_pages : false;
+  const displayHotels = [...sponsoredHotels, ...organicHotels];
+  const totalCount = displayHotels.length;
 
   const handleLoadMore = async () => {
     if (!meta || meta.current_page >= meta.total_pages || loadingMore) return;
@@ -114,8 +132,8 @@ const HotelGridLayout = () => {
     try {
       const nextPage = meta.current_page + 1;
       const { rows, meta: newMeta } = await fetchBusinessPage(nextPage, meta.per_page || PAGE_LIMIT);
-      setHotels((prev) => {
-        const seen = new Set(prev.map((h) => h.id));
+      setOrganicHotels((prev) => {
+        const seen = new Set([...sponsoredHotels, ...prev].map((h) => h.id));
         const out = [...prev];
         for (const raw of rows) {
           const h = mapBusinessToHotel(raw);
@@ -134,6 +152,27 @@ const HotelGridLayout = () => {
       setLoadingMore(false);
     }
   };
+
+  const renderHotelCard = (hotel: Hotel) => (
+    <Col key={hotel.id} md={6} xl={4}>
+      <HotelGridCard
+        id={hotel.id}
+        slug={hotel.slug}
+        name={hotel.name}
+        price={hotel.price}
+        feature={hotel.feature}
+        images={hotel.images}
+        rating={hotel.rating}
+        sale={hotel.sale}
+        is_favorite={hotel.is_favorite}
+        old_price={hotel.old_price}
+        sponsored={hotel.sponsored}
+        ad_campaign_id={hotel.ad_campaign_id}
+        ad_placement={hotel.ad_placement}
+        impression_key={hotel.impression_key}
+      />
+    </Col>
+  );
 
   if (!hasSearch) {
     return null;
@@ -154,27 +193,10 @@ const HotelGridLayout = () => {
           <Alert variant="info" className="text-center my-5">
             {error}
           </Alert>
-        ) : hotels.length > 0 ? (
+        ) : totalCount > 0 ? (
           <>
-            <Row className="g-4">
-              {hotels.map((hotel) => {
-                return (
-                  <Col key={hotel.id} md={6} xl={4}>
-                    <HotelGridCard
-                      id={hotel.id}
-                      slug={hotel.slug}
-                      name={hotel.name}
-                      price={hotel.price}
-                      feature={hotel.feature}
-                      images={hotel.images}
-                      rating={hotel.rating}
-                      sale={hotel.sale}
-                      is_favorite={hotel.is_favorite}
-                    />
-                  </Col>
-                );
-              })}
-            </Row>
+            <Row className="g-4">{displayHotels.map(renderHotelCard)}</Row>
+
             {hasMore && (
               <Row className="mt-4">
                 <Col xs={12} className="text-center">

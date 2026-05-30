@@ -12,6 +12,10 @@ export interface Hotel {
   old_price?: number;
   schemes?: string[]; // Added for list view
   is_favorite?: boolean;
+  sponsored?: boolean;
+  ad_campaign_id?: number | null;
+  ad_placement?: string;
+  impression_key?: string;
 }
 
 export type HotelsGridType = Hotel;

@@ -131,7 +131,7 @@ export default function HotelCard({ hotel }: HotelCardProps) {
               <span className="text-2xl font-bold text-green-600 dark:text-green-500">
                 ₦{hotel.price.toLocaleString()}
               </span>
-              <span className="text-sm text-gray-500">/day</span>
+              <span className="text-sm text-gray-500">/night</span>
               {hotel.sale && (
                 <span className="text-sm text-gray-400 line-through">₦{(hotel.price * 1.25).toLocaleString()}</span>
               )}

@@ -3,6 +3,7 @@
 import FeaturedHotelCard from '@/app/components/FeaturedHotelCard';
 import { fetchSponsoredListings, type SponsoredHotel } from '@/app/helpers/sponsored-listings';
 import { resolveAdViewerContext } from '@/app/helpers/ad-viewer-context';
+import { AD_VIEWER_CONTEXT_UPDATED_EVENT } from '@/app/helpers/ad-location-prompt';
 import { getStoredToken } from '@/app/helpers/auth';
 import { useHomeSearch } from '@/app/contexts/HomeSearchContext';
 import useEmblaCarousel from 'embla-carousel-react';
@@ -30,6 +31,7 @@ const FeaturedHotels = () => {
   const { hasSearched } = useHomeSearch();
   const [hotels, setHotels] = useState<SponsoredHotel[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [adContextVersion, setAdContextVersion] = useState(0);
   const [isMobile, setIsMobile] = useState(() => {
     if (typeof window === 'undefined') return false;
     return window.matchMedia('(max-width: 575.98px)').matches;
@@ -108,6 +110,14 @@ const FeaturedHotels = () => {
     return () => {
       cancelled = true;
     };
+  }, [hasSearched, adContextVersion]);
+
+  useEffect(() => {
+    if (hasSearched || typeof window === 'undefined') return;
+
+    const onContextUpdated = () => setAdContextVersion((v) => v + 1);
+    window.addEventListener(AD_VIEWER_CONTEXT_UPDATED_EVENT, onContextUpdated);
+    return () => window.removeEventListener(AD_VIEWER_CONTEXT_UPDATED_EVENT, onContextUpdated);
   }, [hasSearched]);
 
   const scrollPrev = useCallback(() => {

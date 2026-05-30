@@ -129,7 +129,7 @@ const WishCard = ({ wishCard, onRemove }: WishCardProps) => {
                   {currency}
                   {price}
                 </h5>
-                <span className="mb-0 me-2 small">/day</span>
+                <span className="mb-0 me-2 small">/night</span>
               </div>
               <div className="mt-3 mt-sm-0">
                 <Link href={`/hotel/${wishCard.slug || wishCard.id}`} className="btn btn-sm btn-dark w-100 mb-0">

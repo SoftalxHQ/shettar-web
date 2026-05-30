@@ -2,96 +2,107 @@
 
 import { useToggle } from '@/app/hooks';
 import { Alert, Button, Col, Container, Offcanvas, OffcanvasBody, OffcanvasHeader, Row } from 'react-bootstrap';
-import { BsExclamationOctagonFill, BsGridFill, BsListUl, BsXLg } from 'react-icons/bs';
+import { BsGridFill, BsListUl } from 'react-icons/bs';
 import { FaAngleLeft, FaAngleRight, FaSliders } from 'react-icons/fa6';
 import Link from 'next/link';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { useLayoutContext } from '@/app/states';
 
-// Components
 import HotelListCard from './HotelListCard';
 import HotelListFilter from './HotelListFilter';
 import { HotelListSkeleton } from './index';
+import {
+  fetchBusinesses,
+  hasActiveBusinessSearch,
+  mapBusinessToHotel,
+} from '@/app/helpers/businesses';
+import {
+  fetchSponsoredListings,
+  searchStayParamsFromSearchParams,
+  viewerContextToFetchParams,
+} from '@/app/helpers/sponsored-listings';
+import { resolveAdViewerContext } from '@/app/helpers/ad-viewer-context';
 import { getStoredToken } from '@/app/helpers/auth';
-import { hasActiveBusinessSearch } from '@/app/helpers/businesses';
+import type { SponsoredHotel } from '@/app/helpers/sponsored-listings';
 
-// Types
 import { Hotel } from '@/app/types/hotel';
+
+const PAGE_LIMIT = 20;
+
+function mapSponsoredToHotel(s: SponsoredHotel): Hotel {
+  return {
+    ...s,
+    feature: ['Sponsored'],
+    features: ['Sponsored'],
+    schemes: s.schemes ?? ['Free Cancellation', 'Instant Confirmation'],
+    is_favorite: s.is_favorite ?? false,
+  };
+}
 
 const HotelLists = () => {
   const { isOpen, toggle } = useToggle();
-  const { isOpen: alertVisible, hide: hideAlert } = useToggle(true);
+  const { updateHotelStats } = useLayoutContext();
   const searchParams = useSearchParams();
   const hasSearch = hasActiveBusinessSearch(searchParams);
 
-  const [hotels, setHotels] = useState<Hotel[]>([]);
+  const updateHotelStatsRef = useRef(updateHotelStats);
+  useEffect(() => {
+    updateHotelStatsRef.current = updateHotelStats;
+  }, [updateHotelStats]);
+
+  const [sponsoredHotels, setSponsoredHotels] = useState<Hotel[]>([]);
+  const [organicHotels, setOrganicHotels] = useState<Hotel[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchHotels = useCallback(async () => {
     if (!hasSearch) {
-      setHotels([]);
+      setSponsoredHotels([]);
+      setOrganicHotels([]);
       setError(null);
       setIsLoading(false);
+      updateHotelStatsRef.current(0, '');
       return;
     }
 
     setIsLoading(true);
+    setError(null);
     try {
-      const rawUrl = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:3000";
-      const API_URL = rawUrl.endsWith('/') ? rawUrl.slice(0, -1) : rawUrl;
-
-      const query = new URLSearchParams();
-      searchParams.forEach((value, key) => {
-        if (key === 'rooms') {
-          query.append('number_of_rooms', value);
-        } else {
-          query.append(key, value);
-        }
+      const { rows } = await fetchBusinesses({
+        searchParams,
+        page: 1,
+        limit: PAGE_LIMIT,
       });
 
-      const token = getStoredToken();
-      const response = await fetch(`${API_URL}/api/v1/businesses?${query.toString()}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      const organic = rows.map(mapBusinessToHotel);
+      const location = searchParams.get('location');
+      let sponsored: Hotel[] = [];
 
-      if (!response.ok) {
-        throw new Error('Failed to fetch hotels');
+      if (location) {
+        const token = getStoredToken();
+        const viewer = await resolveAdViewerContext({ activeLocation: location, token });
+        try {
+          const sponsoredRows = await fetchSponsoredListings({
+            placement: 'search_results',
+            ...viewerContextToFetchParams(viewer),
+            ...searchStayParamsFromSearchParams(searchParams),
+          });
+          const organicIds = new Set(organic.map((h) => h.id));
+          sponsored = sponsoredRows
+            .filter((s) => !organicIds.has(s.id))
+            .map(mapSponsoredToHotel);
+        } catch {
+          /* sponsored is best-effort */
+        }
       }
 
-      const data = await response.json();
-
-      // Map API data to Hotel interface
-      const mappedHotels: Hotel[] = data.map((b: any) => {
-        // Convert amenities object to features array
-        const features = Object.entries(b.amenities || {})
-          .filter(([_, value]) => value === true)
-          .map(([key]) => key.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' '))
-          .slice(0, 4); // Limit to 4 features for UI
-
-        const price = parseFloat(b.starting_from) || 0;
-        const oldPrice = parseFloat(b.old_price) || 0;
-        const sale = (oldPrice > price) ? `${Math.round(((oldPrice - price) / oldPrice) * 100)}% Off` : undefined;
-
-        return {
-          id: b.id,
-          slug: b.slug,
-          name: b.name,
-          address: `${b.address}, ${b.city}, ${b.state}`,
-          images: b.images_url || [],
-          price: price,
-          rating: parseFloat(b.average_rating) || 0,
-          feature: features.length > 0 ? features : ['Standard Room'],
-          features: features.length > 0 ? features : ['Standard Room'],
-          sale: sale,
-          schemes: ['Free Cancellation', 'Instant Confirmation'],
-          is_favorite: b.is_favorite || false,
-        };
-      });
-
-      setHotels(mappedHotels);
+      setSponsoredHotels(sponsored);
+      setOrganicHotels(organic);
+      updateHotelStatsRef.current(
+        sponsored.length + organic.length,
+        searchParams.get('location') || ''
+      );
     } catch (err) {
       console.error('Error fetching hotels:', err);
       setError('Unable to load hotels. Please try again later.');
@@ -104,6 +115,8 @@ const HotelLists = () => {
     fetchHotels();
   }, [fetchHotels]);
 
+  const displayHotels = [...sponsoredHotels, ...organicHotels];
+
   if (!hasSearch) {
     return null;
   }
@@ -113,8 +126,6 @@ const HotelLists = () => {
       <Container>
         <Row className="mb-4">
           <Col xs={12}>
-            
-
             <div className="hstack gap-3 justify-content-between justify-content-md-end">
               <Button
                 onClick={toggle}
@@ -148,17 +159,9 @@ const HotelLists = () => {
                 <button className="btn btn-primary mb-0">Filter Result</button>
               </div>
             </div>
-            <Offcanvas
-              placement="end"
-              show={isOpen}
-              onHide={toggle}
-              className="offcanvas-xl"
-              tabIndex={-1}
-            >
+            <Offcanvas placement="end" show={isOpen} onHide={toggle} className="offcanvas-xl" tabIndex={-1}>
               <OffcanvasHeader className="offcanvas-header" closeButton>
-                <h5 className="offcanvas-title">
-                  Advance Filters
-                </h5>
+                <h5 className="offcanvas-title">Advance Filters</h5>
               </OffcanvasHeader>
               <OffcanvasBody className="offcanvas-body flex-column p-3 p-xl-0">
                 <HotelListFilter />
@@ -181,10 +184,8 @@ const HotelLists = () => {
                 <Alert variant="info" className="text-center">
                   {error}
                 </Alert>
-              ) : hotels.length > 0 ? (
-                hotels.map((hotel, idx) => (
-                  <HotelListCard key={idx} hotel={hotel} />
-                ))
+              ) : displayHotels.length > 0 ? (
+                displayHotels.map((hotel) => <HotelListCard key={hotel.id} hotel={hotel} />)
               ) : (
                 <div className="text-center py-5">
                   <h4>No hotels found</h4>
@@ -192,7 +193,7 @@ const HotelLists = () => {
                 </div>
               )}
 
-              {hotels.length > 0 && (
+              {displayHotels.length > 0 && (
                 <nav className="d-flex justify-content-center" aria-label="navigation">
                   <ul className="pagination pagination-primary-soft d-inline-block d-md-flex rounded mb-0">
                     <li className="page-item mb-0">
