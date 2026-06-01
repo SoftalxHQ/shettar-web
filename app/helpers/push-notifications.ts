@@ -75,8 +75,8 @@ export async function registerWebPushDevice(options: RegisterWebPushOptions = {}
   if (getWebPushPermissionStatus() !== 'granted') return null;
   const fcmToken = await fetchFcmToken();
   if (!fcmToken) return null;
-  await submitWebPushRegistration(fcmToken, options);
-  return fcmToken;
+  const ok = await submitWebPushRegistration(fcmToken, options);
+  return ok ? fcmToken : null;
 }
 
 /** Request permission, then register guest or account device. */
@@ -94,8 +94,8 @@ export async function requestWebPushPermissionAndRegister(options: RegisterWebPu
   const fcmToken = await fetchFcmToken();
   if (!fcmToken) return null;
 
-  await submitWebPushRegistration(fcmToken, options);
-  return fcmToken;
+  const ok = await submitWebPushRegistration(fcmToken, options);
+  return ok ? fcmToken : null;
 }
 
 async function fetchFcmToken(): Promise<string | null> {
@@ -109,18 +109,42 @@ async function fetchFcmToken(): Promise<string | null> {
   return getToken(messaging, { vapidKey, serviceWorkerRegistration: registration });
 }
 
-async function submitWebPushRegistration(fcmToken: string, options: RegisterWebPushOptions): Promise<void> {
+async function submitWebPushRegistration(
+  fcmToken: string,
+  options: RegisterWebPushOptions,
+  attempt = 1
+): Promise<boolean> {
   const guestId = options.guestId ?? getOrCreateGuestId();
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   if (options.authToken) {
     headers.Authorization = `Bearer ${options.authToken}`;
   }
 
-  await fetch(`${getApiBaseUrl()}/api/v1/push_devices`, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify({ token: fcmToken, platform: 'web', guest_id: guestId }),
-  });
+  try {
+    const response = await fetch(`${getApiBaseUrl()}/api/v1/push_devices`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ token: fcmToken, platform: 'web', guest_id: guestId }),
+    });
+
+    if (response.ok) return true;
+
+    const body = await response.text().catch(() => '');
+    console.warn(`[web-push] Registration failed (${response.status}): ${body}`);
+
+    if (attempt < 2) {
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+      return submitWebPushRegistration(fcmToken, options, attempt + 1);
+    }
+  } catch (error) {
+    console.warn('[web-push] Registration error:', error);
+    if (attempt < 2) {
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+      return submitWebPushRegistration(fcmToken, options, attempt + 1);
+    }
+  }
+
+  return false;
 }
 
 export async function unregisterWebPushDevice(options: {

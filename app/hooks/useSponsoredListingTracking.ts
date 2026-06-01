@@ -3,6 +3,7 @@
 import { getApiBaseUrl } from '@/app/helpers/businesses';
 import { getStoredToken } from '@/app/helpers/auth';
 import { getAdTrackingContext, type AdSearchContext } from '@/app/helpers/ad-viewer-context';
+import { getAdDeviceContext } from '@/app/helpers/ad-device-context';
 import { useCallback, useEffect, useRef } from 'react';
 
 const SESSION_KEY = 'shettar_ad_session';
@@ -59,7 +60,12 @@ function markSent(key: string) {
 
 function withSearchContext(event: Record<string, unknown>) {
   const ctx = getAdTrackingContext();
-  return ctx ? { ...event, search_context: ctx as AdSearchContext } : event;
+  const device = getAdDeviceContext();
+  const search_context: AdSearchContext = {
+    ...(ctx ?? {}),
+    ...device,
+  };
+  return Object.keys(search_context).length > 0 ? { ...event, search_context } : event;
 }
 
 async function flushEvents(events: Record<string, unknown>[]) {

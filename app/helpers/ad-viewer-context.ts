@@ -16,6 +16,9 @@ export type AdSearchContext = {
   state?: string;
   city?: string;
   source?: string;
+  platform?: string;
+  os?: string;
+  device_type?: string;
 };
 
 const RECENT_KEY = 'shettar_recent_searches';
