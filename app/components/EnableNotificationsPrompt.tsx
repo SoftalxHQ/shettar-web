@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { BsBell } from 'react-icons/bs';
 import { useAppSelector } from '@/lib/store/hooks';
-import { isCableJwtUsable } from '@/app/helpers/jwt-cable';
 import { getOrCreateGuestId } from '@/app/helpers/guest-id';
 import {
   markPushNotificationPromptDismissed,
@@ -33,7 +32,7 @@ export default function EnableNotificationsPrompt({ triggerVisible }: Props) {
     setEnabling(true);
     try {
       const guestId = getOrCreateGuestId();
-      const authToken = isAuthenticated && isCableJwtUsable(token) ? token : null;
+      const authToken = isAuthenticated && token ? token : null;
       const fcmToken = await requestWebPushPermissionAndRegister({ authToken, guestId });
       setVisible(false);
       if (!fcmToken) {

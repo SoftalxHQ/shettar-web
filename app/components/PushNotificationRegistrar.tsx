@@ -23,7 +23,8 @@ export default function PushNotificationRegistrar() {
     if (!isWebPushConfigured()) return;
 
     const guestId = getOrCreateGuestId();
-    if (isAuthenticated && isCableJwtUsable(token)) {
+    // Use API auth whenever logged in; do not gate on ActionCable JWT shape.
+    if (isAuthenticated && token) {
       await registerWebPushDevice({ authToken: token, guestId });
     } else {
       await registerWebPushDevice({ guestId });

@@ -52,7 +52,7 @@ Staging and production URLs are documented in `.env.example` (e.g. `https://api.
 ## Notable behaviour
 
 - **Sponsored listings** — Homepage featured hotels and search placements; ad impressions/clicks batch to `POST /api/v1/ad_events/batch` with viewer location context (search history, bookings, optional browser geolocation opt-in).
-- **Notifications** — Optional banner on the home page after search; registers FCM before or after login (guest device merge on sign-in).
+- **Notifications** — Optional banner on the home page after search; registers FCM before or after login (guest device merge on sign-in). Deployed hosts must set all `NEXT_PUBLIC_FIREBASE_*` and `NEXT_PUBLIC_FCM_VAPID_KEY` from `.env.example` or web push registration is skipped. When logged in, registration sends the API Bearer token so the device is linked to the account (required for account-specific and check-in push).
 - **Real-time** — Wallet balance and in-app notifications via Action Cable.
 
 ## Project layout
