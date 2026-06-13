@@ -20,12 +20,8 @@ const UtilityPage = () => {
             </div>
           </div>
         </CardHeader>
-        <CardBody className="p-4">
-          <Row className="justify-content-center">
-            <Col lg={8} xl={6}>
-              <UtilityPurchase />
-            </Col>
-          </Row>
+        <CardBody className="p-3 p-md-4">
+          <UtilityPurchase />
         </CardBody>
       </Card>
 
