@@ -1,11 +1,11 @@
 'use client';
 
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import toast from 'react-hot-toast';
 import { useAppDispatch, useAppSelector } from '@/lib/store/hooks';
-import { addNotification } from '@/lib/store/slices/notificationsSlice';
-import { isCableJwtUsable } from '@/app/helpers/jwt-cable';
+import { addNotification, setNotifications } from '@/lib/store/slices/notificationsSlice';
 import { getOrCreateGuestId } from '@/app/helpers/guest-id';
+import { appendGuestNotification, loadGuestNotifications } from '@/app/helpers/guest-notifications';
 import {
   isWebPushConfigured,
   listenForForegroundPush,
@@ -14,16 +14,57 @@ import {
 
 const toastedKeys = new Set<string>();
 
+function handleForegroundNotification(
+  dispatch: ReturnType<typeof useAppDispatch>,
+  payload: { title?: string; body?: string; data?: Record<string, string> },
+  isAuthenticated: boolean
+) {
+  const rawId = payload.data?.notification_id;
+  const notificationId =
+    rawId != null && rawId !== '' ? Number(rawId) : -Date.now();
+  const toastKey = `notification-${notificationId}`;
+
+  const item = {
+    id: Number.isFinite(notificationId) ? notificationId : -Date.now(),
+    title: payload.title ?? 'Notification',
+    message: payload.body ?? '',
+    data: payload.data,
+    read_at: undefined as string | undefined,
+    created_at: new Date().toISOString(),
+  };
+
+  if (isAuthenticated) {
+    dispatch(addNotification(item));
+  } else {
+    appendGuestNotification(item);
+    dispatch(addNotification(item));
+  }
+
+  const text = payload.body || payload.title;
+  if (text && !toastedKeys.has(toastKey)) {
+    toastedKeys.add(toastKey);
+    if (toastedKeys.size > 200) {
+      const oldest = toastedKeys.values().next().value;
+      if (oldest) toastedKeys.delete(oldest);
+    }
+    toast.success(text, { icon: '🔔', duration: 5000, id: toastKey });
+  }
+}
+
 export default function PushNotificationRegistrar() {
   const dispatch = useAppDispatch();
   const token = useAppSelector((s) => s.auth.token);
   const isAuthenticated = useAppSelector((s) => s.auth.isAuthenticated);
+  const isAuthenticatedRef = useRef(isAuthenticated);
+
+  useEffect(() => {
+    isAuthenticatedRef.current = isAuthenticated;
+  }, [isAuthenticated]);
 
   const syncPushRegistration = useCallback(async () => {
     if (!isWebPushConfigured()) return;
 
     const guestId = getOrCreateGuestId();
-    // Use API auth whenever logged in; do not gate on ActionCable JWT shape.
     if (isAuthenticated && token) {
       await registerWebPushDevice({ authToken: token, guestId });
     } else {
@@ -32,39 +73,22 @@ export default function PushNotificationRegistrar() {
   }, [isAuthenticated, token]);
 
   useEffect(() => {
+    if (!isAuthenticated) {
+      const guestItems = loadGuestNotifications();
+      if (guestItems.length > 0) {
+        dispatch(setNotifications(guestItems));
+      }
+    }
+  }, [dispatch, isAuthenticated]);
+
+  useEffect(() => {
     let unsubscribe: (() => void) | undefined;
     let cancelled = false;
 
     syncPushRegistration();
 
     listenForForegroundPush((payload) => {
-      if (isAuthenticated && isCableJwtUsable(token)) {
-        const rawId = payload.data?.notification_id;
-        const notificationId =
-          rawId != null && rawId !== '' ? Number(rawId) : -Date.now();
-        const toastKey = `notification-${notificationId}`;
-
-        dispatch(
-          addNotification({
-            id: Number.isFinite(notificationId) ? notificationId : -Date.now(),
-            title: payload.title ?? 'Notification',
-            message: payload.body ?? '',
-            data: payload.data,
-            read_at: undefined,
-            created_at: new Date().toISOString(),
-          })
-        );
-
-        const text = payload.body || payload.title;
-        if (text && !toastedKeys.has(toastKey)) {
-          toastedKeys.add(toastKey);
-          if (toastedKeys.size > 200) {
-            const oldest = toastedKeys.values().next().value;
-            if (oldest) toastedKeys.delete(oldest);
-          }
-          toast.success(text, { icon: '🔔', duration: 5000, id: toastKey });
-        }
-      }
+      handleForegroundNotification(dispatch, payload, isAuthenticatedRef.current);
     }).then((unsub) => {
       if (!cancelled) unsubscribe = unsub;
     });
@@ -81,7 +105,7 @@ export default function PushNotificationRegistrar() {
       window.removeEventListener('focus', onFocus);
       document.removeEventListener('visibilitychange', onFocus);
     };
-  }, [syncPushRegistration, dispatch, isAuthenticated, token]);
+  }, [syncPushRegistration, dispatch]);
 
   return null;
 }

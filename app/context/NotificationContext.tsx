@@ -14,6 +14,7 @@ import {
   useMarkAsReadMutation,
   useDeleteNotificationsMutation,
 } from '@/lib/store/services/apiService';
+import { deleteGuestNotification, markGuestRead } from '@/app/helpers/guest-notifications';
 
 export type { NotificationItem };
 
@@ -56,13 +57,21 @@ export function useNotifications(): NotificationContextType {
   };
 
   const markAsRead = async (id: number | 'all') => {
-    await markRead({ id });
+    if (isAuthenticated) {
+      await markRead({ id });
+    } else {
+      markGuestRead(id);
+    }
     dispatch(markNotificationRead(id));
   };
 
   const deleteNotification = async (id: number | 'all') => {
     try {
-      await deleteNotifs({ id });
+      if (isAuthenticated) {
+        await deleteNotifs({ id });
+      } else {
+        deleteGuestNotification(id);
+      }
       dispatch(removeNotification(id));
       toast.success(id === 'all' ? 'All notifications deleted' : 'Notification deleted');
     } catch {

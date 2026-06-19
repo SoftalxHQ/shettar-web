@@ -58,6 +58,16 @@ export interface AuthResult {
 export const saveAuthSession = (user: StoredUser, token: string) => {
   localStorage.setItem('token', token);
   localStorage.setItem('user', JSON.stringify(user));
+
+  if (typeof window !== 'undefined') {
+    void import('@/app/helpers/push-notifications').then(async ({ syncPushRegistrationAfterAuth }) => {
+      const ok = await syncPushRegistrationAfterAuth(token);
+      if (ok) {
+        const { clearGuestNotifications } = await import('@/app/helpers/guest-notifications');
+        clearGuestNotifications();
+      }
+    });
+  }
 };
 
 export const clearAuthSession = () => {

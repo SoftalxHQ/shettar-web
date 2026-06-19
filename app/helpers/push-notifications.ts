@@ -109,6 +109,13 @@ async function fetchFcmToken(): Promise<string | null> {
   return getToken(messaging, { vapidKey, serviceWorkerRegistration: registration });
 }
 
+const MAX_REGISTRATION_ATTEMPTS = 4;
+const RETRY_DELAYS_MS = [1500, 3000, 6000];
+
+function registrationRetryDelayMs(attempt: number): number {
+  return RETRY_DELAYS_MS[Math.min(attempt - 1, RETRY_DELAYS_MS.length - 1)] ?? 6000;
+}
+
 async function submitWebPushRegistration(
   fcmToken: string,
   options: RegisterWebPushOptions,
@@ -132,19 +139,27 @@ async function submitWebPushRegistration(
     const body = await response.text().catch(() => '');
     console.warn(`[web-push] Registration failed (${response.status}): ${body}`);
 
-    if (attempt < 2) {
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+    if (attempt < MAX_REGISTRATION_ATTEMPTS) {
+      await new Promise((resolve) => setTimeout(resolve, registrationRetryDelayMs(attempt)));
       return submitWebPushRegistration(fcmToken, options, attempt + 1);
     }
   } catch (error) {
     console.warn('[web-push] Registration error:', error);
-    if (attempt < 2) {
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+    if (attempt < MAX_REGISTRATION_ATTEMPTS) {
+      await new Promise((resolve) => setTimeout(resolve, registrationRetryDelayMs(attempt)));
       return submitWebPushRegistration(fcmToken, options, attempt + 1);
     }
   }
 
   return false;
+}
+
+/** Re-register push device with account auth immediately after login/sign-up. */
+export async function syncPushRegistrationAfterAuth(authToken: string): Promise<boolean> {
+  if (!isConfigured() || getWebPushPermissionStatus() !== 'granted') return false;
+  const guestId = getOrCreateGuestId();
+  const fcmToken = await registerWebPushDevice({ authToken, guestId });
+  return fcmToken != null;
 }
 
 export async function unregisterWebPushDevice(options: {
