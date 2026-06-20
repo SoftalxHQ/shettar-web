@@ -1,9 +1,11 @@
 'use client';
 
-import { useRef } from 'react';
-import { Button, Card, Col, Row } from 'react-bootstrap';
-import { BsDownload, BsLightningChargeFill, BsPhone, BsPrinter, BsTv, BsWallet2, BsWifi } from 'react-icons/bs';
+import { forwardRef, useRef } from 'react';
+import { Button } from 'react-bootstrap';
+import { BsBag, BsDownload, BsHouse, BsLightningChargeFill, BsPhone, BsPrinter, BsTv, BsWallet2, BsWifi } from 'react-icons/bs';
 import { useReactToPrint } from 'react-to-print';
+import { downloadReceiptPdf } from '@/app/helpers/receipt-export';
+import { resolveReceiptReference } from '@/app/helpers/utility-receipt';
 import { currency } from '@/app/states';
 
 export type UtilityReceipt = {
@@ -20,227 +22,544 @@ export type UtilityReceipt = {
   token?: string;
   units?: string;
   meterType?: string;
+  receiptKind?: 'utility' | 'topup' | 'booking' | 'order';
+  paymentMethod?: string;
+  grossAmount?: string;
+  fee?: string;
+  businessName?: string;
+  bookingId?: string;
+  orderNumber?: string;
+  roomNumber?: string;
+  promoCode?: string;
+  promoDiscount?: string;
+  subtotalBeforeDiscount?: string;
 };
 
 type UtilityReceiptCardProps = {
   receipt: UtilityReceipt;
+  hideInlineActions?: boolean;
 };
 
-const UtilityReceiptCard = ({ receipt }: UtilityReceiptCardProps) => {
-  const componentRef = useRef<HTMLDivElement>(null);
-  const handlePrint = useReactToPrint({ contentRef: componentRef });
-
-  const isPending = receipt.status === 'pending';
-  const typeLower = receipt.type.toLowerCase();
-  const isData = typeLower.includes('data');
-  const isTv = typeLower.includes('tv');
-  const isElectricity = typeLower.includes('electric');
-
-  const ServiceIcon = isElectricity ? BsLightningChargeFill : isTv ? BsTv : isData ? BsWifi : BsPhone;
-  const recipientLabel = isElectricity ? 'Meter Number' : isTv ? 'Smartcard' : 'Phone Number';
-  const serviceTag = isElectricity ? 'Electricity Token' : isTv ? 'TV Subscription' : isData ? 'Data Bundle' : 'Airtime VTU';
-
-  const formattedAmount = receipt.amount.startsWith(currency) || receipt.amount.startsWith('₦')
-    ? receipt.amount
-    : `${currency}${Number(receipt.amount).toLocaleString('en-NG')}`;
-
-  const displayReference = receipt.requestId || `UTL-${receipt.purchasedAt.slice(-8)}`;
-  const purchaseDate = new Date(receipt.purchasedAt).toLocaleDateString('en-GB', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  });
-  const purchaseTime = new Date(receipt.purchasedAt).toLocaleTimeString('en-GB', {
-    hour: 'numeric',
-    minute: '2-digit',
-    hour12: true,
-  });
-
+function SummaryRow({
+  label,
+  value,
+  accent,
+}: {
+  label: string;
+  value: string;
+  accent?: boolean;
+}) {
   return (
-    <div className="utility-receipt print-card" ref={componentRef}>
-      <Card className="border-0 shadow-lg rounded-4 overflow-hidden bg-body">
-        <div className="bg-primary bg-gradient p-4 text-white">
-          <Row className="align-items-center">
-            <Col>
-              <span className="text-white-50 small text-uppercase fw-bold ls-1">Transaction Reference</span>
-              <h3 className="mb-0 text-white font-monospace">{displayReference}</h3>
-            </Col>
-            <Col xs="auto" className="d-flex gap-2 no-print">
-              <Button
-                variant="white"
-                size="sm"
-                className="btn-light-soft bg-white bg-opacity-25 border-0 text-white rounded-circle p-2 flex-centered"
-                title="Print Receipt"
-                style={{ width: '40px', height: '40px' }}
-                onClick={() => handlePrint()}
-              >
-                <BsPrinter size={18} />
-              </Button>
-              <Button
-                variant="white"
-                size="sm"
-                className="btn-light-soft bg-white bg-opacity-25 border-0 text-white rounded-circle p-2 flex-centered"
-                title="Download PDF"
-                style={{ width: '40px', height: '40px' }}
-                onClick={() => handlePrint()}
-              >
-                <BsDownload size={18} />
-              </Button>
-            </Col>
-          </Row>
-        </div>
-
-        <Card.Body className="p-4 p-md-5">
-          <div className="d-flex align-items-center mb-4 mb-md-5">
-            <div className="flex-shrink-0">
-              <div className="bg-primary bg-opacity-10 p-3 rounded-3 text-primary flex-centered">
-                <ServiceIcon size={32} />
-              </div>
-            </div>
-            <div className="flex-grow-1 ms-3">
-              <h4 className="mb-1 text-body-emphasis fw-bold">{receipt.type}</h4>
-              <p className="mb-0 text-body-secondary small">
-                {receipt.network ? `${receipt.network} · ` : ''}Shettar Utility Services
-              </p>
-            </div>
-          </div>
-
-          <div className="bg-body-tertiary p-4 rounded-4 mb-4 mb-md-5 border-start border-primary border-4 shadow-sm">
-            <Row className="g-4 text-center text-md-start">
-              <Col xs={6} md={4}>
-                <h6 className="text-uppercase small fw-bold text-primary mb-2" style={{ letterSpacing: '0.5px' }}>
-                  {isElectricity || isTv ? 'Account' : 'Recipient'}
-                </h6>
-                <p className="h6 mb-1 text-body fw-bold">{receipt.customerName || receipt.recipient || '—'}</p>
-                <small className="text-primary fw-bold text-uppercase">{recipientLabel}</small>
-              </Col>
-              <Col xs={6} md={4}>
-                <h6 className="text-uppercase small fw-bold text-primary mb-2" style={{ letterSpacing: '0.5px' }}>
-                  Provider
-                </h6>
-                <p className="h6 mb-1 text-body fw-bold">{receipt.network || '—'}</p>
-                <small className="text-primary fw-bold text-uppercase">
-                  {receipt.billersCode || receipt.recipient || '—'}
-                </small>
-              </Col>
-              <Col xs={12} md={4}>
-                <h6 className="text-uppercase small fw-bold text-primary mb-2" style={{ letterSpacing: '0.5px' }}>
-                  Date
-                </h6>
-                <p className="h6 mb-1 text-body fw-bold">{purchaseDate}</p>
-                <small className="text-primary fw-bold text-uppercase">{purchaseTime}</small>
-              </Col>
-            </Row>
-          </div>
-
-          <div className="mb-4 mb-md-5">
-            <h6
-              className="text-uppercase small text-body-secondary mb-3 border-bottom pb-2 fw-bold"
-              style={{ letterSpacing: '1px' }}
-            >
-              Purchase Summary
-            </h6>
-            <div className="d-flex justify-content-between align-items-center mb-2">
-              <span className="fw-bold text-body-emphasis">Service Type</span>
-              <span className="text-body fw-semibold small">{receipt.type}</span>
-            </div>
-            {receipt.plan ? (
-              <div className="d-flex justify-content-between align-items-center mb-2">
-                <span className="text-body-secondary fw-medium small">{isTv ? 'Bouquet' : 'Plan'}</span>
-                <span className="text-body fw-semibold small text-end" style={{ maxWidth: '55%' }}>
-                  {receipt.plan}
-                </span>
-              </div>
-            ) : null}
-            {receipt.meterType ? (
-              <div className="d-flex justify-content-between align-items-center mb-2">
-                <span className="text-body-secondary fw-medium small">Meter Type</span>
-                <span className="text-body fw-semibold small text-capitalize">{receipt.meterType}</span>
-              </div>
-            ) : null}
-            {receipt.token ? (
-              <div className="d-flex justify-content-between align-items-center mb-2">
-                <span className="text-body-secondary fw-medium small">Token</span>
-                <span className="text-body fw-bold small font-monospace text-end" style={{ maxWidth: '60%' }}>
-                  {receipt.token}
-                </span>
-              </div>
-            ) : null}
-            {receipt.units ? (
-              <div className="d-flex justify-content-between align-items-center mb-2">
-                <span className="text-body-secondary fw-medium small">Units</span>
-                <span className="text-body fw-semibold small">{receipt.units}</span>
-              </div>
-            ) : null}
-            <div className="d-flex justify-content-between align-items-center mb-2">
-              <span className="text-body-secondary fw-medium small">Status</span>
-              <span className={`badge ${isPending ? 'bg-warning text-dark' : 'bg-success'} px-3 py-2`}>
-                {isPending ? 'Processing' : 'Delivered'}
-              </span>
-            </div>
-            <div className="d-flex justify-content-between align-items-center mb-2">
-              <span className="text-body-secondary fw-medium small">Payment Method</span>
-              <span className="text-body fw-semibold small d-flex align-items-center gap-1">
-                <BsWallet2 />
-                Shettar Wallet
-              </span>
-            </div>
-            <div className="d-flex justify-content-between align-items-center mt-3 pt-3 border-top border-secondary border-opacity-25">
-              <h5 className="mb-0 text-body-emphasis fw-bold">Total Amount Paid</h5>
-              <h4 className="mb-0 text-primary fw-bold">{formattedAmount}</h4>
-            </div>
-            <p className="text-end small text-body-secondary mt-2 mb-0 font-italic">Paid via Shettar Wallet</p>
-          </div>
-
-          <div className="mb-0">
-            <h6 className="text-uppercase small text-body-secondary mb-3 fw-bold">What you purchased</h6>
-            <div className="d-flex flex-wrap gap-2">
-              <span className="badge bg-body-secondary text-body-emphasis border border-secondary border-opacity-25 px-3 py-2 fw-medium shadow-sm">
-                {receipt.network || 'Provider'}
-              </span>
-              <span className="badge bg-body-secondary text-body-emphasis border border-secondary border-opacity-25 px-3 py-2 fw-medium shadow-sm">
-                {serviceTag}
-              </span>
-              {receipt.plan ? (
-                <span className="badge bg-body-secondary text-body-emphasis border border-secondary border-opacity-25 px-3 py-2 fw-medium shadow-sm">
-                  {receipt.plan}
-                </span>
-              ) : null}
-            </div>
-          </div>
-        </Card.Body>
-
-        <div
-          className="perforated-edge d-flex w-100 px-3 overflow-hidden"
-          style={{ marginTop: '-12px', marginBottom: '-12px', gap: '8px' }}
-        >
-          {Array.from({ length: 30 }).map((_, i) => (
-            <div
-              key={i}
-              className="perforated-hole rounded-circle flex-shrink-0"
-              style={{ width: '20px', height: '20px', border: '1px solid rgba(0,0,0,0.05)' }}
-            />
-          ))}
-        </div>
-      </Card>
-
-      <style jsx>{`
-        .ls-1 { letter-spacing: 1px; }
-        .flex-centered { display: flex; align-items: center; justify-content: center; }
-        .perforated-hole { background-color: var(--bs-body-tertiary); box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05); }
-        @media print {
-          @page { margin: 0.5cm; size: auto; }
-          body * { visibility: hidden !important; }
-          .print-card, .print-card * { visibility: visible !important; }
-          .print-card { position: absolute !important; left: 0 !important; top: 0 !important; width: 100% !important; margin: 0 !important; padding: 0 !important; }
-          .no-print, .no-print * { display: none !important; visibility: hidden !important; }
-          .card { border: 1px solid #eee !important; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-          .bg-primary { background-color: #4f46e5 !important; background-image: linear-gradient(to bottom right, #4f46e5, #4338ca) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-          .perforated-edge { display: none !important; }
-        }
-      `}</style>
+    <div className="summary-row">
+      <span className="summary-label">{label}</span>
+      <span className={`summary-value${accent ? ' summary-value-accent' : ''}`}>{value}</span>
     </div>
   );
-};
+}
+
+const UtilityReceiptCard = forwardRef<HTMLDivElement, UtilityReceiptCardProps>(
+  function UtilityReceiptCard({ receipt, hideInlineActions = false }, ref) {
+    const internalRef = useRef<HTMLDivElement>(null);
+    const componentRef = ref ?? internalRef;
+    const handlePrint = useReactToPrint({ contentRef: componentRef as React.RefObject<HTMLDivElement> });
+
+    const isPending = receipt.status === 'pending';
+    const isBooking = receipt.receiptKind === 'booking';
+    const isOrder = receipt.receiptKind === 'order';
+    const isTopup = receipt.receiptKind === 'topup' || receipt.type.toLowerCase().includes('top-up') || receipt.type.toLowerCase().includes('top up');
+    const typeLower = receipt.type.toLowerCase();
+    const isData = !isTopup && !isBooking && !isOrder && typeLower.includes('data');
+    const isTv = !isTopup && !isBooking && !isOrder && typeLower.includes('tv');
+    const isElectricity = !isTopup && !isBooking && !isOrder && typeLower.includes('electric');
+
+    const ServiceIcon = isBooking ? BsHouse : isOrder ? BsBag : isTopup ? BsWallet2 : isElectricity ? BsLightningChargeFill : isTv ? BsTv : isData ? BsWifi : BsPhone;
+    const recipientLabel = isBooking ? 'HOTEL' : isOrder ? 'ROOM' : isTopup ? 'WALLET' : isElectricity ? 'METER' : isTv ? 'SMARTCARD' : 'PHONE';
+    const serviceTag = isBooking ? 'Hotel Stay' : isOrder ? 'Room Service' : isTopup ? 'Wallet Funding' : isElectricity ? 'Electricity Token' : isTv ? 'TV Subscription' : isData ? 'Data Bundle' : 'Airtime VTU';
+    const brandLabel = isBooking || isOrder ? 'Shettar Travel & Dining' : isTopup ? 'Shettar Wallet Services' : 'Shettar Utility Services';
+    const statusLabel = isPending ? 'Processing' : isTopup || isBooking || isOrder ? 'Completed' : 'Delivered';
+    const totalLabel = isTopup ? 'Amount Credited' : 'Total Paid';
+    const referenceLabel = isBooking ? 'RESERVATION NUMBER' : isOrder ? 'ORDER NUMBER' : 'TRANSACTION REFERENCE';
+    const summaryTitle = isTopup || isBooking || isOrder ? 'PAYMENT SUMMARY' : 'PURCHASE SUMMARY';
+    const detailsTitle = isTopup || isBooking || isOrder ? 'TRANSACTION DETAILS' : 'WHAT YOU PURCHASED';
+
+    const formattedAmount = receipt.amount.startsWith(currency) || receipt.amount.startsWith('₦')
+      ? receipt.amount
+      : `${currency}${Number(receipt.amount).toLocaleString('en-NG')}`;
+
+    const formatMoney = (value?: string) =>
+      value ? `${currency}${Number(value).toLocaleString('en-NG')}` : null;
+
+    const formattedGross = formatMoney(receipt.grossAmount);
+    const formattedFee = formatMoney(receipt.fee);
+    const formattedSubtotal = formatMoney(receipt.subtotalBeforeDiscount);
+    const formattedPromoDiscount = formatMoney(receipt.promoDiscount);
+
+    const displayReference = receipt.requestId || receipt.bookingId || receipt.orderNumber || `${isBooking ? 'BKN' : isOrder ? 'ORD' : isTopup ? 'TOP' : 'UTL'}-${receipt.purchasedAt.replace(/\D/g, '').slice(-8)}`;
+    const purchaseDate = new Date(receipt.purchasedAt).toLocaleDateString('en-GB', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    });
+    const purchaseTime = new Date(receipt.purchasedAt).toLocaleTimeString('en-GB', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    });
+
+    const tags = [
+      isTopup ? 'Shettar Wallet' : isBooking || isOrder ? receipt.businessName || receipt.network || 'Shettar' : receipt.network || 'Provider',
+      serviceTag,
+      isTopup ? receipt.network : receipt.plan,
+    ].filter(Boolean) as string[];
+
+    return (
+      <div className="receipt-wrap">
+        <div className="utility-receipt print-card" ref={componentRef}>
+          <div className="receipt-card">
+            <div className="ticket-header">
+              <div className="ticket-header-main">
+                <span className="ticket-label">{referenceLabel}</span>
+                <span className="ticket-id">{displayReference}</span>
+              </div>
+              <div className="header-icon" aria-hidden="true">
+                <ServiceIcon size={22} />
+              </div>
+            </div>
+
+            <div className="perforated" aria-hidden="true">
+              {Array.from({ length: 22 }).map((_, i) => (
+                <span key={i} className="perforated-dot" />
+              ))}
+            </div>
+
+            <div className="receipt-body">
+              <div className="service-row">
+                <div className="service-icon">
+                  <ServiceIcon size={24} />
+                </div>
+                <div className="service-copy">
+                  <div className="service-title">{receipt.type}</div>
+                  <div className="service-sub">
+                    {receipt.network ? `${receipt.network} · ` : ''}{brandLabel}
+                  </div>
+                </div>
+              </div>
+
+              <div className="details-strip">
+                <div className="detail-col">
+                  <span className="detail-label">{isTopup ? 'DESTINATION' : isBooking ? 'HOTEL' : isOrder ? 'LOCATION' : 'RECIPIENT'}</span>
+                  <span className="detail-value">{receipt.customerName || receipt.recipient || '—'}</span>
+                  <span className="detail-hint">{recipientLabel}</span>
+                </div>
+                <div className="detail-col">
+                  <span className="detail-label">{isTopup ? 'PAYMENT' : isBooking || isOrder ? 'PROPERTY' : 'NETWORK'}</span>
+                  <span className="detail-value">{receipt.network || '—'}</span>
+                  <span className="detail-hint">{isTopup ? 'METHOD' : 'PROVIDER'}</span>
+                </div>
+                <div className="detail-col detail-col-end">
+                  <span className="detail-label">DATE</span>
+                  <span className="detail-value">{purchaseDate}</span>
+                  <span className="detail-hint">{purchaseTime}</span>
+                </div>
+              </div>
+
+              <div className="section-title">{summaryTitle}</div>
+              <div className="summary-box">
+                <SummaryRow label={isTopup || isBooking || isOrder ? 'Transaction Type' : 'Service Type'} value={receipt.type} />
+                {receipt.bookingId ? <SummaryRow label="Booking Reference" value={receipt.bookingId} /> : null}
+                {receipt.orderNumber ? <SummaryRow label="Order Number" value={receipt.orderNumber} /> : null}
+                {receipt.roomNumber ? <SummaryRow label="Room" value={receipt.roomNumber} /> : null}
+                {formattedSubtotal ? <SummaryRow label="Subtotal" value={formattedSubtotal} /> : null}
+                {receipt.promoCode && formattedPromoDiscount ? (
+                  <SummaryRow label={`Promo (${receipt.promoCode})`} value={`−${formattedPromoDiscount}`} accent />
+                ) : null}
+                {formattedGross ? <SummaryRow label="Amount Paid" value={formattedGross} /> : null}
+                {formattedFee ? <SummaryRow label="Processing Fee" value={formattedFee} /> : null}
+                {receipt.plan ? <SummaryRow label={isTv ? 'Bouquet' : 'Plan'} value={receipt.plan} /> : null}
+                {receipt.meterType ? <SummaryRow label="Meter Type" value={receipt.meterType} /> : null}
+                {receipt.token ? <SummaryRow label="Token" value={receipt.token} accent /> : null}
+                {receipt.units ? <SummaryRow label="Units" value={receipt.units} /> : null}
+                <SummaryRow label="Status" value={statusLabel} accent={!isPending} />
+                <SummaryRow
+                  label="Payment Method"
+                  value={isTopup || isBooking || isOrder ? receipt.paymentMethod || 'Shettar Wallet' : 'Shettar Wallet'}
+                />
+                <div className="total-row">
+                  <span className="total-label">{totalLabel}</span>
+                  <span className="total-amount">{formattedAmount}</span>
+                </div>
+              </div>
+
+              <div className="section-title section-title-spaced">{detailsTitle}</div>
+              <div className="tag-row">
+                {tags.map((tag, index) => (
+                  <span key={`${tag}-${index}`} className="tag">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {!hideInlineActions ? (
+          <div className="receipt-actions no-print">
+            <Button variant="outline-primary" size="sm" className="rounded-pill px-3" onClick={() => handlePrint()}>
+              <BsPrinter className="me-2" />
+              Print
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              className="rounded-pill px-3"
+              onClick={() => {
+                const el = (componentRef as React.RefObject<HTMLDivElement>).current;
+                if (el) void downloadReceiptPdf(el, resolveReceiptReference(receipt));
+              }}
+            >
+              <BsDownload className="me-2" />
+              Download PDF
+            </Button>
+          </div>
+        ) : null}
+
+        <style jsx>{`
+          .receipt-wrap {
+            width: 100%;
+          }
+
+          .utility-receipt {
+            width: 100%;
+          }
+
+          .receipt-card {
+            --receipt-page-bg: #f0f2f8;
+            --receipt-section-bg: #f4f6fb;
+            border-radius: 22px;
+            overflow: hidden;
+            background: #fff;
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
+          }
+
+          :global([data-bs-theme='dark']) .receipt-card {
+            --receipt-page-bg: #0f0f1a;
+            --receipt-section-bg: rgba(255, 255, 255, 0.05);
+            background: #1a1a2e;
+          }
+
+          .ticket-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 18px 20px;
+            background: var(--bs-primary);
+            color: #fff;
+          }
+
+          .ticket-header-main {
+            flex: 1;
+            min-width: 0;
+          }
+
+          .ticket-label {
+            display: block;
+            color: rgba(255, 255, 255, 0.65);
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+          }
+
+          .ticket-id {
+            display: block;
+            color: #fff;
+            font-size: 18px;
+            font-weight: 900;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            letter-spacing: 0.5px;
+            word-break: break-all;
+          }
+
+          .header-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            color: rgba(255, 255, 255, 0.95);
+          }
+
+          .perforated {
+            display: flex;
+            gap: 6px;
+            padding: 0 12px;
+            margin-top: -10px;
+            margin-bottom: -10px;
+            position: relative;
+            z-index: 2;
+          }
+
+          .perforated-dot {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--receipt-page-bg, var(--bs-body-bg));
+            flex-shrink: 0;
+          }
+
+          .receipt-body {
+            padding: 20px;
+          }
+
+          .service-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px;
+            margin-bottom: 16px;
+            border-radius: 14px;
+            background: var(--receipt-section-bg);
+          }
+
+          .service-icon {
+            width: 46px;
+            height: 46px;
+            border-radius: 13px;
+            background: color-mix(in srgb, var(--bs-primary) 12%, transparent);
+            color: var(--bs-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+          }
+
+          .service-copy {
+            flex: 1;
+            min-width: 0;
+          }
+
+          .service-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--bs-body-color);
+            margin-bottom: 3px;
+          }
+
+          .service-sub {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--bs-secondary-color);
+          }
+
+          .details-strip {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 8px;
+            padding: 16px;
+            border-radius: 14px;
+            margin-bottom: 20px;
+            border-left: 4px solid var(--bs-primary);
+            background: var(--receipt-section-bg);
+          }
+
+          .detail-col {
+            flex: 1;
+            min-width: 0;
+          }
+
+          .detail-col-end {
+            text-align: right;
+          }
+
+          .detail-label {
+            display: block;
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: var(--bs-primary);
+            margin-bottom: 4px;
+          }
+
+          .detail-value {
+            display: block;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--bs-body-color);
+            margin-bottom: 2px;
+            word-break: break-word;
+          }
+
+          .detail-hint {
+            display: block;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--bs-primary);
+          }
+
+          .section-title {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 1.2px;
+            text-transform: uppercase;
+            color: var(--bs-secondary-color);
+            margin-bottom: 10px;
+          }
+
+          .section-title-spaced {
+            margin-top: 18px;
+          }
+
+          .summary-box {
+            border-radius: 14px;
+            padding: 14px;
+            background: var(--receipt-section-bg);
+          }
+
+          .summary-box :global(.summary-row) {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+          }
+
+          .summary-box :global(.summary-label) {
+            flex: 1;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--bs-secondary-color);
+          }
+
+          .summary-box :global(.summary-value) {
+            flex: 1;
+            font-size: 14px;
+            font-weight: 600;
+            text-align: right;
+            color: var(--bs-body-color);
+            word-break: break-word;
+          }
+
+          .summary-box :global(.summary-value-accent) {
+            color: var(--bs-primary);
+          }
+
+          .total-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid rgba(0, 0, 0, 0.07);
+            padding-top: 12px;
+            margin-top: 6px;
+          }
+
+          :global([data-bs-theme='dark']) .total-row {
+            border-top-color: rgba(255, 255, 255, 0.08);
+          }
+
+          .total-label {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--bs-body-color);
+          }
+
+          .total-amount {
+            font-size: 22px;
+            font-weight: 900;
+            color: var(--bs-primary);
+          }
+
+          .tag-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+          }
+
+          .tag {
+            display: inline-flex;
+            max-width: 100%;
+            padding: 6px 12px;
+            border-radius: 20px;
+            border: 1px solid rgba(0, 0, 0, 0.07);
+            background: var(--receipt-section-bg);
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--bs-body-color);
+          }
+
+          :global([data-bs-theme='dark']) .tag {
+            border-color: rgba(255, 255, 255, 0.08);
+          }
+
+          .receipt-actions {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 16px;
+          }
+
+          @media (max-width: 575.98px) {
+            .details-strip {
+              flex-direction: column;
+              gap: 14px;
+            }
+
+            .detail-col-end {
+              text-align: left;
+            }
+          }
+
+          @media print {
+            @page {
+              margin: 0.5cm;
+              size: auto;
+            }
+
+            body * {
+              visibility: hidden !important;
+            }
+
+            .print-card,
+            .print-card * {
+              visibility: visible !important;
+            }
+
+            .print-card {
+              position: absolute !important;
+              left: 0 !important;
+              top: 0 !important;
+              width: 100% !important;
+              margin: 0 !important;
+              padding: 0 !important;
+            }
+
+            .no-print,
+            .no-print * {
+              display: none !important;
+              visibility: hidden !important;
+            }
+
+            .receipt-card {
+              box-shadow: none !important;
+              border: 1px solid #eee;
+            }
+
+            .ticket-header {
+              background: #5143d9 !important;
+              -webkit-print-color-adjust: exact;
+              print-color-adjust: exact;
+            }
+          }
+        `}</style>
+      </div>
+    );
+  }
+);
 
 export default UtilityReceiptCard;

@@ -9,8 +9,15 @@ import { getStoredToken, getStoredUser } from '@/app/helpers/auth';
 import { useApi } from '@/app/hooks/useApi';
 import Pagination from '../Pagination';
 import toast from 'react-hot-toast';
+import UtilityReceiptModal from './Utility/UtilityReceiptModal';
+import type { UtilityReceipt } from './Utility/UtilityReceiptCard';
+import {
+  isReceiptTransaction,
+  mapTransactionToReceipt,
+  type WalletTransactionMetadata,
+} from '@/app/helpers/utility-receipt';
 
-interface TransactionMetadata {
+interface TransactionMetadata extends WalletTransactionMetadata {
   business_name?: string;
   booking_id?: string;
   amount_charged?: number;
@@ -52,6 +59,7 @@ const Transactions = () => {
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState<any>(null);
   const [isExporting, setIsExporting] = useState(false);
+  const [selectedReceipt, setSelectedReceipt] = useState<UtilityReceipt | null>(null);
   const { apiFetch } = useApi();
 
   const handleExport = async () => {
@@ -171,6 +179,7 @@ const Transactions = () => {
                 <th className="py-3">Date</th>
                 <th className="py-3 text-end">Amount</th>
                 <th className="py-3 text-center px-4">Status</th>
+                <th className="py-3 text-center px-3">Receipt</th>
               </tr>
             </thead>
             <tbody>
@@ -183,11 +192,12 @@ const Transactions = () => {
                     <td><Skeleton height="20px" width="120px" /></td>
                     <td className="text-end"><Skeleton height="20px" width="80px" className="ms-auto" /></td>
                     <td className="text-center px-4"><Skeleton height="24px" width="70px" className="mx-auto" /></td>
+                    <td className="text-center px-3"><Skeleton height="20px" width="40px" className="mx-auto" /></td>
                   </tr>
                 ))
               ) : transactions.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="text-center py-5">
+                  <td colSpan={7} className="text-center py-5">
                     <div className="opacity-50 mb-2 h5">No history yet</div>
                     <p className="small text-secondary mb-0">Your financial activities will appear here.</p>
                   </td>
@@ -196,6 +206,8 @@ const Transactions = () => {
                 transactions.map((txn) => {
                   const status = getStatusBadge(txn.status);
                   const promo = getPromoBreakdown(txn);
+                  const showReceipt = isReceiptTransaction(txn);
+                  const receipt = showReceipt ? mapTransactionToReceipt(txn) : null;
                   return (
                     <tr key={txn.id}>
                       <td className="px-4">
@@ -247,6 +259,20 @@ const Transactions = () => {
                           {status.text}
                         </Badge>
                       </td>
+                      <td className="text-center px-3">
+                        {receipt ? (
+                          <Button
+                            variant="link"
+                            size="sm"
+                            className="p-0 text-decoration-none fw-semibold"
+                            onClick={() => setSelectedReceipt(receipt)}
+                          >
+                            View
+                          </Button>
+                        ) : (
+                          <span className="text-muted small">—</span>
+                        )}
+                      </td>
                     </tr>
                   );
                 })
@@ -264,6 +290,7 @@ const Transactions = () => {
           />
         </div>
       )}
+      <UtilityReceiptModal receipt={selectedReceipt} onClose={() => setSelectedReceipt(null)} />
     </Card>
   );
 };
