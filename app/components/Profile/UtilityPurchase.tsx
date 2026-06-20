@@ -132,7 +132,7 @@ const UtilityPurchase = () => {
     smartcard,
     tvMode,
     tvPurchaseAmount,
-    tvRenewAmount,
+    // tvRenewAmount,
     tvVerification,
   ]);
 
@@ -141,14 +141,22 @@ const UtilityPurchase = () => {
       setNetworks(list);
       if (list[0]) setSelectedNetwork(list[0].name);
     });
-    fetchTvProviders().then((list) => {
-      setTvProviders(list);
-      if (list[0]) setSelectedTvProvider(list[0].name);
-    });
-    fetchElectricityProviders().then((list) => {
-      setElectricityProviders(list);
-      if (list[0]) setSelectedElectricityProvider(list[0].name);
-    });
+    fetchTvProviders()
+      .then((list) => {
+        setTvProviders(list);
+        if (list[0]) setSelectedTvProvider(list[0].name);
+      })
+      .catch((error: unknown) => {
+        toast.error(error instanceof Error ? error.message : 'Could not load TV providers');
+      });
+    fetchElectricityProviders()
+      .then((list) => {
+        setElectricityProviders(list);
+        if (list[0]) setSelectedElectricityProvider(list[0].name);
+      })
+      .catch((error: unknown) => {
+        toast.error(error instanceof Error ? error.message : 'Could not load electricity providers');
+      });
   }, []);
 
   useEffect(() => {

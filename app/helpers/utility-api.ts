@@ -82,7 +82,10 @@ export async function fetchTvProviders(): Promise<UtilityProvider[]> {
   const response = await fetch(`${API_URL}/api/v1/utility/tv_providers`, {
     headers: await authHeaders(),
   });
-  if (!response.ok) return [];
+  if (!response.ok) {
+    const data = await response.json().catch(() => null);
+    throw new Error(parseUtilityApiError(data, `Could not load TV providers (${response.status})`));
+  }
   const data = await response.json();
   return data.providers ?? [];
 }
@@ -91,7 +94,10 @@ export async function fetchElectricityProviders(): Promise<UtilityProvider[]> {
   const response = await fetch(`${API_URL}/api/v1/utility/electricity_providers`, {
     headers: await authHeaders(),
   });
-  if (!response.ok) return [];
+  if (!response.ok) {
+    const data = await response.json().catch(() => null);
+    throw new Error(parseUtilityApiError(data, `Could not load electricity providers (${response.status})`));
+  }
   const data = await response.json();
   return data.providers ?? [];
 }
