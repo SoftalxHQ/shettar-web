@@ -2,7 +2,7 @@
 
 import { useRef } from 'react';
 import { Button, Card, Col, Row } from 'react-bootstrap';
-import { BsDownload, BsPhone, BsPrinter, BsWallet2, BsWifi } from 'react-icons/bs';
+import { BsDownload, BsLightningChargeFill, BsPhone, BsPrinter, BsTv, BsWallet2, BsWifi } from 'react-icons/bs';
 import { useReactToPrint } from 'react-to-print';
 import { currency } from '@/app/states';
 
@@ -15,6 +15,11 @@ export type UtilityReceipt = {
   status: 'delivered' | 'pending';
   requestId?: string;
   purchasedAt: string;
+  billersCode?: string;
+  customerName?: string;
+  token?: string;
+  units?: string;
+  meterType?: string;
 };
 
 type UtilityReceiptCardProps = {
@@ -26,7 +31,14 @@ const UtilityReceiptCard = ({ receipt }: UtilityReceiptCardProps) => {
   const handlePrint = useReactToPrint({ contentRef: componentRef });
 
   const isPending = receipt.status === 'pending';
-  const isData = receipt.type.toLowerCase().includes('data');
+  const typeLower = receipt.type.toLowerCase();
+  const isData = typeLower.includes('data');
+  const isTv = typeLower.includes('tv');
+  const isElectricity = typeLower.includes('electric');
+
+  const ServiceIcon = isElectricity ? BsLightningChargeFill : isTv ? BsTv : isData ? BsWifi : BsPhone;
+  const recipientLabel = isElectricity ? 'Meter Number' : isTv ? 'Smartcard' : 'Phone Number';
+  const serviceTag = isElectricity ? 'Electricity Token' : isTv ? 'TV Subscription' : isData ? 'Data Bundle' : 'Airtime VTU';
 
   const formattedAmount = receipt.amount.startsWith(currency) || receipt.amount.startsWith('₦')
     ? receipt.amount
@@ -82,7 +94,7 @@ const UtilityReceiptCard = ({ receipt }: UtilityReceiptCardProps) => {
           <div className="d-flex align-items-center mb-4 mb-md-5">
             <div className="flex-shrink-0">
               <div className="bg-primary bg-opacity-10 p-3 rounded-3 text-primary flex-centered">
-                {isData ? <BsWifi size={32} /> : <BsPhone size={32} />}
+                <ServiceIcon size={32} />
               </div>
             </div>
             <div className="flex-grow-1 ms-3">
@@ -97,17 +109,19 @@ const UtilityReceiptCard = ({ receipt }: UtilityReceiptCardProps) => {
             <Row className="g-4 text-center text-md-start">
               <Col xs={6} md={4}>
                 <h6 className="text-uppercase small fw-bold text-primary mb-2" style={{ letterSpacing: '0.5px' }}>
-                  Recipient
+                  {isElectricity || isTv ? 'Account' : 'Recipient'}
                 </h6>
-                <p className="h6 mb-1 text-body fw-bold">{receipt.recipient || '—'}</p>
-                <small className="text-primary fw-bold text-uppercase">Phone Number</small>
+                <p className="h6 mb-1 text-body fw-bold">{receipt.customerName || receipt.recipient || '—'}</p>
+                <small className="text-primary fw-bold text-uppercase">{recipientLabel}</small>
               </Col>
               <Col xs={6} md={4}>
                 <h6 className="text-uppercase small fw-bold text-primary mb-2" style={{ letterSpacing: '0.5px' }}>
-                  Network
+                  Provider
                 </h6>
                 <p className="h6 mb-1 text-body fw-bold">{receipt.network || '—'}</p>
-                <small className="text-primary fw-bold text-uppercase">Provider</small>
+                <small className="text-primary fw-bold text-uppercase">
+                  {receipt.billersCode || receipt.recipient || '—'}
+                </small>
               </Col>
               <Col xs={12} md={4}>
                 <h6 className="text-uppercase small fw-bold text-primary mb-2" style={{ letterSpacing: '0.5px' }}>
@@ -132,10 +146,30 @@ const UtilityReceiptCard = ({ receipt }: UtilityReceiptCardProps) => {
             </div>
             {receipt.plan ? (
               <div className="d-flex justify-content-between align-items-center mb-2">
-                <span className="text-body-secondary fw-medium small">Data Plan</span>
+                <span className="text-body-secondary fw-medium small">{isTv ? 'Bouquet' : 'Plan'}</span>
                 <span className="text-body fw-semibold small text-end" style={{ maxWidth: '55%' }}>
                   {receipt.plan}
                 </span>
+              </div>
+            ) : null}
+            {receipt.meterType ? (
+              <div className="d-flex justify-content-between align-items-center mb-2">
+                <span className="text-body-secondary fw-medium small">Meter Type</span>
+                <span className="text-body fw-semibold small text-capitalize">{receipt.meterType}</span>
+              </div>
+            ) : null}
+            {receipt.token ? (
+              <div className="d-flex justify-content-between align-items-center mb-2">
+                <span className="text-body-secondary fw-medium small">Token</span>
+                <span className="text-body fw-bold small font-monospace text-end" style={{ maxWidth: '60%' }}>
+                  {receipt.token}
+                </span>
+              </div>
+            ) : null}
+            {receipt.units ? (
+              <div className="d-flex justify-content-between align-items-center mb-2">
+                <span className="text-body-secondary fw-medium small">Units</span>
+                <span className="text-body fw-semibold small">{receipt.units}</span>
               </div>
             ) : null}
             <div className="d-flex justify-content-between align-items-center mb-2">
@@ -162,10 +196,10 @@ const UtilityReceiptCard = ({ receipt }: UtilityReceiptCardProps) => {
             <h6 className="text-uppercase small text-body-secondary mb-3 fw-bold">What you purchased</h6>
             <div className="d-flex flex-wrap gap-2">
               <span className="badge bg-body-secondary text-body-emphasis border border-secondary border-opacity-25 px-3 py-2 fw-medium shadow-sm">
-                {receipt.network || 'Network'}
+                {receipt.network || 'Provider'}
               </span>
               <span className="badge bg-body-secondary text-body-emphasis border border-secondary border-opacity-25 px-3 py-2 fw-medium shadow-sm">
-                {isData ? 'Data Bundle' : 'Airtime VTU'}
+                {serviceTag}
               </span>
               {receipt.plan ? (
                 <span className="badge bg-body-secondary text-body-emphasis border border-secondary border-opacity-25 px-3 py-2 fw-medium shadow-sm">
@@ -191,59 +225,18 @@ const UtilityReceiptCard = ({ receipt }: UtilityReceiptCardProps) => {
       </Card>
 
       <style jsx>{`
-        .ls-1 {
-          letter-spacing: 1px;
-        }
-        .flex-centered {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-        .perforated-hole {
-          background-color: var(--bs-body-tertiary);
-          box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
-        }
-
+        .ls-1 { letter-spacing: 1px; }
+        .flex-centered { display: flex; align-items: center; justify-content: center; }
+        .perforated-hole { background-color: var(--bs-body-tertiary); box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05); }
         @media print {
-          @page {
-            margin: 0.5cm;
-            size: auto;
-          }
-          body * {
-            visibility: hidden !important;
-          }
-          .print-card,
-          .print-card * {
-            visibility: visible !important;
-          }
-          .print-card {
-            position: absolute !important;
-            left: 0 !important;
-            top: 0 !important;
-            width: 100% !important;
-            margin: 0 !important;
-            padding: 0 !important;
-          }
-          .no-print,
-          .no-print * {
-            display: none !important;
-            visibility: hidden !important;
-          }
-          .card {
-            border: 1px solid #eee !important;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1) !important;
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
-          }
-          .bg-primary {
-            background-color: #4f46e5 !important;
-            background-image: linear-gradient(to bottom right, #4f46e5, #4338ca) !important;
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
-          }
-          .perforated-edge {
-            display: none !important;
-          }
+          @page { margin: 0.5cm; size: auto; }
+          body * { visibility: hidden !important; }
+          .print-card, .print-card * { visibility: visible !important; }
+          .print-card { position: absolute !important; left: 0 !important; top: 0 !important; width: 100% !important; margin: 0 !important; padding: 0 !important; }
+          .no-print, .no-print * { display: none !important; visibility: hidden !important; }
+          .card { border: 1px solid #eee !important; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          .bg-primary { background-color: #4f46e5 !important; background-image: linear-gradient(to bottom right, #4f46e5, #4338ca) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          .perforated-edge { display: none !important; }
         }
       `}</style>
     </div>

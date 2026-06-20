@@ -41,6 +41,7 @@ import {
   BsPower,
   BsStar,
   BsSun,
+  BsTv,
   BsWalletFill
 } from 'react-icons/bs';
 import Link from 'next/link';
@@ -69,6 +70,8 @@ function getNotificationIcon(title: string, message: string) {
   const content = (title + ' ' + message).toLowerCase();
   if (content.includes('booking')) return { icon: BsCalendarCheckFill, color: 'text-success', bg: 'bg-success' };
   if (content.includes('wallet') || content.includes('payment') || content.includes('funded')) return { icon: BsWalletFill, color: 'text-primary', bg: 'bg-primary' };
+  if (content.includes('electricity') || content.includes('token')) return { icon: BsLightningChargeFill, color: 'text-warning', bg: 'bg-warning' };
+  if (content.includes('tv') || content.includes('dstv') || content.includes('gotv')) return { icon: BsTv, color: 'text-info', bg: 'bg-info' };
   if (content.includes('airtime') || content.includes('data')) return { icon: BsLightningChargeFill, color: 'text-warning', bg: 'bg-warning' };
   return { icon: BsBellFill, color: 'text-info', bg: 'bg-info' };
 }

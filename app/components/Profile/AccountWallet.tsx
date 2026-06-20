@@ -133,6 +133,8 @@ const AccountWallet = () => {
 
   const handleTopUp = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (paymentMethod === 'dva') return;
+
     if (!amount || Number(amount) < 100) {
       toast.error('Minimum top-up is ₦100');
       return;
@@ -159,15 +161,7 @@ const AccountWallet = () => {
         throw new Error(data.errors?.[0]?.message || 'Failed to initialize payment');
       }
 
-      if (paymentMethod === 'dva') {
-        // DVA — just show the account details, no Paystack popup needed
-        toast.success('Transfer the exact amount to your virtual account to fund your wallet.');
-        setShowTopUp(false);
-        setAmount('');
-        return;
-      }
-
-      // 2. Open Paystack with the GROSS amount (includes fee passed to customer)
+      // Open Paystack with the GROSS amount (includes fee passed to customer)
       const chargeAmount = data.charge_amount || Number(amount);
       const handler = (window as any).PaystackPop.setup({
         key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY,
@@ -470,9 +464,16 @@ const AccountWallet = () => {
             <Button variant="white" onClick={() => { setShowTopUp(false); setAmount(''); setFeeBreakdown(null); }} disabled={isProcessing}>
               Cancel
             </Button>
-            <Button variant="primary" type="submit" disabled={isProcessing || !amount}>
-              {isProcessing ? 'Processing...' : paymentMethod === 'dva' ? `Transfer ${feeBreakdown ? `${currency}${feeBreakdown.charge_amount.toLocaleString('en-NG', { minimumFractionDigits: 2 })}` : 'amount'}` : `Pay ${feeBreakdown ? `${currency}${feeBreakdown.charge_amount.toLocaleString('en-NG', { minimumFractionDigits: 2 })}` : ''}`}
-            </Button>
+            {paymentMethod === 'dva' ? (
+              <Button variant="secondary" disabled style={{ opacity: 0.5 }}>
+                <BsBank className="me-2" />
+                Transfer to Virtual Account
+              </Button>
+            ) : (
+              <Button variant="primary" type="submit" disabled={isProcessing || !amount}>
+                {isProcessing ? 'Processing...' : `Pay ${feeBreakdown ? `${currency}${feeBreakdown.charge_amount.toLocaleString('en-NG', { minimumFractionDigits: 2 })}` : ''}`}
+              </Button>
+            )}
           </Modal.Footer>
         </Form>
       </Modal>

@@ -8,16 +8,37 @@ export type UtilityNetwork = {
   color: string;
 };
 
+export type UtilityProvider = {
+  name: string;
+  label: string;
+  color?: string;
+  service_id?: string;
+};
+
 export type DataVariation = {
   variation_code: string;
   name: string;
   amount: number;
 };
 
+export type VerifyResult = {
+  customer_name?: string;
+  customer_number?: string;
+  customer_address?: string;
+  current_bouquet?: string;
+  due_date?: string;
+  renewal_amount?: number;
+  meter_type?: string;
+  minimum_amount?: number;
+  outstanding_balance?: number;
+};
+
 export type PurchaseResult = {
   message: string;
   status: 'delivered' | 'pending';
   request_id?: string;
+  token?: string;
+  units?: string;
 };
 
 export function parseUtilityApiError(data: unknown, fallback: string): string {
@@ -57,6 +78,24 @@ export async function fetchUtilityNetworks(): Promise<UtilityNetwork[]> {
   return data.networks?.length ? data.networks : defaultNetworks();
 }
 
+export async function fetchTvProviders(): Promise<UtilityProvider[]> {
+  const response = await fetch(`${API_URL}/api/v1/utility/tv_providers`, {
+    headers: await authHeaders(),
+  });
+  if (!response.ok) return [];
+  const data = await response.json();
+  return data.providers ?? [];
+}
+
+export async function fetchElectricityProviders(): Promise<UtilityProvider[]> {
+  const response = await fetch(`${API_URL}/api/v1/utility/electricity_providers`, {
+    headers: await authHeaders(),
+  });
+  if (!response.ok) return [];
+  const data = await response.json();
+  return data.providers ?? [];
+}
+
 export function dedupeVariations(variations: DataVariation[]): DataVariation[] {
   const seen = new Set<string>();
   return variations.filter((plan) => {
@@ -74,6 +113,34 @@ export async function fetchDataVariations(network: string): Promise<DataVariatio
   if (!response.ok) return [];
   const data = await response.json();
   return dedupeVariations(data.variations ?? []);
+}
+
+export async function fetchTvVariations(provider: string): Promise<DataVariation[]> {
+  const response = await fetch(
+    `${API_URL}/api/v1/utility/variations?provider=${encodeURIComponent(provider)}&type=tv`,
+    { headers: await authHeaders() }
+  );
+  if (!response.ok) return [];
+  const data = await response.json();
+  return dedupeVariations(data.variations ?? []);
+}
+
+export async function verifyUtilityBill(payload: {
+  category: 'tv' | 'electricity';
+  provider: string;
+  billers_code: string;
+  meter_type?: 'prepaid' | 'postpaid';
+}): Promise<{ verification: VerifyResult; billers_code: string; provider: string; meter_type?: string }> {
+  const response = await fetch(`${API_URL}/api/v1/utility/verify`, {
+    method: 'POST',
+    headers: await authHeaders(),
+    body: JSON.stringify(payload),
+  });
+  const data = await parseJsonResponse(response);
+  if (!response.ok) {
+    throw new Error(parseUtilityApiError(data, 'Verification failed. Please check your details.'));
+  }
+  return data as { verification: VerifyResult; billers_code: string; provider: string; meter_type?: string };
 }
 
 async function parseJsonResponse(response: Response): Promise<unknown> {
@@ -119,6 +186,47 @@ export async function buyData(payload: {
   return data as PurchaseResult;
 }
 
+export async function buyTv(payload: {
+  provider: string;
+  billers_code: string;
+  subscription_type: 'renew' | 'change';
+  variation_code?: string;
+  amount: number;
+  customer_name?: string;
+  phone_number?: string;
+}): Promise<PurchaseResult> {
+  const response = await fetch(`${API_URL}/api/v1/wallet/buy_tv`, {
+    method: 'POST',
+    headers: await authHeaders(),
+    body: JSON.stringify(payload),
+  });
+  const data = await parseJsonResponse(response);
+  if (!response.ok) {
+    throw new Error(parseUtilityApiError(data, 'TV subscription failed. Your wallet has been refunded.'));
+  }
+  return data as PurchaseResult;
+}
+
+export async function buyElectricity(payload: {
+  provider: string;
+  billers_code: string;
+  meter_type: 'prepaid' | 'postpaid';
+  phone_number?: string;
+  amount: number;
+  customer_name?: string;
+}): Promise<PurchaseResult> {
+  const response = await fetch(`${API_URL}/api/v1/wallet/buy_electricity`, {
+    method: 'POST',
+    headers: await authHeaders(),
+    body: JSON.stringify(payload),
+  });
+  const data = await parseJsonResponse(response);
+  if (!response.ok) {
+    throw new Error(parseUtilityApiError(data, 'Electricity payment failed. Your wallet has been refunded.'));
+  }
+  return data as PurchaseResult;
+}
+
 function defaultNetworks(): UtilityNetwork[] {
   return [
     { name: 'MTN', label: 'MTN', color: '#FFCC00' },
@@ -127,3 +235,4 @@ function defaultNetworks(): UtilityNetwork[] {
     { name: '9mobile', label: '9mobile', color: '#006633' },
   ];
 }
+

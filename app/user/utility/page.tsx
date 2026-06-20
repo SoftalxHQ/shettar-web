@@ -16,7 +16,7 @@ const UtilityPage = () => {
             </div>
             <div>
               <h4 className="card-header-title text-dark mb-0">Utilities</h4>
-              <p className="small text-secondary mb-0">Recharge airtime and data easily from your wallet</p>
+              <p className="small text-secondary mb-0">Recharge airtime, data, TV subscriptions, and electricity from your wallet</p>
             </div>
           </div>
         </CardHeader>
@@ -33,14 +33,14 @@ const UtilityPage = () => {
               <div className="bg-primary text-white rounded-circle flex-centered me-3" style={{ width: '24px', height: '24px', flexShrink: 0 }}>1</div>
               <div>
                 <h6 className="mb-1">Select Service</h6>
-                <p className="small text-secondary mb-0">Choose between Airtime or Data purchase from the tabs above.</p>
+                <p className="small text-secondary mb-0">Choose Airtime, Data, TV, or Electricity from the tabs above.</p>
               </div>
             </div>
             <div className="d-flex align-items-start">
               <div className="bg-primary text-white rounded-circle flex-centered me-3" style={{ width: '24px', height: '24px', flexShrink: 0 }}>2</div>
               <div>
                 <h6 className="mb-1">Fill Details</h6>
-                <p className="small text-secondary mb-0">Select your network provider, enter the recipient phone number, and choose your preferred plan or amount.</p>
+                <p className="small text-secondary mb-0">Select your provider, verify smartcard or meter when required, and confirm the amount or plan.</p>
               </div>
             </div>
             <div className="d-flex align-items-start">
