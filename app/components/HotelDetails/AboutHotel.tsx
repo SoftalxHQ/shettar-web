@@ -1,10 +1,9 @@
 'use client';
 
 import { useToggle } from '@/app/hooks';
-import { Fragment } from 'react';
-import { Button, Card, CardBody, CardHeader, Col, Collapse, Container, OverlayTrigger, Row, Tooltip } from 'react-bootstrap';
-import { BsPatchCheckFill, BsShieldFillCheck } from 'react-icons/bs';
-import { FaCheckCircle, FaConciergeBell, FaSwimmingPool, FaVolumeUp } from 'react-icons/fa';
+import { Button, Card, CardBody, CardHeader, Col, Container, OverlayTrigger, Row, Tooltip } from 'react-bootstrap';
+import { BsPatchCheckFill } from 'react-icons/bs';
+import { FaCheckCircle, FaConciergeBell, FaSwimmingPool } from 'react-icons/fa';
 import { FaAngleDown, FaAngleUp, FaSnowflake, FaWifi } from 'react-icons/fa6';
 import CustomerReview from './CustomerReview';
 import HotelPolicies from './HotelPolicies';
@@ -12,9 +11,14 @@ import PriceOverView from './PriceOverView';
 import RoomOptions from './RoomOptions';
 
 import clsx from 'clsx';
-import { amenities } from '@/app/data/hotel-details';
+import type { HotelDetail } from '@/app/types/hotel';
 
-const AboutHotel = ({ hotel, onRefresh }: { hotel: any; onRefresh?: () => void }) => {
+type AboutHotelProps = {
+  hotel: HotelDetail | null | undefined;
+  onRefresh?: () => void;
+};
+
+const AboutHotel = ({ hotel, onRefresh }: AboutHotelProps) => {
   const { isOpen, toggle } = useToggle();
 
   if (!hotel) return null;
@@ -26,8 +30,13 @@ const AboutHotel = ({ hotel, onRefresh }: { hotel: any; onRefresh?: () => void }
 
   // Group amenities by category for display
   const activeAmenities = Object.entries(hotel.amenities || {})
-    .filter(([_, value]) => value === true)
+    .filter(([, value]) => value === true)
     .map(([key]) => key.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' '));
+
+  const averageRating =
+    typeof hotel.average_rating === 'string'
+      ? parseFloat(hotel.average_rating) || 0
+      : (hotel.average_rating ?? 0);
 
   return (
     <section className="pt-5 pt-lg-10">
@@ -41,7 +50,7 @@ const AboutHotel = ({ hotel, onRefresh }: { hotel: any; onRefresh?: () => void }
                 </CardHeader>
                 <CardBody className="pt-4 p-0">
                   <h5 className="fw-light mb-4 opacity-75">Main Highlights</h5>
-                  <div className="hstack gap-3 mb-3">
+                  <div className="d-flex flex-wrap gap-3 mb-3">
                     {hasWifi && (
                       <OverlayTrigger overlay={<Tooltip>Free Wifi</Tooltip>}>
                         <div className="icon-lg bg-body-tertiary h5 rounded-2 flex-centered border" style={{ width: '50px', height: '50px' }}>
@@ -124,27 +133,29 @@ const AboutHotel = ({ hotel, onRefresh }: { hotel: any; onRefresh?: () => void }
                   <h3 className="card-title mb-0">Amenities</h3>
                 </CardHeader>
                 <CardBody className="pt-4 p-0">
-                  <Row className="g-4">
-                    <Col sm={12}>
-                      <div className="d-flex flex-wrap gap-2">
-                        {activeAmenities.map((amenity, idx) => (
-                          <div key={idx} className="badge bg-body-tertiary text-body border p-2 px-3 fw-normal shadow-sm items-center">
-                            <FaCheckCircle className="text-success me-2" size={14} />
-                            {amenity}
-                          </div>
-                        ))}
-                        {activeAmenities.length === 0 && <span className="text-muted">No specific amenities listed.</span>}
-                      </div>
-                    </Col>
+                  <Row className="g-2 g-sm-3">
+                    {activeAmenities.map((amenity, idx) => (
+                      <Col key={idx} xs={6} sm={4} lg={3}>
+                        <div className="d-flex align-items-start gap-2 p-2 p-sm-3 rounded-3 bg-body-tertiary border h-100">
+                          <FaCheckCircle className="text-success flex-shrink-0 mt-1" size={14} />
+                          <span className="small text-wrap lh-sm">{amenity}</span>
+                        </div>
+                      </Col>
+                    ))}
+                    {activeAmenities.length === 0 && (
+                      <Col xs={12}>
+                        <span className="text-muted">No specific amenities listed.</span>
+                      </Col>
+                    )}
                   </Row>
                 </CardBody>
               </Card>
 
-              <RoomOptions availableRoomTypes={hotel.available_room_types} hotel={hotel} />
+              <RoomOptions availableRoomTypes={hotel.available_room_types ?? []} hotel={hotel} />
 
               <CustomerReview
-                reviews={hotel.reviews}
-                averageRating={hotel.average_rating}
+                reviews={hotel.reviews ?? []}
+                averageRating={averageRating}
                 ratingDistribution={hotel.rating_distribution}
                 businessId={hotel.id}
                 onReviewPosted={onRefresh}

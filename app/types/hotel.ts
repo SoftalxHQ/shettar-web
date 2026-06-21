@@ -26,3 +26,48 @@ export type NotificationType = {
   content?: string;
   time: string;
 };
+
+/** Business/hotel payload from GET /api/v1/businesses/:slug */
+export type HotelAmenities = Record<string, boolean | undefined>;
+
+export interface HotelReview {
+  id: number;
+  reviewer: string;
+  first_name?: string;
+  last_name?: string;
+  reviewer_avatar?: string;
+  review_count?: number;
+  stay_date?: string;
+  rating: number;
+  content: string;
+  created_at: string;
+  updated_at?: string;
+  verified?: boolean;
+  admin_reply?: string | null;
+  admin_reply_by?: string | null;
+  admin_replied_at?: string | null;
+}
+
+export interface HotelRatingBucket {
+  rating: number;
+  count: number;
+  percentage: number;
+}
+
+export interface HotelDetail extends Hotel {
+  description?: string;
+  amenities?: HotelAmenities;
+  available_room_types?: Record<string, unknown>[];
+  reviews?: HotelReview[];
+  average_rating?: number | string;
+  rating_distribution?: HotelRatingBucket[];
+  starting_from?: number | string;
+  check_in?: string;
+  check_out?: string;
+  policy_highlights?: { kind: string; text: string }[];
+  policy_bullets?: string[];
+  policy_footer?: string | null;
+  city?: string;
+  state?: string;
+  images_url?: string[];
+}
