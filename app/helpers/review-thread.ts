@@ -11,6 +11,9 @@ export type ReviewComment = {
   updated_at?: string;
   deletable?: boolean;
   editable?: boolean;
+  likes_count?: number;
+  dislikes_count?: number;
+  user_vote?: 1 | -1 | null;
 };
 
 export type NestedReviewComment = ReviewComment & {
@@ -176,6 +179,19 @@ export function isCommentEditable(comment: ReviewComment): boolean {
   return isCommentDeletable(comment);
 }
 
+export function isReviewDeletable(review: {
+  deletable?: boolean;
+  created_at?: string;
+  date?: string;
+}): boolean {
+  if (typeof review.deletable === 'boolean') return review.deletable;
+  const created = review.created_at ?? review.date;
+  if (!created) return false;
+  const ts = new Date(created).getTime();
+  if (Number.isNaN(ts)) return false;
+  return Date.now() - ts < TWENTY_FOUR_HOURS_MS;
+}
+
 export function isOwnGuestComment(comment: ReviewComment, accountId?: number | null): boolean {
   return comment.author_role === 'guest' &&
     comment.author_type === 'Account' &&
@@ -185,12 +201,6 @@ export function isOwnGuestComment(comment: ReviewComment, accountId?: number | n
 
 export function canReplyToThread(_review: ReviewWithThread): boolean {
   return true;
-}
-
-/** Guests cannot reply to their own comment (no self-threading). */
-export function canReplyToComment(comment: ReviewComment, accountId?: number | null): boolean {
-  if (comment.author_role === 'business') return true;
-  return !isOwnGuestComment(comment, accountId);
 }
 
 export function replyParentId(comment: ReviewComment): number | null {

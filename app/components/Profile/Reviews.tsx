@@ -12,6 +12,7 @@ import {
   truncateReview,
   parseApiError,
   commentsAfterRemoval,
+  isReviewDeletable,
   type ReviewComment,
 } from '@/app/helpers/review-thread';
 import ReviewCommentThread from '@/app/components/ReviewCommentThread';
@@ -21,7 +22,6 @@ import { toast } from 'react-hot-toast';
 import { Skeleton } from '../';
 
 type ReviewItem = { id: number; rating: number; content: string; date: string; created_at?: string; hotel_name: string; hotel_image?: string | null; business_id: number; business_slug?: string | null; business_unique_id?: string | null; admin_reply?: string | null; admin_reply_by?: string | null; deletable?: boolean; comments?: ReviewComment[] };
-function isReviewDeletable(r: ReviewItem): boolean { if (typeof r.deletable === 'boolean') return r.deletable; if (!r.created_at) return true; return Date.now() - new Date(r.created_at).getTime() < 86400000; }
 function hotelPathFromReview(review: ReviewItem): string | null {
   return hotelPathFromBusiness(review);
 }
@@ -88,12 +88,24 @@ const Reviews = () => {
   }, []);
 
   const handlePreDelete = (id: number) => {
+    const review = reviews.find((r) => r.id === id);
+    if (review && !isReviewDeletable(review)) {
+      toast.error('Reviews can only be deleted within 24 hours of posting.');
+      return;
+    }
     setReviewToDeleteId(id);
     setShowDeleteModal(true);
   };
 
   const confirmDelete = async () => {
     if (!reviewToDeleteId) return;
+    const review = reviews.find((r) => r.id === reviewToDeleteId);
+    if (review && !isReviewDeletable(review)) {
+      toast.error('Reviews can only be deleted within 24 hours of posting.');
+      setShowDeleteModal(false);
+      setReviewToDeleteId(null);
+      return;
+    }
 
     setIsDeleting(true);
     try {
@@ -207,6 +219,20 @@ const Reviews = () => {
       ? { ...r, comments: commentsAfterRemoval(r.comments || reviewComments(r), commentId) }
       : r));
     toast.success('Reply deleted');
+  };
+
+  const handleVoteComment = async (reviewId: number, commentId: number, value: 1 | -1) => {
+    const token = getStoredToken();
+    const response = await apiFetch(`${API_URL}/api/v1/reviews/${reviewId}/comments/${commentId}/vote`, {
+      method: 'POST',
+      headers: { Authorization: token ? `Bearer ${token}` : '', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ value }),
+    });
+    const data = await response.json();
+    if (!response.ok || !data.comment) throw new Error(parseApiError(data, 'Failed to save vote'));
+    setReviews((prev) => prev.map((r) => r.id === reviewId
+      ? { ...r, comments: (r.comments || reviewComments(r)).map((c) => (c.id === commentId ? data.comment : c)) }
+      : r));
   };
 
   const toggleReviewExpanded = (reviewId: number) => {
@@ -389,6 +415,7 @@ const Reviews = () => {
                         onReply={handleReply}
                         onUpdateComment={handleUpdateComment}
                         onDeleteComment={handleDeleteComment}
+                        onVoteComment={handleVoteComment}
                       />
                       {isFirst && shouldShowViewAll && (
                         <button
@@ -429,7 +456,7 @@ const Reviews = () => {
           </div>
           <h4 className="mb-2">Delete this review?</h4>
           <p className="text-secondary mb-0">
-            Are you sure you want to permanently delete this review? This action cannot be undone.
+            Are you sure you want to delete this review? Reviews can only be removed within 24 hours of posting.
           </p>
         </Modal.Body>
         <Modal.Footer className="border-0 pt-0 justify-content-center pb-4">

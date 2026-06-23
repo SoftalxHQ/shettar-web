@@ -92,7 +92,7 @@ const WishlistPage = () => {
     <UserLayout>
       <Card className="border bg-transparent">
         <CardHeader className="bg-transparent border-bottom">
-          <h4 className="card-header-title text-dark">My Wishlist</h4>
+          <h4 className="card-header-title text-body">My Wishlist</h4>
         </CardHeader>
         <CardBody className="vstack gap-4">
           <form className="d-flex justify-content-between flex-wrap gap-2 align-items-center">
@@ -132,7 +132,7 @@ const WishlistPage = () => {
                   name: item.business.name,
                   address: item.business.address,
                   price: item.business.starting_from || 0,
-                  rating: item.business.star_rating || 0,
+                  rating: item.business.average_rating ?? 0,
                   slug: item.business.slug,
                   image: item.business.image_url || '/assets/images/category_luxury.jpg'
                 }}

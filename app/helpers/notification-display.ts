@@ -3,10 +3,13 @@ import type { IconType } from 'react-icons';
 import {
   BsBellFill,
   BsCalendarCheckFill,
+  BsChatDotsFill,
+  BsEggFried,
   BsLightningChargeFill,
-  BsPhoneFill,
+  BsTelephoneFill,
   BsTv,
   BsWalletFill,
+  BsWifi,
 } from 'react-icons/bs';
 
 export type NotificationVisual = {
@@ -27,10 +30,10 @@ export function getNotificationVisual(input: {
     return { icon: BsWalletFill, color: 'text-primary', bg: 'bg-primary' };
   }
   if (source === 'airtime' || content.includes('airtime')) {
-    return { icon: BsPhoneFill, color: 'text-warning', bg: 'bg-warning' };
+    return { icon: BsTelephoneFill, color: 'text-primary', bg: 'bg-primary' };
   }
-  if (source === 'data' || content.includes('data bundle') || content.includes('data purchase')) {
-    return { icon: BsPhoneFill, color: 'text-info', bg: 'bg-info' };
+  if (source === 'data' || content.includes('data bundle') || content.includes('data purchase') || content.includes('data plan')) {
+    return { icon: BsWifi, color: 'text-info', bg: 'bg-info' };
   }
   if (source === 'tv' || content.includes('tv subscription') || content.includes('dstv') || content.includes('gotv')) {
     return { icon: BsTv, color: 'text-info', bg: 'bg-info' };
@@ -39,14 +42,24 @@ export function getNotificationVisual(input: {
     return { icon: BsLightningChargeFill, color: 'text-warning', bg: 'bg-warning' };
   }
   if (
-    ['check_in', 'check_out', 'booking_cancelled'].includes(source) ||
+    ['check_in', 'check_out', 'booking_cancelled', 'cancellation_fee'].includes(source) ||
     content.includes('booking') ||
+    content.includes('checked in') ||
+    content.includes('checked out') ||
     content.includes('stay at')
   ) {
     return { icon: BsCalendarCheckFill, color: 'text-success', bg: 'bg-success' };
   }
-  if (source === 'restaurant_order' || content.includes('room service') || content.includes('order')) {
-    return { icon: BsBellFill, color: 'text-primary', bg: 'bg-primary' };
+  if (
+    source === 'restaurant_order' ||
+    content.includes('room service') ||
+    content.includes('kitchen') ||
+    (content.includes('order') && !content.includes('border'))
+  ) {
+    return { icon: BsEggFried, color: 'text-primary', bg: 'bg-primary' };
+  }
+  if (source === 'review_comment_reply' || source === 'review_reply' || content.includes('replied to your review')) {
+    return { icon: BsChatDotsFill, color: 'text-primary', bg: 'bg-primary' };
   }
   if (content.includes('wallet') || content.includes('payment') || content.includes('debited')) {
     return { icon: BsWalletFill, color: 'text-primary', bg: 'bg-primary' };
@@ -68,8 +81,9 @@ export function notificationToastEmoji(input: {
   if (source === 'data' || content.includes('data')) return '📶';
   if (source === 'tv' || content.includes('tv')) return '📺';
   if (source === 'electricity' || content.includes('electricity')) return '⚡';
-  if (content.includes('booking') || content.includes('stay at')) return '🏨';
-  if (source === 'restaurant_order' || content.includes('room service')) return '🍽️';
+  if (content.includes('booking') || content.includes('checked in') || content.includes('checked out') || content.includes('stay at')) return '📅';
+  if (source === 'restaurant_order' || content.includes('room service') || content.includes('kitchen')) return '🍽️';
+  if (source === 'review_comment_reply' || source === 'review_reply') return '💬';
   return '🔔';
 }
 

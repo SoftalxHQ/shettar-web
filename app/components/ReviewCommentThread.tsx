@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { Button, Form, Modal, Dropdown } from 'react-bootstrap';
 import {
@@ -12,6 +12,8 @@ import {
   BsPinAngleFill,
   BsThreeDotsVertical,
   BsTrash,
+  BsSend,
+  BsPencilSquare,
 } from 'react-icons/bs';
 import {
   reviewComments,
@@ -21,7 +23,6 @@ import {
   isCommentDeletable,
   isCommentEditable,
   canReplyToThread,
-  canReplyToComment,
   replyParentId,
   commentBodyDisplay,
   commentInitials,
@@ -47,9 +48,12 @@ type Props = {
   onReply: (reviewId: number, body: string, parentId?: number | null) => Promise<void>;
   onUpdateComment: (reviewId: number, commentId: number, body: string) => Promise<void>;
   onDeleteComment: (reviewId: number, commentId: number) => Promise<void>;
+  onVoteComment?: (reviewId: number, commentId: number, value: 1 | -1) => Promise<void>;
+  readOnlyVotes?: boolean;
 };
 
 type SharedHandlers = {
+  reviewId: number;
   allComments: ReviewComment[];
   accountId?: number | null;
   isAuthenticated: boolean;
@@ -69,9 +73,58 @@ type SharedHandlers = {
   onDelete: (commentId: number) => void;
   onEditDraftChange: (commentId: number, value: string) => void;
   onReplyDraftChange: (key: string, value: string) => void;
+  onVoteComment?: (reviewId: number, commentId: number, value: 1 | -1) => Promise<void>;
+  votingCommentId: number | null;
+  readOnlyVotes: boolean;
   businessName: string;
   isPinned?: boolean;
 };
+
+function ReplyComposer({
+  value,
+  onChange,
+  onSubmit,
+  submitting,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  onSubmit: () => void;
+  submitting: boolean;
+}) {
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
+
+  return (
+    <div className="d-flex gap-2 align-items-start mt-2 mb-2">
+      <div className="rounded-circle bg-secondary bg-opacity-10 flex-shrink-0" style={{ width: NESTED_AVATAR, height: NESTED_AVATAR }} />
+      <div className="flex-grow-1 d-flex gap-2 align-items-end">
+        <Form.Control
+          ref={inputRef}
+          as="textarea"
+          rows={2}
+          placeholder="Add a reply..."
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="small"
+        />
+        <Button
+          size="sm"
+          variant="primary"
+          className="d-flex align-items-center justify-content-center p-0 flex-shrink-0"
+          style={{ width: 32, height: 32 }}
+          onClick={onSubmit}
+          disabled={submitting}
+          aria-label="Send reply"
+        >
+          {submitting ? <span className="spinner-border spinner-border-sm" role="status" /> : <BsSend size={14} />}
+        </Button>
+      </div>
+    </div>
+  );
+}
 
 function CommentAvatar({
   name,
@@ -159,8 +212,12 @@ function CommentContent({
     onDelete,
     onEditDraftChange,
     onReplyDraftChange,
+    onVoteComment,
+    votingCommentId,
+    readOnlyVotes,
     businessName,
     isPinned,
+    reviewId,
   } = handlers;
 
   const isBusiness = comment.author_role === 'business';
@@ -174,6 +231,23 @@ function CommentContent({
   const showDropdown =
     isOwnGuestComment(comment, accountId) &&
     (isCommentEditable(comment) || isCommentDeletable(comment));
+  const likesCount = comment.likes_count ?? 0;
+  const dislikesCount = comment.dislikes_count ?? 0;
+  const userVote = comment.user_vote ?? null;
+  const canVote =
+    !readOnlyVotes &&
+    isAuthenticated &&
+    Boolean(onVoteComment);
+  const isVoting = votingCommentId === comment.id;
+
+  const handleVote = async (value: 1 | -1) => {
+    if (!canVote || !onVoteComment || isVoting) return;
+    try {
+      await onVoteComment(reviewId, comment.id, value);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to save vote');
+    }
+  };
 
   return (
     <div className="flex-grow-1 min-width-0 position-relative pb-1">
@@ -200,12 +274,18 @@ function CommentContent({
             <Dropdown.Toggle as="button" className="btn btn-link btn-sm p-1 text-muted border-0 bg-transparent no-caret">
               <BsThreeDotsVertical size={16} />
             </Dropdown.Toggle>
-            <Dropdown.Menu className="shadow border-0 py-1" style={{ fontSize: 13 }}>
+            <Dropdown.Menu className="shadow border-0 py-1" style={{ fontSize: 13, minWidth: '7.5rem' }}>
               {isCommentEditable(comment) && (
-                <Dropdown.Item onClick={() => onStartEdit(comment.id, comment.body)}>Edit</Dropdown.Item>
+                <Dropdown.Item onClick={() => onStartEdit(comment.id, comment.body)} className="d-flex align-items-center gap-2 py-2">
+                  <BsPencilSquare size={14} />
+                  Edit
+                </Dropdown.Item>
               )}
               {isCommentDeletable(comment) && (
-                <Dropdown.Item className="text-danger" onClick={() => onDelete(comment.id)}>Delete</Dropdown.Item>
+                <Dropdown.Item className="text-danger d-flex align-items-center gap-2 py-2" onClick={() => onDelete(comment.id)}>
+                  <BsTrash size={14} />
+                  Delete
+                </Dropdown.Item>
               )}
             </Dropdown.Menu>
           </Dropdown>
@@ -235,15 +315,39 @@ function CommentContent({
         </p>
       )}
 
-      {!isEditing && (
+      {!isEditing && (canVote || readOnlyVotes || likesCount > 0 || dislikesCount > 0 || (isAuthenticated && canReply)) && (
         <div className="d-flex align-items-center gap-1 mb-1">
-          <button type="button" className="btn btn-link btn-sm p-1 text-muted rounded-circle" aria-label="Like" style={{ width: 32, height: 32 }}>
-            <BsHandThumbsUp size={14} />
-          </button>
-          <button type="button" className="btn btn-link btn-sm p-1 text-muted rounded-circle" aria-label="Dislike" style={{ width: 32, height: 32 }}>
-            <BsHandThumbsDown size={14} />
-          </button>
-          {isAuthenticated && canReply && canReplyToComment(comment, accountId) && (
+          {(canVote || readOnlyVotes || likesCount > 0) && (
+            <button
+              type="button"
+              className={`btn btn-link btn-sm p-1 rounded-circle d-inline-flex align-items-center gap-1 ${
+                userVote === 1 ? 'text-primary' : 'text-muted'
+              }`}
+              aria-label="Like"
+              style={{ height: 32 }}
+              disabled={!canVote || isVoting}
+              onClick={() => handleVote(1)}
+            >
+              <BsHandThumbsUp size={14} />
+              {likesCount > 0 && <span style={{ fontSize: 12, fontWeight: 600 }}>{likesCount}</span>}
+            </button>
+          )}
+          {(canVote || readOnlyVotes || dislikesCount > 0) && (
+            <button
+              type="button"
+              className={`btn btn-link btn-sm p-1 rounded-circle d-inline-flex align-items-center gap-1 ${
+                userVote === -1 ? 'text-primary' : 'text-muted'
+              }`}
+              aria-label="Dislike"
+              style={{ height: 32 }}
+              disabled={!canVote || isVoting}
+              onClick={() => handleVote(-1)}
+            >
+              <BsHandThumbsDown size={14} />
+              {dislikesCount > 0 && <span style={{ fontSize: 12, fontWeight: 600 }}>{dislikesCount}</span>}
+            </button>
+          )}
+          {isAuthenticated && canReply && (
             <button
               type="button"
               className="btn btn-link btn-sm px-3 py-1 text-muted text-decoration-none fw-bold"
@@ -257,23 +361,12 @@ function CommentContent({
       )}
 
       {showComposer && (
-        <div className="d-flex gap-2 align-items-start mt-2 mb-2">
-          <div className="rounded-circle bg-secondary bg-opacity-10 flex-shrink-0" style={{ width: NESTED_AVATAR, height: NESTED_AVATAR }} />
-          <div className="flex-grow-1 d-flex gap-2">
-            <Form.Control
-              as="textarea"
-              rows={2}
-              placeholder="Add a reply..."
-              value={replyDrafts[composerKey] || ''}
-              onChange={(e) => onReplyDraftChange(composerKey, e.target.value)}
-              className="small"
-            />
-            <div className="d-flex flex-column gap-1">
-              <Button size="sm" variant="primary" onClick={onSubmitReply} disabled={replyingKey === composerKey}>Reply</Button>
-              <Button size="sm" variant="light" onClick={() => onToggleReply(parentId)}>Cancel</Button>
-            </div>
-          </div>
-        </div>
+        <ReplyComposer
+          value={replyDrafts[composerKey] || ''}
+          onChange={(v) => onReplyDraftChange(composerKey, v)}
+          onSubmit={onSubmitReply}
+          submitting={replyingKey === composerKey}
+        />
       )}
     </div>
   );
@@ -366,6 +459,8 @@ export default function ReviewCommentThread({
   onReply,
   onUpdateComment,
   onDeleteComment,
+  onVoteComment,
+  readOnlyVotes = false,
 }: Props) {
   const [openReplyKey, setOpenReplyKey] = useState<string | null>(null);
   const [replyParentIdState, setReplyParentIdState] = useState<number | null>(null);
@@ -374,6 +469,7 @@ export default function ReviewCommentThread({
   const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
   const [editDrafts, setEditDrafts] = useState<Record<number, string>>({});
   const [savingCommentId, setSavingCommentId] = useState<number | null>(null);
+  const [votingCommentId, setVotingCommentId] = useState<number | null>(null);
   const [deleteCommentId, setDeleteCommentId] = useState<number | null>(null);
   const [isDeletingComment, setIsDeletingComment] = useState(false);
   const [collapsedIds, setCollapsedIds] = useState<Set<number>>(new Set());
@@ -456,7 +552,18 @@ export default function ReviewCommentThread({
     }
   };
 
+  const handleVoteComment = async (reviewId: number, commentId: number, value: 1 | -1) => {
+    if (!onVoteComment) return;
+    setVotingCommentId(commentId);
+    try {
+      await onVoteComment(reviewId, commentId, value);
+    } finally {
+      setVotingCommentId(null);
+    }
+  };
+
   const handlers: SharedHandlers = {
+    reviewId: review.id,
     allComments,
     accountId,
     isAuthenticated,
@@ -479,6 +586,9 @@ export default function ReviewCommentThread({
     onDelete: setDeleteCommentId,
     onEditDraftChange: (id, value) => setEditDrafts((prev) => ({ ...prev, [id]: value })),
     onReplyDraftChange: (key, value) => setReplyDrafts((prev) => ({ ...prev, [key]: value })),
+    onVoteComment: onVoteComment ? handleVoteComment : undefined,
+    votingCommentId,
+    readOnlyVotes,
     businessName,
   };
 
@@ -499,23 +609,12 @@ export default function ReviewCommentThread({
         )}
 
         {showReviewComposer && (
-          <div className="d-flex gap-2 align-items-start mt-2 mb-3">
-            <div className="rounded-circle bg-secondary bg-opacity-10 flex-shrink-0" style={{ width: NESTED_AVATAR, height: NESTED_AVATAR }} />
-            <div className="flex-grow-1 d-flex gap-2">
-              <Form.Control
-                as="textarea"
-                rows={2}
-                placeholder="Add a reply..."
-                value={replyDrafts[reviewComposerKey] || ''}
-                onChange={(e) => handlers.onReplyDraftChange(reviewComposerKey, e.target.value)}
-                className="small"
-              />
-              <div className="d-flex flex-column gap-1">
-                <Button size="sm" variant="primary" onClick={submitReply} disabled={replyingKey === reviewComposerKey}>Reply</Button>
-                <Button size="sm" variant="light" onClick={() => toggleReply(null)}>Cancel</Button>
-              </div>
-            </div>
-          </div>
+          <ReplyComposer
+            value={replyDrafts[reviewComposerKey] || ''}
+            onChange={(v) => handlers.onReplyDraftChange(reviewComposerKey, v)}
+            onSubmit={submitReply}
+            submitting={replyingKey === reviewComposerKey}
+          />
         )}
 
         {!reviewCollapsed &&

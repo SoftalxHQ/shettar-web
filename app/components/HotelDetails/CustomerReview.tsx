@@ -165,6 +165,17 @@ const CustomerReview = ({ reviews, averageRating, ratingDistribution, businessId
     toast.success('Reply deleted');
   };
 
+  const handleVoteComment = async (reviewId: number, commentId: number, value: 1 | -1) => {
+    const res = await fetch(`${businessCommentUrl(reviewId, commentId)}/vote`, {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({ value }),
+    });
+    const data = await res.json();
+    if (!res.ok || !data.comment) throw new Error(parseApiError(data, 'Failed to save vote'));
+    mergeComment(reviewId, data.comment, 'update');
+  };
+
   const reviewSchema = yup.object({
     review: yup
       .string()
@@ -356,6 +367,7 @@ const CustomerReview = ({ reviews, averageRating, ratingDistribution, businessId
                     onReply={handleReply}
                     onUpdateComment={handleUpdateComment}
                     onDeleteComment={handleDeleteComment}
+                    onVoteComment={isAuthenticated ? handleVoteComment : undefined}
                   />
                 </div>
               </div>
