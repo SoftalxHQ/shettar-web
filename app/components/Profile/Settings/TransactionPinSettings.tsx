@@ -4,12 +4,14 @@ import { useEffect, useState } from 'react';
 import { Button, Card, CardBody, CardHeader } from 'react-bootstrap';
 import toast from 'react-hot-toast';
 import TransactionPinModal from '@/app/components/TransactionPinModal';
+import TransactionPinResetModal from '@/app/components/TransactionPinResetModal';
 import { changeTransactionPin, isTransactionPinSet } from '@/app/helpers/transaction-pin';
 
 const TransactionPinSettings = () => {
   const [pinSet, setPinSet] = useState<boolean | null>(null);
   const [showSetupModal, setShowSetupModal] = useState(false);
   const [showChangeModal, setShowChangeModal] = useState(false);
+  const [showResetModal, setShowResetModal] = useState(false);
   const [changeStep, setChangeStep] = useState<'current' | 'new' | 'confirm'>('current');
   const [currentPin, setCurrentPin] = useState('');
   const [newPin, setNewPin] = useState('');
@@ -94,9 +96,14 @@ const TransactionPinSettings = () => {
           {pinSet === null ? (
             <p className="text-muted small mb-0">Loading PIN status…</p>
           ) : pinSet ? (
-            <Button variant="outline-primary" size="sm" onClick={openChangeModal}>
-              Change transaction PIN
-            </Button>
+            <div className="d-flex flex-wrap align-items-center gap-3">
+              <Button variant="outline-primary" size="sm" onClick={openChangeModal}>
+                Change transaction PIN
+              </Button>
+              <Button variant="link" size="sm" className="p-0" onClick={() => setShowResetModal(true)}>
+                Forgot PIN?
+              </Button>
+            </div>
           ) : (
             <Button variant="primary" size="sm" onClick={() => setShowSetupModal(true)}>
               Set transaction PIN
@@ -121,6 +128,16 @@ const TransactionPinSettings = () => {
         onSubmit={handleChangeSubmit}
         onHide={() => setShowChangeModal(false)}
         allowSetup={false}
+        onForgotPin={() => {
+          setShowChangeModal(false);
+          setShowResetModal(true);
+        }}
+      />
+
+      <TransactionPinResetModal
+        show={showResetModal}
+        onHide={() => setShowResetModal(false)}
+        onSuccess={refreshPinStatus}
       />
     </>
   );

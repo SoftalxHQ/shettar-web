@@ -8,7 +8,11 @@ export type TransactionPinErrorCode =
   | 'pin_mismatch'
   | 'invalid_pin_format'
   | 'invalid_password'
-  | 'pin_already_set';
+  | 'pin_already_set'
+  | 'email_not_verified'
+  | 'invalid_code'
+  | 'code_expired'
+  | 'rate_limited';
 
 function authHeaders(token: string) {
   return {
@@ -73,4 +77,52 @@ export async function changeTransactionPin(payload: {
   }
 
   return { ok: true, message: data.message || 'Transaction PIN updated successfully' };
+}
+
+export async function requestTransactionPinReset(): Promise<{
+  ok: boolean;
+  message: string;
+  email?: string;
+  code?: TransactionPinErrorCode;
+}> {
+  const token = getStoredToken();
+  if (!token) return { ok: false, message: 'Not signed in' };
+
+  const response = await fetch(`${getApiBaseUrl()}/api/v1/accounts/transaction_pin/reset/request`, {
+    method: 'POST',
+    headers: authHeaders(token),
+  });
+
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    return { ok: false, message: data.error || 'Failed to send reset code', code: data.code };
+  }
+
+  return {
+    ok: true,
+    message: data.message || 'Verification code sent',
+    email: data.email,
+  };
+}
+
+export async function confirmTransactionPinReset(payload: {
+  code: string;
+  pin: string;
+  pin_confirmation: string;
+}): Promise<{ ok: boolean; message: string; code?: TransactionPinErrorCode }> {
+  const token = getStoredToken();
+  if (!token) return { ok: false, message: 'Not signed in' };
+
+  const response = await fetch(`${getApiBaseUrl()}/api/v1/accounts/transaction_pin/reset/confirm`, {
+    method: 'POST',
+    headers: authHeaders(token),
+    body: JSON.stringify(payload),
+  });
+
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    return { ok: false, message: data.error || 'Failed to reset transaction PIN', code: data.code };
+  }
+
+  return { ok: true, message: data.message || 'Transaction PIN reset successfully' };
 }

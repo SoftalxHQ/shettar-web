@@ -11,6 +11,7 @@ type Props = {
   onSubmit: (pin: string) => void;
   onHide: () => void;
   allowSetup?: boolean;
+  onForgotPin?: () => void;
 };
 
 type SetupStep = 'password' | 'new_pin' | 'confirm_pin';
@@ -22,6 +23,7 @@ export default function TransactionPinModal({
   onSubmit,
   onHide,
   allowSetup = true,
+  onForgotPin,
 }: Props) {
   const [digits, setDigits] = useState(['', '', '', '']);
   const [setupStep, setSetupStep] = useState<SetupStep>('password');
@@ -197,6 +199,13 @@ export default function TransactionPinModal({
               ))}
             </div>
             {error ? <p className="text-danger small text-center mb-0">{error}</p> : null}
+            {!needsSetup && onForgotPin ? (
+              <div className="text-center mt-3">
+                <Button variant="link" size="sm" className="p-0 text-decoration-underline" onClick={onForgotPin}>
+                  Forgot PIN?
+                </Button>
+              </div>
+            ) : null}
           </>
         )}
       </Modal.Body>
