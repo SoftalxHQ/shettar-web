@@ -30,23 +30,20 @@ import {
 import {
   BsBellFill,
   BsBookmarkCheck,
-  BsCalendarCheckFill,
   BsCircleHalf,
   BsGear,
   BsHeart,
   BsInfoCircle,
-  BsLightningChargeFill,
   BsMoonStars,
   BsPerson,
   BsPower,
   BsStar,
   BsSun,
-  BsTv,
-  BsWalletFill
 } from 'react-icons/bs';
 import Link from 'next/link';
 import { type IconType } from 'react-icons';
 import { useNotifications } from '@/app/context/NotificationContext';
+import { getNotificationVisual } from '@/app/helpers/notification-display';
 
 function timeAgo(dateString: string) {
   const date = new Date(dateString);
@@ -66,14 +63,8 @@ function timeAgo(dateString: string) {
   return "just now";
 }
 
-function getNotificationIcon(title: string, message: string) {
-  const content = (title + ' ' + message).toLowerCase();
-  if (content.includes('booking')) return { icon: BsCalendarCheckFill, color: 'text-success', bg: 'bg-success' };
-  if (content.includes('wallet') || content.includes('payment') || content.includes('funded')) return { icon: BsWalletFill, color: 'text-primary', bg: 'bg-primary' };
-  if (content.includes('electricity') || content.includes('token')) return { icon: BsLightningChargeFill, color: 'text-warning', bg: 'bg-warning' };
-  if (content.includes('tv') || content.includes('dstv') || content.includes('gotv')) return { icon: BsTv, color: 'text-info', bg: 'bg-info' };
-  if (content.includes('airtime') || content.includes('data')) return { icon: BsLightningChargeFill, color: 'text-warning', bg: 'bg-warning' };
-  return { icon: BsBellFill, color: 'text-info', bg: 'bg-info' };
+function getNotificationIcon(title: string, message: string, data?: Record<string, unknown> | null) {
+  return getNotificationVisual({ title, message, data });
 }
 
 type ThemeMode = {
@@ -253,7 +244,11 @@ export default function Header() {
                               >
                                 <div className="d-flex align-items-start">
                                   {(() => {
-                                    const { icon: Icon, color, bg } = getNotificationIcon(notification.title, notification.message);
+                                    const { icon: Icon, color, bg } = getNotificationIcon(
+                                      notification.title,
+                                      notification.message,
+                                      notification.data
+                                    );
                                     return (
                                       <div className={clsx('avatar avatar-xs me-3 flex-shrink-0')}>
                                         <div className={clsx('avatar-img rounded-circle d-flex align-items-center justify-content-center', bg, 'bg-opacity-15', color)}>

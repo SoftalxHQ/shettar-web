@@ -1,5 +1,5 @@
 import UserLayout from '@/app/components/layouts/UserLayout';
-import { NotificationSettings, SecuritySettings, PersonalInformation, UpdatePassword } from '@/app/components';
+import { NotificationSettings, SecuritySettings, PersonalInformation, UpdatePassword, TransactionPinSettings } from '@/app/components';
 
 const SettingsPage = () => {
   return (
@@ -8,7 +8,8 @@ const SettingsPage = () => {
         <PersonalInformation />
         <UpdatePassword />
         <SecuritySettings />
-        {/* <NotificationSettings /> */}
+        <TransactionPinSettings />
+        <NotificationSettings />
       </div>
     </UserLayout>
   );

@@ -1,11 +1,11 @@
 'use client';
 
 import { useCallback, useEffect, useRef } from 'react';
-import toast from 'react-hot-toast';
 import { useAppDispatch, useAppSelector } from '@/lib/store/hooks';
 import { addNotification, setNotifications } from '@/lib/store/slices/notificationsSlice';
 import { getOrCreateGuestId } from '@/app/helpers/guest-id';
 import { appendGuestNotification, loadGuestNotifications } from '@/app/helpers/guest-notifications';
+import { showNotificationToast } from '@/app/helpers/notification-display';
 import {
   isWebPushConfigured,
   listenForForegroundPush,
@@ -47,7 +47,12 @@ function handleForegroundNotification(
       const oldest = toastedKeys.values().next().value;
       if (oldest) toastedKeys.delete(oldest);
     }
-    toast.success(text, { icon: '🔔', duration: 5000, id: toastKey });
+    showNotificationToast({
+      title: payload.title,
+      message: payload.body,
+      data: payload.data,
+      id: toastKey,
+    });
   }
 }
 

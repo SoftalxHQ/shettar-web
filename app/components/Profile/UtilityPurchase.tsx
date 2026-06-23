@@ -14,6 +14,7 @@ import {
 import confetti from 'canvas-confetti';
 import { useLayoutContext, currency } from '@/app/states';
 import { toast } from 'react-hot-toast';
+import { useTransactionPin } from '@/app/hooks/useTransactionPin';
 import UtilityReceiptCard, { type UtilityReceipt } from '@/app/components/Profile/Utility/UtilityReceiptCard';
 import {
   buyAirtime,
@@ -56,6 +57,7 @@ function fireConfetti() {
 
 const UtilityPurchase = () => {
   const { account: profile, refreshAccount } = useLayoutContext();
+  const { requestTransactionPin, PinModal } = useTransactionPin();
   const [activeTab, setActiveTab] = useState<TabType>('airtime');
 
   const [networks, setNetworks] = useState<UtilityNetwork[]>([]);
@@ -265,6 +267,9 @@ const UtilityPurchase = () => {
       return;
     }
 
+    const transactionPin = await requestTransactionPin();
+    if (!transactionPin) return;
+
     setPurchaseError(null);
     setLoading(true);
     try {
@@ -280,7 +285,12 @@ const UtilityPurchase = () => {
           toast.error(message);
           return;
         }
-        const result = await buyAirtime({ network: selectedNetwork, phone_number: phoneNumber, amount: value });
+        const result = await buyAirtime({
+          network: selectedNetwork,
+          phone_number: phoneNumber,
+          amount: value,
+          transaction_pin: transactionPin,
+        });
         await refreshAccount?.();
         showReceipt({
           type: 'Airtime',
@@ -301,6 +311,7 @@ const UtilityPurchase = () => {
           phone_number: phoneNumber,
           variation_code: selectedPlan.variation_code,
           amount: selectedPlan.amount,
+          transaction_pin: transactionPin,
         });
         await refreshAccount?.();
         showReceipt({
@@ -325,6 +336,7 @@ const UtilityPurchase = () => {
           variation_code: tvMode === 'change' ? selectedTvPlan?.variation_code : undefined,
           amount: tvPurchaseAmount,
           customer_name: tvVerification.customer_name,
+          transaction_pin: transactionPin,
         });
         await refreshAccount?.();
         showReceipt({
@@ -354,6 +366,7 @@ const UtilityPurchase = () => {
           ...(phoneNumber.trim() ? { phone_number: phoneNumber.trim() } : {}),
           amount: payAmount,
           customer_name: electricityVerification.customer_name,
+          transaction_pin: transactionPin,
         });
         await refreshAccount?.();
         showReceipt({
@@ -397,6 +410,7 @@ const UtilityPurchase = () => {
     tvMode,
     tvPurchaseAmount,
     tvVerification,
+    requestTransactionPin,
   ]);
 
   const resetPurchase = () => {
@@ -828,6 +842,7 @@ const UtilityPurchase = () => {
           }
         }
       `}</style>
+      <PinModal />
     </div>
   );
 };

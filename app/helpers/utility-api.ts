@@ -161,6 +161,7 @@ export async function buyAirtime(payload: {
   network: string;
   phone_number: string;
   amount: number;
+  transaction_pin?: string;
 }): Promise<PurchaseResult> {
   const response = await fetch(`${API_URL}/api/v1/wallet/buy_airtime`, {
     method: 'POST',
@@ -179,6 +180,7 @@ export async function buyData(payload: {
   phone_number: string;
   variation_code: string;
   amount: number;
+  transaction_pin?: string;
 }): Promise<PurchaseResult> {
   const response = await fetch(`${API_URL}/api/v1/wallet/buy_data`, {
     method: 'POST',
@@ -200,6 +202,7 @@ export async function buyTv(payload: {
   amount: number;
   customer_name?: string;
   phone_number?: string;
+  transaction_pin?: string;
 }): Promise<PurchaseResult> {
   const response = await fetch(`${API_URL}/api/v1/wallet/buy_tv`, {
     method: 'POST',
@@ -220,6 +223,7 @@ export async function buyElectricity(payload: {
   phone_number?: string;
   amount: number;
   customer_name?: string;
+  transaction_pin?: string;
 }): Promise<PurchaseResult> {
   const response = await fetch(`${API_URL}/api/v1/wallet/buy_electricity`, {
     method: 'POST',

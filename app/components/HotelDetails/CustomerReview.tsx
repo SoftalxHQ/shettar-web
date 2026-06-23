@@ -2,10 +2,12 @@
 
 import TextAreaFormInput from '../form/TextAreaFormInput';
 import { yupResolver } from '@hookform/resolvers/yup';
-import { Fragment, useState, useRef } from 'react';
+import { Fragment, useState, useRef, useEffect } from 'react';
 import { Button, Card, Col, ProgressBar, Row, CardHeader, CardBody } from 'react-bootstrap';
 import { useForm } from 'react-hook-form';
-import { BsArrowRight, BsStar, BsStarFill, BsStarHalf, BsShieldCheck } from 'react-icons/bs';
+import { BsArrowRight, BsStar, BsStarFill, BsStarHalf } from 'react-icons/bs';
+import ReviewCommentThread from '@/app/components/ReviewCommentThread';
+import { type ReviewComment, parseApiError, commentsAfterRemoval } from '@/app/helpers/review-thread';
 import { FaStar } from 'react-icons/fa6';
 import { FaStarHalfAlt } from 'react-icons/fa';
 import * as yup from 'yup';
@@ -32,6 +34,7 @@ interface Review {
   admin_reply?: string | null;
   admin_reply_by?: string | null;
   admin_replied_at?: string | null;
+  comments?: ReviewComment[];
 }
 
 type FormValues = {
@@ -89,10 +92,78 @@ const StarPicker = ({
 // ── Main Component ─────────────────────────────────────────────────────────────
 
 const CustomerReview = ({ reviews, averageRating, ratingDistribution, businessId, onReviewPosted }: CustomerReviewProps) => {
-  const { isAuthenticated } = useLayoutContext();
+  const { isAuthenticated, account } = useLayoutContext();
   const [rating, setRating] = useState(5);
   const [ratingError, setRatingError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [localReviews, setLocalReviews] = useState<Review[]>(reviews || []);
+
+  useEffect(() => {
+    setLocalReviews(reviews || []);
+  }, [reviews]);
+
+  const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
+  const accountId = account?.id as number | undefined;
+
+  const businessCommentUrl = (reviewId: number, commentId?: number) => {
+    const base = `${API_URL}/api/v1/businesses/${businessId}/reviews/${reviewId}/comments`;
+    return commentId ? `${base}/${commentId}` : base;
+  };
+
+  const authHeaders = () => {
+    const token = getStoredToken();
+    return {
+      'Content-Type': 'application/json',
+      Authorization: token ? `Bearer ${token}` : '',
+    };
+  };
+
+  const mergeComment = (reviewId: number, comment: ReviewComment, mode: 'add' | 'update' | 'remove') => {
+    setLocalReviews((prev) =>
+      prev.map((r) => {
+        if (r.id !== reviewId) return r;
+        const existing = r.comments || [];
+        if (mode === 'add') return { ...r, comments: [...existing, comment] };
+        if (mode === 'update') return { ...r, comments: existing.map((c) => (c.id === comment.id ? comment : c)) };
+        return { ...r, comments: commentsAfterRemoval(existing, comment.id) };
+      })
+    );
+  };
+
+  const handleReply = async (reviewId: number, body: string, parentId?: number | null) => {
+    const res = await fetch(businessCommentUrl(reviewId), {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({ body, ...(parentId ? { parent_id: parentId } : {}) }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(parseApiError(data, 'Failed to post reply'));
+    mergeComment(reviewId, data.comment, 'add');
+    toast.success('Reply posted');
+  };
+
+  const handleUpdateComment = async (reviewId: number, commentId: number, body: string) => {
+    const res = await fetch(businessCommentUrl(reviewId, commentId), {
+      method: 'PATCH',
+      headers: authHeaders(),
+      body: JSON.stringify({ body }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(parseApiError(data, 'Failed to update reply'));
+    mergeComment(reviewId, data.comment, 'update');
+    toast.success('Reply updated');
+  };
+
+  const handleDeleteComment = async (reviewId: number, commentId: number) => {
+    const res = await fetch(businessCommentUrl(reviewId, commentId), {
+      method: 'DELETE',
+      headers: authHeaders(),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(parseApiError(data, 'Failed to delete reply'));
+    mergeComment(reviewId, { id: commentId } as ReviewComment, 'remove');
+    toast.success('Reply deleted');
+  };
 
   const reviewSchema = yup.object({
     review: yup
@@ -116,17 +187,11 @@ const CustomerReview = ({ reviews, averageRating, ratingDistribution, businessId
     setRatingError('');
     setIsSubmitting(true);
 
-    const token = getStoredToken();
-    const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
-
     const toastId = toast.loading('Posting your review…');
     try {
       const res = await fetch(`${API_URL}/api/v1/reviews`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
+        headers: authHeaders(),
         body: JSON.stringify({
           review: {
             rating,
@@ -172,7 +237,7 @@ const CustomerReview = ({ reviews, averageRating, ratingDistribution, businessId
   return (
     <Card className="bg-transparent border-0">
       <CardHeader className="border-bottom bg-transparent px-0 pt-0">
-        <h3 className="card-title mb-0 fw-bold" style={{ color: '#000' }}>Customer Review</h3>
+        <h3 className="card-title mb-0 fw-bold text-body">Customer Review</h3>
       </CardHeader>
       <CardBody className="pt-4 p-0">
         {/* Rating summary */}
@@ -180,7 +245,7 @@ const CustomerReview = ({ reviews, averageRating, ratingDistribution, businessId
           <Row className="g-4 align-items-center">
             <Col md={4} className="position-relative">
               <div className="text-center">
-                <h1 className="display-4 fw-bold mb-0" style={{ color: '#000', fontSize: '4.5rem' }}>{displayRating}</h1>
+                <h1 className="display-4 fw-bold mb-0 text-body" style={{ fontSize: '4.5rem' }}>{displayRating}</h1>
                 <p className="mb-2 text-secondary fw-medium fs-6">Based on {displayCount} review{displayCount !== 1 ? 's' : ''}</p>
                 <div className="d-flex justify-content-center gap-1 mb-0">
                   {Array.from({ length: 5 }).map((_, idx) => {
@@ -218,7 +283,7 @@ const CustomerReview = ({ reviews, averageRating, ratingDistribution, businessId
                         </div>
                       </Col>
                       <Col xs="auto" style={{ width: '50px' }} className="text-end">
-                        <span className="small fw-bold text-dark">{item.percentage}%</span>
+                        <span className="small fw-bold text-body">{item.percentage}%</span>
                       </Col>
                     </Row>
                   ))}
@@ -230,7 +295,7 @@ const CustomerReview = ({ reviews, averageRating, ratingDistribution, businessId
 
         {/* Reviews list */}
         <div className="vstack gap-5">
-          {reviews?.map((review, idx) => (
+          {localReviews?.map((review, idx) => (
             <div key={review.id || idx}>
               <div className="d-flex gap-4 mb-3">
                 {/* Avatar */}
@@ -257,7 +322,7 @@ const CustomerReview = ({ reviews, averageRating, ratingDistribution, businessId
                 <div className="flex-grow-1">
                   <div className="d-flex justify-content-between align-items-start">
                     <div>
-                      <h6 className="mb-0 fw-bold fs-5 text-dark">{getFormatName(review)}</h6>
+                      <h6 className="mb-0 fw-bold fs-5 text-body">{getFormatName(review)}</h6>
                       <div className="d-flex align-items-center gap-2 flex-wrap mt-1">
                         <span className="small text-secondary">
                           {review.stay_date ? `Stayed ${new Date(review.stay_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}` : new Date(review.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
@@ -273,49 +338,28 @@ const CustomerReview = ({ reviews, averageRating, ratingDistribution, businessId
                       </div>
                     </div>
 
-                    <div className="rounded-3 bg-warning px-3 py-2 fw-bold text-dark d-flex align-items-center justify-content-center shadow-sm" style={{ minWidth: '45px' }}>
+                    <div className="rounded-3 bg-warning bg-opacity-25 px-3 py-2 fw-bold text-body d-flex align-items-center justify-content-center shadow-sm" style={{ minWidth: '45px' }}>
                       {review.rating}
                     </div>
                   </div>
 
-                  <p className="mt-3 text-secondary lh-base fs-6 mb-0" style={{ maxWidth: '800px' }}>
+                  <p className="mt-3 text-body lh-base fs-6 mb-0" style={{ maxWidth: '800px' }}>
                     {review.content}
                   </p>
 
-                  {/* ── Admin reply ── */}
-                  {review.admin_reply && (
-                    <div
-                      className="mt-3 rounded-4 p-3"
-                      style={{
-                        background: 'rgba(99,102,241,0.06)',
-                        border: '1px solid rgba(99,102,241,0.18)',
-                      }}
-                    >
-                      <div className="d-flex align-items-center gap-2 mb-2">
-                        <BsShieldCheck className="text-primary" size={14} />
-                        <span className="fw-semibold small" style={{ color: '#4f46e5' }}>
-                          {review.admin_reply_by || 'Management'}
-                        </span>
-                        <span
-                          className="badge rounded-pill small"
-                          style={{ background: 'rgba(99,102,241,0.12)', color: '#4f46e5', fontSize: '10px', padding: '2px 8px' }}
-                        >
-                          Admin
-                        </span>
-                        {review.admin_replied_at && (
-                          <span className="ms-auto text-secondary" style={{ fontSize: '11px' }}>
-                            {new Date(review.admin_replied_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
-                          </span>
-                        )}
-                      </div>
-                      <p className="mb-0 text-secondary lh-base" style={{ fontSize: '13.5px' }}>
-                        {review.admin_reply}
-                      </p>
-                    </div>
-                  )}
+                  <ReviewCommentThread
+                    review={review}
+                    accountId={accountId}
+                    isAuthenticated={isAuthenticated}
+                    showThread
+                    reviewRoot={{ reviewId: review.id }}
+                    onReply={handleReply}
+                    onUpdateComment={handleUpdateComment}
+                    onDeleteComment={handleDeleteComment}
+                  />
                 </div>
               </div>
-              {idx < reviews.length - 1 && <hr className="my-4 opacity-50" />}
+              {idx < localReviews.length - 1 && <hr className="my-4 opacity-50" />}
             </div>
           ))}
 

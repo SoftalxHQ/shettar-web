@@ -1,12 +1,30 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { Card, CardBody, CardHeader, Row, Col, Image, Button, Form, Modal } from 'react-bootstrap';
 import { BsStarFill, BsStarHalf, BsStar, BsTrash, BsPencilSquare } from 'react-icons/bs';
 import { getStoredToken } from '@/app/helpers/auth';
+import { hotelPathFromBusiness } from '@/app/helpers/hotel-path';
+import {
+  reviewComments,
+  shouldTruncateReview,
+  truncateReview,
+  parseApiError,
+  commentsAfterRemoval,
+  type ReviewComment,
+} from '@/app/helpers/review-thread';
+import ReviewCommentThread from '@/app/components/ReviewCommentThread';
+import { useLayoutContext } from '@/app/states';
 import { useApi } from '@/app/hooks/useApi';
 import { toast } from 'react-hot-toast';
 import { Skeleton } from '../';
+
+type ReviewItem = { id: number; rating: number; content: string; date: string; created_at?: string; hotel_name: string; hotel_image?: string | null; business_id: number; business_slug?: string | null; business_unique_id?: string | null; admin_reply?: string | null; admin_reply_by?: string | null; deletable?: boolean; comments?: ReviewComment[] };
+function isReviewDeletable(r: ReviewItem): boolean { if (typeof r.deletable === 'boolean') return r.deletable; if (!r.created_at) return true; return Date.now() - new Date(r.created_at).getTime() < 86400000; }
+function hotelPathFromReview(review: ReviewItem): string | null {
+  return hotelPathFromBusiness(review);
+}
 
 const ReviewSkeleton = () => (
   <div className="border-bottom mb-4 pb-4">
@@ -31,7 +49,7 @@ const ReviewSkeleton = () => (
 );
 
 const Reviews = () => {
-  const [reviews, setReviews] = useState<any[]>([]);
+  const [reviews, setReviews] = useState<ReviewItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingReviewId, setEditingReviewId] = useState<number | null>(null);
   const [editForm, setEditForm] = useState({ rating: 0, content: '' });
@@ -39,12 +57,16 @@ const Reviews = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [reviewToDeleteId, setReviewToDeleteId] = useState<number | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [expandedReviewIds, setExpandedReviewIds] = useState<Set<number>>(new Set());
+  const [showAllReviews, setShowAllReviews] = useState(false);
   const { apiFetch } = useApi();
+  const { account } = useLayoutContext();
+  const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
+  const accountId = account?.id as number | undefined;
 
   const fetchReviews = async () => {
     try {
       const token = getStoredToken();
-      const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
       const response = await apiFetch(`${API_URL}/api/v1/reviews`, {
         headers: {
           'Authorization': token ? `Bearer ${token}` : '',
@@ -76,7 +98,6 @@ const Reviews = () => {
     setIsDeleting(true);
     try {
       const token = getStoredToken();
-      const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
       const response = await apiFetch(`${API_URL}/api/v1/reviews/${reviewToDeleteId}`, {
         method: 'DELETE',
         headers: {
@@ -90,7 +111,8 @@ const Reviews = () => {
         toast.success('Review deleted successfully');
         setShowDeleteModal(false);
       } else {
-        toast.error('Failed to delete review');
+        const delData = await response.json().catch(() => ({}));
+        toast.error(delData.error?.[0]?.message || 'Failed to delete review');
       }
     } catch (error) {
       console.error('Error deleting review:', error);
@@ -115,7 +137,6 @@ const Reviews = () => {
     setIsSubmitting(true);
     try {
       const token = getStoredToken();
-      const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
       const response = await apiFetch(`${API_URL}/api/v1/reviews/${id}`, {
         method: 'PUT',
         headers: {
@@ -144,6 +165,63 @@ const Reviews = () => {
       setIsSubmitting(false);
     }
   };
+
+
+  const handleReply = async (reviewId: number, body: string, parentId?: number | null) => {
+    const token = getStoredToken();
+    const response = await apiFetch(`${API_URL}/api/v1/reviews/${reviewId}/comments`, {
+      method: 'POST',
+      headers: { Authorization: token ? `Bearer ${token}` : '', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ body, ...(parentId ? { parent_id: parentId } : {}) }),
+    });
+    const data = await response.json();
+    if (!response.ok || !data.comment) throw new Error(parseApiError(data, 'Failed to post reply'));
+    setReviews((prev) => prev.map((r) => r.id === reviewId ? { ...r, comments: [...(r.comments || reviewComments(r)), data.comment] } : r));
+    toast.success('Reply posted');
+  };
+
+  const handleUpdateComment = async (reviewId: number, commentId: number, body: string) => {
+    const token = getStoredToken();
+    const response = await apiFetch(`${API_URL}/api/v1/reviews/${reviewId}/comments/${commentId}`, {
+      method: 'PATCH',
+      headers: { Authorization: token ? `Bearer ${token}` : '', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ body }),
+    });
+    const data = await response.json();
+    if (!response.ok || !data.comment) throw new Error(parseApiError(data, 'Failed to update reply'));
+    setReviews((prev) => prev.map((r) => r.id === reviewId
+      ? { ...r, comments: (r.comments || reviewComments(r)).map((c) => (c.id === commentId ? data.comment : c)) }
+      : r));
+    toast.success('Reply updated');
+  };
+
+  const handleDeleteComment = async (reviewId: number, commentId: number) => {
+    const token = getStoredToken();
+    const response = await apiFetch(`${API_URL}/api/v1/reviews/${reviewId}/comments/${commentId}`, {
+      method: 'DELETE',
+      headers: { Authorization: token ? `Bearer ${token}` : '', 'Content-Type': 'application/json' },
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(parseApiError(data, 'Failed to delete reply'));
+    setReviews((prev) => prev.map((r) => r.id === reviewId
+      ? { ...r, comments: commentsAfterRemoval(r.comments || reviewComments(r), commentId) }
+      : r));
+    toast.success('Reply deleted');
+  };
+
+  const toggleReviewExpanded = (reviewId: number) => {
+    setExpandedReviewIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(reviewId)) next.delete(reviewId);
+      else next.add(reviewId);
+      return next;
+    });
+  };
+
+  const visibleReviews = showAllReviews ? reviews : reviews.slice(0, 1);
+  const shouldShowViewAll = !showAllReviews && reviews.length > 0 && (
+    reviews.length > 1 || reviewComments(reviews[0]).length > 0
+  );
 
   const renderStars = (rating: number) => {
     const stars = [];
@@ -181,22 +259,41 @@ const Reviews = () => {
             <p className="text-secondary small">You haven't reviewed any hotels yet. Reviews help others make better choices!</p>
           </div>
         ) : (
-          reviews.map((review, idx) => (
-            <div key={review.id} className={idx !== reviews.length - 1 ? 'border-bottom mb-4 pb-4' : ''}>
+          <>
+          {visibleReviews.map((review, idx) => {
+            const hotelPath = hotelPathFromReview(review);
+            const isFirst = idx === 0;
+            return (
+            <div key={review.id} className={idx !== visibleReviews.length - 1 || shouldShowViewAll ? 'border-bottom mb-4 pb-4' : ''}>
               <Row className="g-3 g-lg-4">
                 <Col md={3}>
-                  <Image
-                    src={review.hotel_image || '/assets/images/category_luxury.jpg'}
-                    className="card-img rounded-2 shadow-sm"
-                    style={{ objectFit: 'cover' }}
-                    alt={review.hotel_name}
-                  />
+                  {hotelPath ? (
+                    <Link href={hotelPath}>
+                      <Image
+                        src={review.hotel_image || '/assets/images/category_luxury.jpg'}
+                        className="card-img rounded-2 shadow-sm"
+                        style={{ objectFit: 'cover' }}
+                        alt={review.hotel_name}
+                      />
+                    </Link>
+                  ) : (
+                    <Image
+                      src={review.hotel_image || '/assets/images/category_luxury.jpg'}
+                      className="card-img rounded-2 shadow-sm"
+                      style={{ objectFit: 'cover' }}
+                      alt={review.hotel_name}
+                    />
+                  )}
                 </Col>
 
                 <Col md={9}>
                   <div className="d-flex justify-content-between align-items-start">
                     <div>
-                      <h5 className="mb-1">{review.hotel_name}</h5>
+                      {hotelPath ? (
+                        <Link href={hotelPath} className="text-decoration-none"><h5 className="mb-1 text-body">{review.hotel_name}</h5></Link>
+                      ) : (
+                        <h5 className="mb-1 text-body">{review.hotel_name}</h5>
+                      )}
                       <div className="d-flex align-items-center mb-2">
                         <div className="me-2">{renderStars(review.rating)}</div>
                         <span className="small">({review.rating})</span>
@@ -212,14 +309,11 @@ const Reviews = () => {
                       >
                         <BsPencilSquare />
                       </Button>
-                      <Button
-                        variant="light"
-                        size="sm"
-                        className="btn-round mb-0 text-danger"
-                        onClick={() => handlePreDelete(review.id)}
-                      >
-                        <BsTrash />
-                      </Button>
+                      {isReviewDeletable(review) ? (
+                        <Button variant="light" size="sm" className="btn-round mb-0 text-danger" onClick={() => handlePreDelete(review.id)}>
+                          <BsTrash />
+                        </Button>
+                      ) : null}
                     </div>
                   </div>
 
@@ -269,16 +363,59 @@ const Reviews = () => {
                     </div>
                   ) : (
                     <>
-                      <p className="mb-2 text-dark">"{review.content}"</p>
-                      <div className="d-flex justify-content-between align-items-center">
+                      <p className="mb-1 text-body lh-base">
+                        &ldquo;{expandedReviewIds.has(review.id) || !shouldTruncateReview(review.content)
+                          ? review.content
+                          : truncateReview(review.content)}&rdquo;
+                      </p>
+                      <div className="d-flex flex-wrap align-items-center gap-2 mb-3">
                         <span className="small text-secondary">Posted on {review.date}</span>
+                        {shouldTruncateReview(review.content) && (
+                          <button
+                            type="button"
+                            className="btn btn-link btn-sm p-0 text-primary text-decoration-none"
+                            onClick={() => toggleReviewExpanded(review.id)}
+                          >
+                            {expandedReviewIds.has(review.id) ? 'View less' : 'View more'}
+                          </button>
+                        )}
                       </div>
+                      <ReviewCommentThread
+                        review={review}
+                        accountId={accountId}
+                        isAuthenticated
+                        showThread={showAllReviews}
+                        reviewRoot={{ reviewId: review.id }}
+                        onReply={handleReply}
+                        onUpdateComment={handleUpdateComment}
+                        onDeleteComment={handleDeleteComment}
+                      />
+                      {isFirst && shouldShowViewAll && (
+                        <button
+                          type="button"
+                          className="btn btn-link btn-sm p-0 text-primary text-decoration-none"
+                          onClick={() => setShowAllReviews(true)}
+                        >
+                          View all
+                        </button>
+                      )}
                     </>
                   )}
                 </Col>
               </Row>
             </div>
-          ))
+          );
+          })}
+          {showAllReviews && reviews.length > 1 && (
+            <button
+              type="button"
+              className="btn btn-link btn-sm p-0 text-primary text-decoration-none"
+              onClick={() => setShowAllReviews(false)}
+            >
+              Show less
+            </button>
+          )}
+          </>
         )}
       </CardBody>
 

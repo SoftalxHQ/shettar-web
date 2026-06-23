@@ -5,6 +5,26 @@
 
 /* User CSS */
 
+/* YouTube Comments Styling */
+:root {
+  --yt-thread-line: rgba(0, 0, 0, 0.08);
+  --yt-link-color: #065fd4;
+  --yt-owner-bg: #606060;
+  --yt-owner-text: #ffffff;
+}
+
+[data-bs-theme="dark"] {
+  --yt-thread-line: rgba(255, 255, 255, 0.15);
+  --yt-link-color: #3ea6ff;
+  --yt-owner-bg: #ffffff;
+  --yt-owner-text: #0f0f0f;
+}
+
+/* Dropdown custom styling to hide caret */
+.no-caret::after {
+  display: none !important;
+}
+
 .abri-toast {
   background: var(--bs-body-bg) !important;
   color: var(--bs-body-color) !important;

@@ -27,6 +27,7 @@ import { toast } from 'react-hot-toast';
 import { getStoredToken } from '@/app/helpers/auth';
 import { getAttributionToken } from '@/app/hooks/useSponsoredListingTracking';
 import { createConsumer } from '@rails/actioncable';
+import { useTransactionPin } from '@/app/hooks/useTransactionPin';
 
 const currency = '₦';
 
@@ -66,6 +67,7 @@ const PaymentOptions = ({
   const { isAuthenticated, account, refreshAccount } = useLayoutContext();
   const router = useRouter();
   const { apiFetch } = useApi();
+  const { requestTransactionPin, PinModal } = useTransactionPin();
 
   const isEmergencyMissing = isAuthenticated && (!account?.emer_first_name || !account?.emer_phone_number);
   const isEmailUnverified = isAuthenticated && account && !account.email_verified;
@@ -132,7 +134,7 @@ const PaymentOptions = ({
   const discountAmount = appliedPromo?.discount_amount || 0;
   const customerPayTotal = subtotal - discountAmount;
 
-  const createReservation = async (data: any, paystackReference?: string) => {
+  const createReservation = async (data: any, paystackReference?: string, transactionPin?: string) => {
     const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
     const token = localStorage.getItem('token');
 
@@ -177,9 +179,10 @@ const PaymentOptions = ({
       reservationData.ad_attribution_token = adToken;
     }
 
-    const payload = {
-      reservation: reservationData
+    const payload: Record<string, unknown> = {
+      reservation: reservationData,
     };
+    if (transactionPin) payload.transaction_pin = transactionPin;
 
     const response = await apiFetch(`${API_URL}/api/v1/businesses/${hotel.id}/room_types/${room.id}/reservations`, {
       method: 'POST',
@@ -379,8 +382,12 @@ const PaymentOptions = ({
           }
         });
       } else {
-        // Wallet payment - direct backend call
-        const result = await createReservation(data);
+        const transactionPin = await requestTransactionPin();
+        if (!transactionPin) {
+          setIsSubmitting(false);
+          return;
+        }
+        const result = await createReservation(data, undefined, transactionPin);
         const confirmedBookingId = result.reservations[0].booking_id;
         showBookingSuccessToast(confirmedBookingId);
         router.push(`/hotel/${hotelSlug}/roomtype/${roomSlug}/booking-confirmed?booking_id=${confirmedBookingId}`);
@@ -562,6 +569,7 @@ const PaymentOptions = ({
           </Modal.Footer>
         </Form>
       </Modal>
+      <PinModal />
     </Card>
   );
 };

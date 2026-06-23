@@ -8,7 +8,12 @@ import {
   markPushNotificationPromptDismissed,
   shouldShowPushNotificationPrompt,
 } from '@/app/helpers/push-notification-prompt';
+import {
+  showPushNotConfiguredToast,
+  showPushPermissionDeniedToast,
+} from '@/app/helpers/notification-display';
 import { isWebPushConfigured, requestWebPushPermissionAndRegister } from '@/app/helpers/push-notifications';
+import toast from 'react-hot-toast';
 
 type Props = {
   triggerVisible: boolean;
@@ -33,10 +38,19 @@ export default function EnableNotificationsPrompt({ triggerVisible }: Props) {
     try {
       const guestId = getOrCreateGuestId();
       const authToken = isAuthenticated && token ? token : null;
-      const fcmToken = await requestWebPushPermissionAndRegister({ authToken, guestId });
+      const result = await requestWebPushPermissionAndRegister({ authToken, guestId });
       setVisible(false);
-      if (!fcmToken) {
+      if (result.ok) {
+        toast.success('Notifications enabled', { icon: '🔔' });
+      } else if (result.reason === 'denied') {
         markPushNotificationPromptDismissed();
+        showPushPermissionDeniedToast();
+      } else if (result.reason === 'not_configured') {
+        markPushNotificationPromptDismissed();
+        showPushNotConfiguredToast();
+      } else {
+        markPushNotificationPromptDismissed();
+        toast.error('Could not enable notifications. Please try again.');
       }
     } finally {
       setEnabling(false);

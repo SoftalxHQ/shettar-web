@@ -30,9 +30,17 @@ export default function HotelDetailPage() {
 
   const fetchHotelDetail = async () => {
     setIsLoading(true);
+    setError(null);
     try {
       const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
-      let url = `${API_URL}/api/v1/businesses/${hotelSlug}`;
+      const slug = Array.isArray(hotelSlug) ? hotelSlug[0] : hotelSlug;
+      const businessKey = decodeURIComponent(String(slug ?? '')).trim();
+      if (!businessKey) {
+        setError('Invalid hotel link.');
+        return;
+      }
+
+      let url = `${API_URL}/api/v1/businesses/${encodeURIComponent(businessKey)}`;
 
       const query = new URLSearchParams();
       const start_date = searchParams.get('start_date');
@@ -53,7 +61,25 @@ export default function HotelDetailPage() {
       });
 
       if (!response.ok) {
-        throw new Error('Hotel not found');
+        let message = 'Unable to load hotel details.';
+        try {
+          const body = await response.json();
+          const apiMessage = body?.errors ?? body?.error;
+          if (typeof apiMessage === 'string') {
+            message = apiMessage;
+          } else if (Array.isArray(apiMessage)) {
+            message = apiMessage.map((item) => item?.message ?? item).filter(Boolean).join(', ') || message;
+          }
+        } catch {
+          // ignore JSON parse errors
+        }
+
+        if (response.status === 404) {
+          message = 'Hotel not found.';
+        }
+
+        setError(message);
+        return;
       }
 
       const data = await response.json();

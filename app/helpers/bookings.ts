@@ -57,8 +57,9 @@ export function reservationRoomNumber(r: GuestReservation) {
 }
 
 export function hotelDetailPath(business?: GuestReservation['business']) {
-  if (!business?.id && !business?.slug) return null;
-  return `/hotel/${business.slug || business.id}`;
+  const key = business?.slug || business?.business_unique_id || business?.id;
+  if (key == null || String(key).trim() === '') return null;
+  return `/hotel/${encodeURIComponent(String(key).trim())}`;
 }
 
 export function reservationBookedAt(r: GuestReservation) {

@@ -1,12 +1,12 @@
 'use client';
 
 import { useEffect } from 'react';
-import toast from 'react-hot-toast';
 import { useAppDispatch, useAppSelector } from '@/lib/store/hooks';
 import { addNotification } from '@/lib/store/slices/notificationsSlice';
 import { saveAuthSession, getStoredUser } from '@/app/helpers/auth';
 import { isCableJwtUsable } from '@/app/helpers/jwt-cable';
 import { subscribeAccountNotifications } from '@/app/helpers/account-notifications-cable';
+import { showNotificationToast } from '@/app/helpers/notification-display';
 
 const toastedKeys = new Set<string>();
 
@@ -41,10 +41,11 @@ export default function AccountNotificationsSync() {
           const oldest = toastedKeys.values().next().value;
           if (oldest) toastedKeys.delete(oldest);
         }
-        toast.success(data.message || data.title || 'New notification', {
+        showNotificationToast({
+          title: data.title,
+          message: data.message,
+          data: data.data,
           id: toastKey,
-          icon: '🔔',
-          duration: 5000,
         });
       }
     }, token);

@@ -12,8 +12,11 @@ self.addEventListener('message', (event) => {
 
   messaging.onBackgroundMessage((payload) => {
     const title = payload.notification?.title || 'Shettar';
+    const iconUrl = new URL('/images/logo/logo.svg', self.location.origin).href;
     self.registration.showNotification(title, {
       body: payload.notification?.body || '',
+      icon: iconUrl,
+      badge: iconUrl,
       data: payload.data || {},
     });
   });

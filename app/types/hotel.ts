@@ -30,6 +30,14 @@ export type NotificationType = {
 /** Business/hotel payload from GET /api/v1/businesses/:slug */
 export type HotelAmenities = Record<string, boolean | undefined>;
 
+export interface HotelReviewComment {
+  id: number;
+  body: string;
+  author_name: string;
+  author_role: 'guest' | 'business';
+  created_at?: string;
+}
+
 export interface HotelReview {
   id: number;
   reviewer: string;
@@ -46,6 +54,7 @@ export interface HotelReview {
   admin_reply?: string | null;
   admin_reply_by?: string | null;
   admin_replied_at?: string | null;
+  comments?: HotelReviewComment[];
 }
 
 export interface HotelRatingBucket {

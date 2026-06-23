@@ -80,22 +80,37 @@ export async function registerWebPushDevice(options: RegisterWebPushOptions = {}
 }
 
 /** Request permission, then register guest or account device. */
-export async function requestWebPushPermissionAndRegister(options: RegisterWebPushOptions = {}): Promise<string | null> {
-  const messaging = await getMessagingInstance();
-  if (!messaging) return null;
+export type WebPushRegisterResult =
+  | { ok: true; token: string }
+  | { ok: false; reason: 'denied' | 'unsupported' | 'not_configured' | 'token_failed' | 'register_failed' };
 
-  if (Notification.permission === 'default') {
-    const result = await Notification.requestPermission();
-    if (result !== 'granted') return null;
-  } else if (Notification.permission !== 'granted') {
-    return null;
+export async function requestWebPushPermissionAndRegister(
+  options: RegisterWebPushOptions = {}
+): Promise<WebPushRegisterResult> {
+  if (typeof window === 'undefined' || !('Notification' in window)) {
+    return { ok: false, reason: 'unsupported' };
   }
 
+  // Always prompt in the user-gesture handler before Firebase / service worker work.
+  if (Notification.permission === 'default') {
+    const result = await Notification.requestPermission();
+    if (result !== 'granted') return { ok: false, reason: 'denied' };
+  } else if (Notification.permission !== 'granted') {
+    return { ok: false, reason: 'denied' };
+  }
+
+  if (!isConfigured()) {
+    return { ok: false, reason: 'not_configured' };
+  }
+
+  const messaging = await getMessagingInstance();
+  if (!messaging) return { ok: false, reason: 'unsupported' };
+
   const fcmToken = await fetchFcmToken();
-  if (!fcmToken) return null;
+  if (!fcmToken) return { ok: false, reason: 'token_failed' };
 
   const ok = await submitWebPushRegistration(fcmToken, options);
-  return ok ? fcmToken : null;
+  return ok ? { ok: true, token: fcmToken } : { ok: false, reason: 'register_failed' };
 }
 
 async function fetchFcmToken(): Promise<string | null> {
@@ -165,10 +180,10 @@ export async function syncPushRegistrationAfterAuth(authToken: string): Promise<
 export async function unregisterWebPushDevice(options: {
   authToken?: string | null;
   guestId?: string | null;
-  fcmToken: string;
+  fcmToken?: string | null;
 }): Promise<void> {
-  const { fcmToken } = options;
-  if (!fcmToken) return;
+  const token = options.fcmToken ?? (getWebPushPermissionStatus() === 'granted' ? await fetchFcmToken().catch(() => null) : null);
+  if (!token) return;
 
   const guestId = options.guestId ?? getOrCreateGuestId();
   const headers: Record<string, string> = {};
@@ -176,7 +191,7 @@ export async function unregisterWebPushDevice(options: {
     headers.Authorization = `Bearer ${options.authToken}`;
   }
 
-  const url = new URL(`${getApiBaseUrl()}/api/v1/push_devices/${encodeURIComponent(fcmToken)}`);
+  const url = new URL(`${getApiBaseUrl()}/api/v1/push_devices/${encodeURIComponent(token)}`);
   if (!options.authToken && guestId) {
     url.searchParams.set('guest_id', guestId);
   }
