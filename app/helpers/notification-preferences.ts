@@ -4,12 +4,14 @@ export type NotificationPreferences = {
   in_app_enabled: boolean;
   email_enabled: boolean;
   push_enabled: boolean;
+  login_alerts_enabled: boolean;
 };
 
 const DEFAULT_PREFERENCES: NotificationPreferences = {
   in_app_enabled: true,
   email_enabled: true,
   push_enabled: false,
+  login_alerts_enabled: false,
 };
 
 function authHeaders(token: string) {

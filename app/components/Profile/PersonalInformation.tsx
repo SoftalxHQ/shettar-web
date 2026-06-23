@@ -219,6 +219,12 @@ const PersonalInformation = () => {
             placeholder="e.g. +234 800 000 0000"
             containerClass="col-md-6"
             control={control}
+            disabled={!!profile?.phone_verified}
+            helpText={
+              profile?.phone_verified
+                ? 'Your mobile number is verified and cannot be changed.'
+                : undefined
+            }
           />
 
           <Col md={6}>

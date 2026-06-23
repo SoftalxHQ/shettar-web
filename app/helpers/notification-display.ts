@@ -6,6 +6,7 @@ import {
   BsChatDotsFill,
   BsEggFried,
   BsLightningChargeFill,
+  BsShieldLockFill,
   BsTelephoneFill,
   BsTv,
   BsWalletFill,
@@ -61,6 +62,9 @@ export function getNotificationVisual(input: {
   if (source === 'review_comment_reply' || source === 'review_reply' || content.includes('replied to your review')) {
     return { icon: BsChatDotsFill, color: 'text-primary', bg: 'bg-primary' };
   }
+  if (source === 'login_alert' || source === 'security' || content.includes('new login') || content.includes('password was successfully changed')) {
+    return { icon: BsShieldLockFill, color: 'text-warning', bg: 'bg-warning' };
+  }
   if (content.includes('wallet') || content.includes('payment') || content.includes('debited')) {
     return { icon: BsWalletFill, color: 'text-primary', bg: 'bg-primary' };
   }
@@ -84,6 +88,7 @@ export function notificationToastEmoji(input: {
   if (content.includes('booking') || content.includes('checked in') || content.includes('checked out') || content.includes('stay at')) return '📅';
   if (source === 'restaurant_order' || content.includes('room service') || content.includes('kitchen')) return '🍽️';
   if (source === 'review_comment_reply' || source === 'review_reply') return '💬';
+  if (source === 'login_alert' || source === 'security') return '🛡️';
   return '🔔';
 }
 
