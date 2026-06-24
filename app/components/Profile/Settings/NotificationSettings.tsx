@@ -5,6 +5,7 @@ import { Card, CardBody, CardHeader, Spinner } from 'react-bootstrap';
 import toast from 'react-hot-toast';
 import { useAppSelector } from '@/lib/store/hooks';
 import { getOrCreateGuestId } from '@/app/helpers/guest-id';
+import { getStoredToken } from '@/app/helpers/auth';
 import {
   showPushNotConfiguredToast,
   showPushPermissionDeniedToast,
@@ -22,7 +23,8 @@ import {
 } from '@/app/helpers/push-notifications';
 
 const NotificationSettings = () => {
-  const token = useAppSelector((s) => s.auth.token);
+  const reduxToken = useAppSelector((s) => s.auth.token);
+  const token = reduxToken ?? (typeof window !== 'undefined' ? getStoredToken() : null);
   const [prefs, setPrefs] = useState<NotificationPreferences | null>(null);
   const [loading, setLoading] = useState(true);
   const [savingKey, setSavingKey] = useState<keyof NotificationPreferences | null>(null);
@@ -65,7 +67,7 @@ const NotificationSettings = () => {
             } else if (result.reason === 'not_configured') {
               showPushNotConfiguredToast(getWebPushConfigIssues());
             } else {
-              toast.error('Could not enable web push. Please try again.');
+              toast.error(result.message || 'Could not enable web push. Please try again.');
             }
             return;
           }
@@ -86,10 +88,13 @@ const NotificationSettings = () => {
 
         if (key === 'push_enabled' && nextValue) {
           toast.success('Web push notifications enabled', { icon: '🔔' });
+        } else if (key !== 'push_enabled' || !nextValue) {
+          toast.success('Notification settings saved');
         }
-      } catch {
+      } catch (error) {
         setPrefs(previous);
-        toast.error('Failed to update settings');
+        const detail = error instanceof Error ? error.message : undefined;
+        toast.error(detail || 'Failed to update settings');
       } finally {
         setSavingKey(null);
       }

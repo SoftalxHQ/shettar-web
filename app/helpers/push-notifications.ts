@@ -83,42 +83,55 @@ export async function registerWebPushDevice(options: RegisterWebPushOptions = {}
   if (getWebPushPermissionStatus() !== 'granted') return null;
   const fcmToken = await fetchFcmToken();
   if (!fcmToken) return null;
-  const ok = await submitWebPushRegistration(fcmToken, options);
-  return ok ? fcmToken : null;
+  const registration = await submitWebPushRegistration(fcmToken, options);
+  return registration.ok ? fcmToken : null;
 }
 
 /** Request permission, then register guest or account device. */
 export type WebPushRegisterResult =
   | { ok: true; token: string }
-  | { ok: false; reason: 'denied' | 'unsupported' | 'not_configured' | 'token_failed' | 'register_failed' };
+  | { ok: false; reason: 'denied' | 'unsupported' | 'not_configured' | 'token_failed' | 'register_failed'; message?: string };
 
 export async function requestWebPushPermissionAndRegister(
   options: RegisterWebPushOptions = {}
 ): Promise<WebPushRegisterResult> {
-  if (typeof window === 'undefined' || !('Notification' in window)) {
-    return { ok: false, reason: 'unsupported' };
+  try {
+    if (typeof window === 'undefined' || !('Notification' in window)) {
+      return { ok: false, reason: 'unsupported' };
+    }
+
+    // Always prompt in the user-gesture handler before Firebase / service worker work.
+    if (Notification.permission === 'default') {
+      const result = await Notification.requestPermission();
+      if (result !== 'granted') return { ok: false, reason: 'denied' };
+    } else if (Notification.permission !== 'granted') {
+      return { ok: false, reason: 'denied' };
+    }
+
+    if (!isConfigured()) {
+      return { ok: false, reason: 'not_configured' };
+    }
+
+    const messaging = await getMessagingInstance();
+    if (!messaging) return { ok: false, reason: 'unsupported' };
+
+    const fcmToken = await fetchFcmToken();
+    if (!fcmToken) {
+      return {
+        ok: false,
+        reason: 'token_failed',
+        message: 'Could not get a browser push token. Check Firebase/VAPID config and try again.',
+      };
+    }
+
+    const registration = await submitWebPushRegistration(fcmToken, options);
+    return registration.ok
+      ? { ok: true, token: fcmToken }
+      : { ok: false, reason: 'register_failed', message: registration.message };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unexpected error enabling web push.';
+    return { ok: false, reason: 'token_failed', message };
   }
-
-  // Always prompt in the user-gesture handler before Firebase / service worker work.
-  if (Notification.permission === 'default') {
-    const result = await Notification.requestPermission();
-    if (result !== 'granted') return { ok: false, reason: 'denied' };
-  } else if (Notification.permission !== 'granted') {
-    return { ok: false, reason: 'denied' };
-  }
-
-  if (!isConfigured()) {
-    return { ok: false, reason: 'not_configured' };
-  }
-
-  const messaging = await getMessagingInstance();
-  if (!messaging) return { ok: false, reason: 'unsupported' };
-
-  const fcmToken = await fetchFcmToken();
-  if (!fcmToken) return { ok: false, reason: 'token_failed' };
-
-  const ok = await submitWebPushRegistration(fcmToken, options);
-  return ok ? { ok: true, token: fcmToken } : { ok: false, reason: 'register_failed' };
 }
 
 async function fetchFcmToken(): Promise<string | null> {
@@ -143,7 +156,7 @@ async function submitWebPushRegistration(
   fcmToken: string,
   options: RegisterWebPushOptions,
   attempt = 1
-): Promise<boolean> {
+): Promise<{ ok: boolean; message?: string }> {
   const guestId = options.guestId ?? getOrCreateGuestId();
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   if (options.authToken) {
@@ -157,24 +170,32 @@ async function submitWebPushRegistration(
       body: JSON.stringify({ token: fcmToken, platform: 'web', guest_id: guestId }),
     });
 
-    if (response.ok) return true;
+    if (response.ok) return { ok: true };
 
-    const body = await response.text().catch(() => '');
-    console.warn(`[web-push] Registration failed (${response.status}): ${body}`);
+    let message = `Push registration failed (HTTP ${response.status}).`;
+    try {
+      const body = await response.json();
+      if (typeof body?.error === 'string') message = body.error;
+    } catch {
+      const body = await response.text().catch(() => '');
+      if (body) message = body.slice(0, 200);
+    }
+    console.warn(`[web-push] Registration failed (${response.status}): ${message}`);
 
     if (attempt < MAX_REGISTRATION_ATTEMPTS) {
       await new Promise((resolve) => setTimeout(resolve, registrationRetryDelayMs(attempt)));
       return submitWebPushRegistration(fcmToken, options, attempt + 1);
     }
+
+    return { ok: false, message };
   } catch (error) {
     console.warn('[web-push] Registration error:', error);
     if (attempt < MAX_REGISTRATION_ATTEMPTS) {
       await new Promise((resolve) => setTimeout(resolve, registrationRetryDelayMs(attempt)));
       return submitWebPushRegistration(fcmToken, options, attempt + 1);
     }
+    return { ok: false, message: 'Network error registering push device with the server.' };
   }
-
-  return false;
 }
 
 /** Re-register push device with account auth immediately after login/sign-up. */
