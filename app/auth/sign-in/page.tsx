@@ -44,9 +44,6 @@ const SignIn = () => {
         await refreshAuth();
         await refreshAccount();
         router.push('/');
-      } else if (result.errorCode === 'email_not_verified') {
-        toast.error('Please verify your email first.', { id: toastId });
-        router.push(`/auth/verify-email?email=${encodeURIComponent(values.email)}`);
       } else {
         toast.error(result.message, { id: toastId });
       }

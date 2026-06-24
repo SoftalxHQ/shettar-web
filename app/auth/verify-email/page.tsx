@@ -149,13 +149,13 @@ function VerifyEmailContent() {
                   </div>
                   <h1 className="h4 mb-1">Verify Your Email</h1>
                   <p className="mb-0 text-secondary small">
-                    We sent a 6-digit code to
+                    Enter the 6-digit code sent to
                     {email ? (
                       <> <strong className="text-body">{email}</strong></>
                     ) : (
                       ' your email address'
                     )}
-                    . Enter it below to activate your account.
+                    . Tap resend if you need a new code.
                   </p>
                 </div>
 

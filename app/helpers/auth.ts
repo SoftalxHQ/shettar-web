@@ -7,7 +7,7 @@
  *
  * API endpoints:
  *   POST   /accounts/sign_in          → dispatch JWT
- *   POST   /accounts/sign_up          → create account (sends verification code)
+ *   POST   /accounts/sign_up          → create account (JWT issued; verification on demand)
  *   DELETE /accounts/sign_out         → revoke JWT
  *   POST   /accounts/verify_email     → verify 6-digit code after sign-up
  *   POST   /accounts/resend_verification → resend verification code
@@ -26,6 +26,7 @@ export interface StoredUser {
   last_name: string;
   phone_number?: string | null;
   phone_verified?: boolean;
+  email_verified?: boolean;
   address?: string | null;
   zip_code?: string | null;
   avatar_url?: string | null;
@@ -162,6 +163,7 @@ export async function signIn(payload: SignInPayload): Promise<AuthResult> {
         last_name: raw.last_name,
         phone_number: raw.phone_number ?? null,
         phone_verified: raw.phone_verified ?? false,
+        email_verified: raw.email_verified ?? false,
         address: raw.address ?? null,
         zip_code: raw.zip_code ?? null,
         avatar_url: raw.avatar_url ?? null,
@@ -218,6 +220,7 @@ export async function signUp(payload: SignUpPayload): Promise<AuthResult> {
         last_name: raw.last_name,
         phone_number: raw.phone_number ?? null,
         phone_verified: raw.phone_verified ?? false,
+        email_verified: raw.email_verified ?? false,
         address: raw.address ?? null,
         zip_code: raw.zip_code ?? null,
         avatar_url: raw.avatar_url ?? null,
