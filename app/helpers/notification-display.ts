@@ -112,8 +112,13 @@ export function showPushPermissionDeniedToast() {
   });
 }
 
-export function showPushNotConfiguredToast() {
-  toast.error('Web push is not available on this site yet. Please try again later.', {
-    duration: 5000,
-  });
+export function showPushNotConfiguredToast(missingEnvKeys?: string[]) {
+  const missingVapid = missingEnvKeys?.includes('NEXT_PUBLIC_FCM_VAPID_KEY');
+  const message = missingVapid
+    ? 'Web push needs a VAPID key. In Firebase Console → Project settings → Cloud Messaging → Web Push certificates, generate or copy the key pair into NEXT_PUBLIC_FCM_VAPID_KEY, then restart the site.'
+    : missingEnvKeys?.length
+      ? `Web push is not configured on this site (missing: ${missingEnvKeys.join(', ')}).`
+      : 'Web push is not configured on this site yet.';
+
+  toast.error(message, { duration: 8000 });
 }

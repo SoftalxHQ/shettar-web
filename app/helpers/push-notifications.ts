@@ -16,13 +16,20 @@ const firebaseConfig = {
 
 export type WebPushPermissionStatus = 'granted' | 'denied' | 'default';
 
+export function getWebPushConfigIssues(): string[] {
+  const issues: string[] = [];
+  if (!firebaseConfig.apiKey) issues.push('NEXT_PUBLIC_FIREBASE_API_KEY');
+  if (!firebaseConfig.authDomain) issues.push('NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN');
+  if (!firebaseConfig.projectId) issues.push('NEXT_PUBLIC_FIREBASE_PROJECT_ID');
+  if (!firebaseConfig.storageBucket) issues.push('NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET');
+  if (!firebaseConfig.messagingSenderId) issues.push('NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID');
+  if (!firebaseConfig.appId) issues.push('NEXT_PUBLIC_FIREBASE_APP_ID');
+  if (!process.env.NEXT_PUBLIC_FCM_VAPID_KEY) issues.push('NEXT_PUBLIC_FCM_VAPID_KEY');
+  return issues;
+}
+
 function isConfigured() {
-  return Boolean(
-    firebaseConfig.apiKey &&
-      firebaseConfig.projectId &&
-      firebaseConfig.messagingSenderId &&
-      process.env.NEXT_PUBLIC_FCM_VAPID_KEY
-  );
+  return getWebPushConfigIssues().length === 0;
 }
 
 async function registerMessagingServiceWorker() {

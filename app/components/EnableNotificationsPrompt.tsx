@@ -12,7 +12,11 @@ import {
   showPushNotConfiguredToast,
   showPushPermissionDeniedToast,
 } from '@/app/helpers/notification-display';
-import { isWebPushConfigured, requestWebPushPermissionAndRegister } from '@/app/helpers/push-notifications';
+import {
+  getWebPushConfigIssues,
+  isWebPushConfigured,
+  requestWebPushPermissionAndRegister,
+} from '@/app/helpers/push-notifications';
 import toast from 'react-hot-toast';
 
 type Props = {
@@ -47,7 +51,7 @@ export default function EnableNotificationsPrompt({ triggerVisible }: Props) {
         showPushPermissionDeniedToast();
       } else if (result.reason === 'not_configured') {
         markPushNotificationPromptDismissed();
-        showPushNotConfiguredToast();
+        showPushNotConfiguredToast(getWebPushConfigIssues());
       } else {
         markPushNotificationPromptDismissed();
         toast.error('Could not enable notifications. Please try again.');

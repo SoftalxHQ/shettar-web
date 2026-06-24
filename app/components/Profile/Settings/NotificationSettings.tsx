@@ -15,6 +15,8 @@ import {
   type NotificationPreferences,
 } from '@/app/helpers/notification-preferences';
 import {
+  getWebPushConfigIssues,
+  isWebPushConfigured,
   requestWebPushPermissionAndRegister,
   unregisterWebPushDevice,
 } from '@/app/helpers/push-notifications';
@@ -61,7 +63,7 @@ const NotificationSettings = () => {
             if (result.reason === 'denied') {
               showPushPermissionDeniedToast();
             } else if (result.reason === 'not_configured') {
-              showPushNotConfiguredToast();
+              showPushNotConfiguredToast(getWebPushConfigIssues());
             } else {
               toast.error('Could not enable web push. Please try again.');
             }
@@ -102,7 +104,8 @@ const NotificationSettings = () => {
     key: keyof NotificationPreferences
   ) => {
     const checked = prefs?.[key] ?? false;
-    const disabled = !token || loading || savingKey === key;
+    const pushUnavailable = key === 'push_enabled' && !isWebPushConfigured();
+    const disabled = !token || loading || savingKey === key || pushUnavailable;
 
     return (
       <div className="form-check form-switch form-check-md d-flex justify-content-between mb-4">
@@ -156,8 +159,17 @@ const NotificationSettings = () => {
             {renderSwitch(
               'webPushNotifications',
               'Web push notifications',
-              'Your browser will ask to allow notifications on this device',
+              isWebPushConfigured()
+                ? 'Your browser will ask to allow notifications on this device'
+                : 'Not available — Firebase web push is not configured for this environment',
               'push_enabled'
+            )}
+            {!isWebPushConfigured() && (
+              <p className="small text-warning mb-0">
+                Add your Firebase web config and{' '}
+                <code className="text-warning">NEXT_PUBLIC_FCM_VAPID_KEY</code> to enable push on this
+                site, then rebuild or restart the dev server.
+              </p>
             )}
           </>
         )}
