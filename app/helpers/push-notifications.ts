@@ -3,6 +3,7 @@
 import { initializeApp, getApps } from 'firebase/app';
 import { getMessaging, getToken, isSupported, onMessage, type Messaging } from 'firebase/messaging';
 import { getApiBaseUrl } from '@/app/helpers/businesses';
+import { getStoredToken } from '@/app/helpers/auth';
 import { getOrCreateGuestId } from '@/app/helpers/guest-id';
 
 const firebaseConfig = {
@@ -34,21 +35,11 @@ function isConfigured() {
 }
 
 async function registerMessagingServiceWorker() {
+  const existing = await navigator.serviceWorker.getRegistration('/firebase-messaging-sw.js');
+  if (existing?.active) return existing;
+
   const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
-
-  const sendConfig = (worker: ServiceWorker | null | undefined) => {
-    worker?.postMessage({ type: 'FIREBASE_CONFIG', config: firebaseConfig });
-  };
-
-  if (registration.installing) {
-    registration.installing.addEventListener('statechange', () => {
-      if (registration.active) sendConfig(registration.active);
-    });
-  }
-
   await navigator.serviceWorker.ready;
-  sendConfig(registration.active ?? navigator.serviceWorker.controller);
-
   return registration;
 }
 
@@ -81,7 +72,7 @@ export type RegisterWebPushOptions = {
 /** Register only when permission is already granted (no browser prompt). */
 export async function registerWebPushDevice(options: RegisterWebPushOptions = {}): Promise<string | null> {
   if (getWebPushPermissionStatus() !== 'granted') return null;
-  const fcmToken = await fetchFcmToken();
+  const { token: fcmToken } = await fetchFcmToken();
   if (!fcmToken) return null;
   const registration = await submitWebPushRegistration(fcmToken, options);
   return registration.ok ? fcmToken : null;
@@ -115,12 +106,14 @@ export async function requestWebPushPermissionAndRegister(
     const messaging = await getMessagingInstance();
     if (!messaging) return { ok: false, reason: 'unsupported' };
 
-    const fcmToken = await fetchFcmToken();
+    const { token: fcmToken, error: tokenError } = await fetchFcmToken();
     if (!fcmToken) {
       return {
         ok: false,
         reason: 'token_failed',
-        message: 'Could not get a browser push token. Check Firebase/VAPID config and try again.',
+        message:
+          tokenError ||
+          'Could not get a browser push token. Check Firebase/VAPID config and try again.',
       };
     }
 
@@ -134,15 +127,45 @@ export async function requestWebPushPermissionAndRegister(
   }
 }
 
-async function fetchFcmToken(): Promise<string | null> {
+type FcmTokenResult = { token: string | null; error?: string };
+
+function formatFcmTokenError(error: unknown): string {
+  const code = typeof error === 'object' && error && 'code' in error ? String(error.code) : undefined;
+  const message = error instanceof Error ? error.message : 'Could not get a browser push token.';
+
+  if (
+    code === 'messaging/token-subscription-failed' ||
+    message.toLowerCase().includes('push service error')
+  ) {
+    return (
+      'Browser push registration failed. Add this site to Firebase Console → Project settings → ' +
+      'Authorized domains, confirm NEXT_PUBLIC_FCM_VAPID_KEY matches your Web Push key pair, ' +
+      'and try again in a normal browser window (not private/incognito).'
+    );
+  }
+
+  if (code === 'messaging/permission-blocked') {
+    return 'Notifications are blocked for this site. Allow them in your browser settings and try again.';
+  }
+
+  return message;
+}
+
+async function fetchFcmToken(): Promise<FcmTokenResult> {
   const messaging = await getMessagingInstance();
-  if (!messaging) return null;
+  if (!messaging) return { token: null };
 
   const vapidKey = process.env.NEXT_PUBLIC_FCM_VAPID_KEY;
-  if (!vapidKey) return null;
+  if (!vapidKey) return { token: null };
 
-  const registration = await registerMessagingServiceWorker();
-  return getToken(messaging, { vapidKey, serviceWorkerRegistration: registration });
+  try {
+    const registration = await registerMessagingServiceWorker();
+    const token = await getToken(messaging, { vapidKey, serviceWorkerRegistration: registration });
+    return { token };
+  } catch (error) {
+    console.warn('[web-push] getToken failed:', error);
+    return { token: null, error: formatFcmTokenError(error) };
+  }
 }
 
 const MAX_REGISTRATION_ATTEMPTS = 4;
@@ -152,15 +175,20 @@ function registrationRetryDelayMs(attempt: number): number {
   return RETRY_DELAYS_MS[Math.min(attempt - 1, RETRY_DELAYS_MS.length - 1)] ?? 6000;
 }
 
+function resolveAuthToken(explicit?: string | null): string | null {
+  return explicit ?? getStoredToken();
+}
+
 async function submitWebPushRegistration(
   fcmToken: string,
   options: RegisterWebPushOptions,
   attempt = 1
 ): Promise<{ ok: boolean; message?: string }> {
   const guestId = options.guestId ?? getOrCreateGuestId();
+  const authToken = resolveAuthToken(options.authToken);
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-  if (options.authToken) {
-    headers.Authorization = `Bearer ${options.authToken}`;
+  if (authToken) {
+    headers.Authorization = `Bearer ${authToken}`;
   }
 
   try {
@@ -211,17 +239,22 @@ export async function unregisterWebPushDevice(options: {
   guestId?: string | null;
   fcmToken?: string | null;
 }): Promise<void> {
-  const token = options.fcmToken ?? (getWebPushPermissionStatus() === 'granted' ? await fetchFcmToken().catch(() => null) : null);
+  const token =
+    options.fcmToken ??
+    (getWebPushPermissionStatus() === 'granted'
+      ? (await fetchFcmToken().catch(() => ({ token: null }))).token
+      : null);
   if (!token) return;
 
   const guestId = options.guestId ?? getOrCreateGuestId();
+  const authToken = resolveAuthToken(options.authToken);
   const headers: Record<string, string> = {};
-  if (options.authToken) {
-    headers.Authorization = `Bearer ${options.authToken}`;
+  if (authToken) {
+    headers.Authorization = `Bearer ${authToken}`;
   }
 
   const url = new URL(`${getApiBaseUrl()}/api/v1/push_devices/${encodeURIComponent(token)}`);
-  if (!options.authToken && guestId) {
+  if (!authToken && guestId) {
     url.searchParams.set('guest_id', guestId);
   }
 

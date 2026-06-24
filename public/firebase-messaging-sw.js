@@ -2,23 +2,27 @@
 importScripts('https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.14.1/firebase-messaging-compat.js');
 
-let messaging = null;
+// Public Firebase config (shettar-1747f) — must be initialized before getToken() runs.
+firebase.initializeApp({
+  apiKey: 'AIzaSyDO0251mOBioZ7XZluRXGSteag3-cGS8TI',
+  authDomain: 'shettar-1747f.firebaseapp.com',
+  projectId: 'shettar-1747f',
+  storageBucket: 'shettar-1747f.firebasestorage.app',
+  messagingSenderId: '277614124723',
+  appId: '1:277614124723:web:030e62c5c885ff9d351ac6',
+  measurementId: 'G-79YC7H5V5N',
+});
 
-self.addEventListener('message', (event) => {
-  if (event.data?.type !== 'FIREBASE_CONFIG' || messaging) return;
+const messaging = firebase.messaging();
 
-  firebase.initializeApp(event.data.config);
-  messaging = firebase.messaging();
-
-  messaging.onBackgroundMessage((payload) => {
-    const title = payload.notification?.title || 'Shettar';
-    const iconUrl = new URL('/images/logo/logo.svg', self.location.origin).href;
-    self.registration.showNotification(title, {
-      body: payload.notification?.body || '',
-      icon: iconUrl,
-      badge: iconUrl,
-      data: payload.data || {},
-    });
+messaging.onBackgroundMessage((payload) => {
+  const title = payload.notification?.title || 'Shettar';
+  const iconUrl = new URL('/images/logo/logo.svg', self.location.origin).href;
+  self.registration.showNotification(title, {
+    body: payload.notification?.body || '',
+    icon: iconUrl,
+    badge: iconUrl,
+    data: payload.data || {},
   });
 });
 

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef } from 'react';
 import { useAppDispatch, useAppSelector } from '@/lib/store/hooks';
 import { addNotification, setNotifications } from '@/lib/store/slices/notificationsSlice';
 import { getOrCreateGuestId } from '@/app/helpers/guest-id';
+import { getStoredToken } from '@/app/helpers/auth';
 import { appendGuestNotification, loadGuestNotifications } from '@/app/helpers/guest-notifications';
 import { showNotificationToast } from '@/app/helpers/notification-display';
 import {
@@ -70,12 +71,9 @@ export default function PushNotificationRegistrar() {
     if (!isWebPushConfigured()) return;
 
     const guestId = getOrCreateGuestId();
-    if (isAuthenticated && token) {
-      await registerWebPushDevice({ authToken: token, guestId });
-    } else {
-      await registerWebPushDevice({ guestId });
-    }
-  }, [isAuthenticated, token]);
+    const authToken = token ?? getStoredToken();
+    await registerWebPushDevice({ authToken: authToken ?? undefined, guestId });
+  }, [token]);
 
   useEffect(() => {
     if (!isAuthenticated) {
