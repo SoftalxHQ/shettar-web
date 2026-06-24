@@ -13,6 +13,7 @@ const footerLinks = [
       { name: 'About us', link: '/about' },
       { name: 'Contact us', link: '/contact' },
       { name: 'FAQ', link: '/faq' },
+      { name: 'Live Chat', link: '/support-chat' },
       { name: 'Terms & Conditions', link: '/terms' },
     ],
   },
@@ -71,6 +72,9 @@ export default function FooterWithLinks() {
               </NavItem>
               <NavItem>
                 <NavLink className="text-body-secondary ps-0" href="/faq">FAQ</NavLink>
+              </NavItem>
+              <NavItem>
+                <NavLink className="text-body-secondary ps-0" href="/support-chat">Live Chat</NavLink>
               </NavItem>
               <NavItem>
                 <NavLink className="text-body-secondary ps-0" href="/terms">Terms & Conditions</NavLink>

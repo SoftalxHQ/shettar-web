@@ -41,6 +41,9 @@ export default function AppMenu({ showExtraPages, mobileMenuOpen, menuClassName 
                 <Link className="dropdown-item" href="/faq">FAQ</Link>
               </li>
               <li>
+                <Link className="dropdown-item" href="/support-chat">Live Chat</Link>
+              </li>
+              <li>
                 <Link className="dropdown-item" href="/terms">Terms & Conditions</Link>
               </li>
             </DropdownMenu>

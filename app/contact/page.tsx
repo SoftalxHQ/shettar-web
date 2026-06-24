@@ -3,7 +3,7 @@
 import Header from '@/app/components/Header';
 import Footer from '@/app/components/Footer';
 import { Container, Row, Col, Card, CardHeader, CardBody, Button, Image } from 'react-bootstrap';
-import { BsEnvelope, BsGlobe2, BsHeadset, BsInboxesFill, BsPhone, BsTelephone } from 'react-icons/bs';
+import { BsChatDots, BsEnvelope, BsGlobe2, BsHeadset, BsInboxesFill, BsPhone, BsTelephone } from 'react-icons/bs';
 import { FaFacebookF, FaInstagram, FaLinkedin, FaTwitter } from 'react-icons/fa';
 import Link from 'next/link';
 import { useForm } from 'react-hook-form';
@@ -28,7 +28,19 @@ const ContactPage = () => {
               </Col>
             </Row>
             <Row className="g-4">
-              <Col md={6} xl={4}>
+              <Col md={6} xl={3}>
+                <Card className="card-body shadow border-0 text-center align-items-center h-100">
+                  <div className="icon-lg bg-primary bg-opacity-10 text-primary rounded-circle mb-3 d-flex align-items-center justify-content-center" style={{ width: '60px', height: '60px' }}>
+                    <BsChatDots size={24} />
+                  </div>
+                  <h5>Live chat</h5>
+                  <p className="text-secondary small">Get instant help from our support team with bookings, payments, and account questions.</p>
+                  <Link href="/support-chat" className="btn btn-primary btn-sm">
+                    Start Live Chat
+                  </Link>
+                </Card>
+              </Col>
+              <Col md={6} xl={3}>
                 <Card className="card-body shadow border-0 text-center align-items-center h-100">
                   <div className="icon-lg bg-info bg-opacity-10 text-info rounded-circle mb-3 d-flex align-items-center justify-content-center" style={{ width: '60px', height: '60px' }}>
                     <BsHeadset size={24} />
@@ -45,7 +57,7 @@ const ContactPage = () => {
                   </div>
                 </Card>
               </Col>
-              <Col md={6} xl={4}>
+              <Col md={6} xl={3}>
                 <Card className="card-body shadow border-0 text-center align-items-center h-100">
                   <div className="icon-lg bg-danger bg-opacity-10 text-danger rounded-circle mb-3 d-flex align-items-center justify-content-center" style={{ width: '60px', height: '60px' }}>
                     <BsInboxesFill size={24} />
@@ -57,7 +69,7 @@ const ContactPage = () => {
                   </Link>
                 </Card>
               </Col>
-              <Col xl={4}>
+              <Col md={6} xl={3}>
                 <Card className="card-body shadow border-0 text-center align-items-center h-100">
                   <div className="icon-lg bg-warning bg-opacity-10 text-warning rounded-circle mb-3 d-flex align-items-center justify-content-center" style={{ width: '60px', height: '60px' }}>
                     <BsGlobe2 size={24} />

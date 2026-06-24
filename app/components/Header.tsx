@@ -34,6 +34,7 @@ import {
 import {
   BsBellFill,
   BsBookmarkCheck,
+  BsChatDots,
   BsCircleHalf,
   BsGear,
   BsHeart,
@@ -407,6 +408,12 @@ export default function Header() {
                         <Link href="/user/settings" className="dropdown-item">
                           <BsGear className="me-2" />
                           Settings
+                        </Link>
+                      </li>
+                      <li>
+                        <Link href="/support-chat" className="dropdown-item">
+                          <BsChatDots className="me-2" />
+                          Live Chat
                         </Link>
                       </li>
                       <li>
