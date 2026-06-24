@@ -95,7 +95,7 @@ export function notificationToastEmoji(input: {
   return null;
 }
 
-const SHETTAR_LOGO_PATH = '/images/logo/shettar-logo.png';
+const SHETTAR_APP_ICON_PATH = '/images/icon.png';
 
 function notificationToastIcon(input: {
   title?: string;
@@ -106,7 +106,7 @@ function notificationToastIcon(input: {
   if (emoji) return emoji;
 
   return createElement('img', {
-    src: SHETTAR_LOGO_PATH,
+    src: SHETTAR_APP_ICON_PATH,
     alt: '',
     width: 20,
     height: 20,
@@ -119,8 +119,12 @@ export function showNotificationToast(input: {
   message?: string;
   data?: Record<string, unknown> | null;
   id?: string;
+  /** When true, show body/message only (web push). */
+  messageOnly?: boolean;
 }) {
-  const text = input.message || input.title || 'New notification';
+  const text = input.messageOnly
+    ? input.message || 'New notification'
+    : input.message || input.title || 'New notification';
   toast.success(text, {
     id: input.id,
     duration: 5000,

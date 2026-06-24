@@ -53,6 +53,7 @@ function handleForegroundNotification(
       message: payload.body,
       data: payload.data,
       id: toastKey,
+      messageOnly: true,
     });
   }
 }
