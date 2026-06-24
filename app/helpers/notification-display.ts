@@ -1,3 +1,6 @@
+'use client';
+
+import { createElement, type ReactElement } from 'react';
 import toast from 'react-hot-toast';
 import type { IconType } from 'react-icons';
 import {
@@ -76,7 +79,7 @@ export function notificationToastEmoji(input: {
   title?: string;
   message?: string;
   data?: Record<string, unknown> | null;
-}): string {
+}): string | null {
   const source = typeof input.data?.source === 'string' ? input.data.source.toLowerCase() : '';
   const content = `${input.title ?? ''} ${input.message ?? ''}`.toLowerCase();
 
@@ -88,8 +91,27 @@ export function notificationToastEmoji(input: {
   if (content.includes('booking') || content.includes('checked in') || content.includes('checked out') || content.includes('stay at')) return '📅';
   if (source === 'restaurant_order' || content.includes('room service') || content.includes('kitchen')) return '🍽️';
   if (source === 'review_comment_reply' || source === 'review_reply') return '💬';
-  if (source === 'login_alert' || source === 'security' || source === 'account_deletion') return '🛡️';
-  return '🔔';
+  if (source === 'login_alert' || source === 'security' || content.includes('account deletion')) return '🛡️';
+  return null;
+}
+
+const SHETTAR_LOGO_PATH = '/images/logo/shettar-logo.png';
+
+function notificationToastIcon(input: {
+  title?: string;
+  message?: string;
+  data?: Record<string, unknown> | null;
+}): string | ReactElement {
+  const emoji = notificationToastEmoji(input);
+  if (emoji) return emoji;
+
+  return createElement('img', {
+    src: SHETTAR_LOGO_PATH,
+    alt: '',
+    width: 20,
+    height: 20,
+    style: { borderRadius: 4, objectFit: 'contain' },
+  });
 }
 
 export function showNotificationToast(input: {
@@ -102,7 +124,7 @@ export function showNotificationToast(input: {
   toast.success(text, {
     id: input.id,
     duration: 5000,
-    icon: notificationToastEmoji(input),
+    icon: notificationToastIcon(input),
   });
 }
 
