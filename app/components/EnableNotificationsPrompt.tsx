@@ -11,9 +11,10 @@ import {
 import {
   showPushNotConfiguredToast,
   showPushPermissionDeniedToast,
+  showWebPushEnableFailedToast,
+  showWebPushUnavailableToast,
 } from '@/app/helpers/notification-display';
 import {
-  getWebPushConfigIssues,
   isWebPushConfigured,
   requestWebPushPermissionAndRegister,
 } from '@/app/helpers/push-notifications';
@@ -51,10 +52,13 @@ export default function EnableNotificationsPrompt({ triggerVisible }: Props) {
         showPushPermissionDeniedToast();
       } else if (result.reason === 'not_configured') {
         markPushNotificationPromptDismissed();
-        showPushNotConfiguredToast(getWebPushConfigIssues());
+        showPushNotConfiguredToast();
+      } else if (result.reason === 'unsupported' || result.reason === 'token_failed') {
+        markPushNotificationPromptDismissed();
+        showWebPushUnavailableToast();
       } else {
         markPushNotificationPromptDismissed();
-        toast.error('Could not enable notifications. Please try again.');
+        showWebPushEnableFailedToast();
       }
     } finally {
       setEnabling(false);

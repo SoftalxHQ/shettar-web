@@ -106,50 +106,20 @@ export async function requestWebPushPermissionAndRegister(
     const messaging = await getMessagingInstance();
     if (!messaging) return { ok: false, reason: 'unsupported' };
 
-    const { token: fcmToken, error: tokenError } = await fetchFcmToken();
+    const { token: fcmToken } = await fetchFcmToken();
     if (!fcmToken) {
-      return {
-        ok: false,
-        reason: 'token_failed',
-        message:
-          tokenError ||
-          'Could not get a browser push token. Check Firebase/VAPID config and try again.',
-      };
+      return { ok: false, reason: 'token_failed' };
     }
 
     const registration = await submitWebPushRegistration(fcmToken, options);
-    return registration.ok
-      ? { ok: true, token: fcmToken }
-      : { ok: false, reason: 'register_failed', message: registration.message };
+    return registration.ok ? { ok: true, token: fcmToken } : { ok: false, reason: 'register_failed' };
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unexpected error enabling web push.';
-    return { ok: false, reason: 'token_failed', message };
+    console.warn('[web-push] requestWebPushPermissionAndRegister failed:', error);
+    return { ok: false, reason: 'token_failed' };
   }
 }
 
-type FcmTokenResult = { token: string | null; error?: string };
-
-function formatFcmTokenError(error: unknown): string {
-  const code = typeof error === 'object' && error && 'code' in error ? String(error.code) : undefined;
-  const message = error instanceof Error ? error.message : 'Could not get a browser push token.';
-
-  if (
-    code === 'messaging/token-subscription-failed' ||
-    message.toLowerCase().includes('push service error')
-  ) {
-    return (
-      'Browser push registration failed. Add this site to Firebase Console → Project settings → ' +
-      'Authorized domains, confirm NEXT_PUBLIC_FCM_VAPID_KEY matches your Web Push key pair, ' +
-      'and try again in a normal browser window (not private/incognito).'
-    );
-  }
-
-  if (code === 'messaging/permission-blocked') {
-    return 'Notifications are blocked for this site. Allow them in your browser settings and try again.';
-  }
-
-  return message;
-}
+type FcmTokenResult = { token: string | null };
 
 async function fetchFcmToken(): Promise<FcmTokenResult> {
   const messaging = await getMessagingInstance();
@@ -163,8 +133,10 @@ async function fetchFcmToken(): Promise<FcmTokenResult> {
     const token = await getToken(messaging, { vapidKey, serviceWorkerRegistration: registration });
     return { token };
   } catch (error) {
-    console.warn('[web-push] getToken failed:', error);
-    return { token: null, error: formatFcmTokenError(error) };
+    const code = typeof error === 'object' && error && 'code' in error ? String(error.code) : undefined;
+    const detail = error instanceof Error ? error.message : String(error);
+    console.warn('[web-push] getToken failed:', { code, detail, error });
+    return { token: null };
   }
 }
 

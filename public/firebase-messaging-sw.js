@@ -15,13 +15,14 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
+const NOTIFICATION_ICON = new URL('/images/logo/shettar-logo.png', self.location.origin).href;
+
 messaging.onBackgroundMessage((payload) => {
   const title = payload.notification?.title || 'Shettar';
-  const iconUrl = new URL('/images/logo/logo.svg', self.location.origin).href;
   self.registration.showNotification(title, {
     body: payload.notification?.body || '',
-    icon: iconUrl,
-    badge: iconUrl,
+    icon: NOTIFICATION_ICON,
+    badge: NOTIFICATION_ICON,
     data: payload.data || {},
   });
 });

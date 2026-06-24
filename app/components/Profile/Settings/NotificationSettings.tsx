@@ -9,6 +9,8 @@ import { getStoredToken } from '@/app/helpers/auth';
 import {
   showPushNotConfiguredToast,
   showPushPermissionDeniedToast,
+  showWebPushEnableFailedToast,
+  showWebPushUnavailableToast,
 } from '@/app/helpers/notification-display';
 import {
   fetchNotificationPreferences,
@@ -65,9 +67,11 @@ const NotificationSettings = () => {
             if (result.reason === 'denied') {
               showPushPermissionDeniedToast();
             } else if (result.reason === 'not_configured') {
-              showPushNotConfiguredToast(getWebPushConfigIssues());
+              showPushNotConfiguredToast();
+            } else if (result.reason === 'unsupported' || result.reason === 'token_failed') {
+              showWebPushUnavailableToast();
             } else {
-              toast.error(result.message || 'Could not enable web push. Please try again.');
+              showWebPushEnableFailedToast();
             }
             return;
           }
@@ -170,10 +174,8 @@ const NotificationSettings = () => {
               'push_enabled'
             )}
             {!isWebPushConfigured() && (
-              <p className="small text-warning mb-0">
-                Add your Firebase web config and{' '}
-                <code className="text-warning">NEXT_PUBLIC_FCM_VAPID_KEY</code> to enable push on this
-                site, then rebuild or restart the dev server.
+              <p className="small text-muted mb-0">
+                Browser push notifications are not set up for this environment yet.
               </p>
             )}
           </>

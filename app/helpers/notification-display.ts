@@ -112,13 +112,27 @@ export function showPushPermissionDeniedToast() {
   });
 }
 
-export function showPushNotConfiguredToast(missingEnvKeys?: string[]) {
-  const missingVapid = missingEnvKeys?.includes('NEXT_PUBLIC_FCM_VAPID_KEY');
-  const message = missingVapid
-    ? 'Web push needs a VAPID key. In Firebase Console → Project settings → Cloud Messaging → Web Push certificates, generate or copy the key pair into NEXT_PUBLIC_FCM_VAPID_KEY, then restart the site.'
-    : missingEnvKeys?.length
-      ? `Web push is not configured on this site (missing: ${missingEnvKeys.join(', ')}).`
-      : 'Web push is not configured on this site yet.';
+export function isLikelyBraveBrowser(): boolean {
+  if (typeof navigator === 'undefined') return false;
+  return /Brave/i.test(navigator.userAgent) || 'brave' in navigator;
+}
 
-  toast.error(message, { duration: 8000 });
+/** Shown when FCM token / browser push setup fails (Brave, Firefox quirks, etc.). */
+export function showWebPushUnavailableToast() {
+  const message = isLikelyBraveBrowser()
+    ? 'Browser notifications are not fully supported in Brave. Try Chrome or Safari, or use the Shettar mobile app for alerts.'
+    : 'Browser notifications are not available in this browser. Try Chrome or Safari, or use the Shettar mobile app for alerts.';
+
+  toast.error(message, { duration: 7000 });
+}
+
+export function showWebPushEnableFailedToast() {
+  toast.error(
+    "We couldn't turn on browser notifications. Allow notifications for this site in your browser settings, or use the Shettar mobile app.",
+    { duration: 7000 }
+  );
+}
+
+export function showPushNotConfiguredToast() {
+  toast.error('Browser notifications are not available on this site yet.', { duration: 6000 });
 }
