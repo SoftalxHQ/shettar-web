@@ -6,7 +6,7 @@ import {
   BsTrash,
   BsListUl,
   BsStar,
-  BsLightningCharge,
+  BsGrid,
   BsBell,
 } from 'react-icons/bs';
 import { type IconType } from 'react-icons';
@@ -63,7 +63,7 @@ export const USER_PROFILE_MENU_ITEMS: MenuItemType[] = [
     label: 'Utility',
     url: '/user/utility',
     parentKey: 'acc-user',
-    icon: BsLightningCharge,
+    icon: BsGrid,
   },
   {
     key: 'acc-user-notifications',

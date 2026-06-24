@@ -29,6 +29,10 @@ export interface StoredUser {
   address?: string | null;
   zip_code?: string | null;
   avatar_url?: string | null;
+  deletion_pending?: boolean;
+  deletion_scheduled_at?: string | null;
+  deletion_execute_at?: string | null;
+  deletion_reason?: string | null;
 }
 
 export interface SignInPayload {

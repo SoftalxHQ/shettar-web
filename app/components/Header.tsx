@@ -7,7 +7,11 @@ import clsx from 'clsx';
 import { useEffect, useRef, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
-import { resendVerification } from '@/app/helpers/auth';
+import { resendVerification, getStoredToken } from '@/app/helpers/auth';
+import {
+  cancelAccountDeletion,
+  formatDeletionCountdown,
+} from '@/app/helpers/account-deletion';
 import {
   Button,
   Card,
@@ -92,7 +96,7 @@ const themeModes: ThemeMode[] = [
 ];
 
 export default function Header() {
-  const { theme, updateTheme, account, isAccountLoading, logout, isAuthenticated } = useLayoutContext();
+  const { theme, updateTheme, account, isAccountLoading, logout, isAuthenticated, refreshAccount } = useLayoutContext();
   const { notifications, unreadCount, markAsRead } = useNotifications();
   const { isOpen, toggle } = useToggle();
   const { scrollY } = useScrollEvent();
@@ -101,6 +105,41 @@ export default function Header() {
   const router = useRouter();
   const isUserDashboard = pathname?.startsWith('/user') ?? false;
   const [isSendingCode, setIsSendingCode] = useState(false);
+  const [isCancellingDeletion, setIsCancellingDeletion] = useState(false);
+  const [deletionCountdown, setDeletionCountdown] = useState('00:00:00');
+
+  useEffect(() => {
+    if (!account?.deletion_pending || !account.deletion_execute_at) return;
+
+    const updateCountdown = () => {
+      setDeletionCountdown(formatDeletionCountdown(account.deletion_execute_at));
+    };
+
+    updateCountdown();
+    const interval = window.setInterval(updateCountdown, 1000);
+    return () => window.clearInterval(interval);
+  }, [account?.deletion_pending, account?.deletion_execute_at]);
+
+  const handleCancelDeletion = async () => {
+    const token = getStoredToken();
+    if (!token) return;
+
+    setIsCancellingDeletion(true);
+    const toastId = toast.loading('Cancelling account deletion...');
+    try {
+      const result = await cancelAccountDeletion(token);
+      if (result.ok) {
+        toast.success(result.message, { id: toastId });
+        await refreshAccount();
+      } else {
+        toast.error(result.message, { id: toastId });
+      }
+    } catch {
+      toast.error('An error occurred. Please try again.', { id: toastId });
+    } finally {
+      setIsCancellingDeletion(false);
+    }
+  };
 
   const handleVerifyClick = async () => {
     if (!account?.email) return;
@@ -137,6 +176,19 @@ export default function Header() {
             className="btn btn-link p-0 text-primary fw-bold text-decoration-underline ms-1 mb-1 align-baseline"
           >
             {isSendingCode ? 'Sending...' : 'Verify Now'}
+          </button>
+        </div>
+      )}
+      {isAuthenticated && account?.deletion_pending && (
+        <div className="bg-danger bg-opacity-10 border-bottom border-danger text-dark text-center py-2 px-3 small">
+          <BsInfoCircle className="me-2 text-danger mb-1" />
+          Account scheduled for deletion in <strong>{deletionCountdown}</strong>.{' '}
+          <button
+            onClick={handleCancelDeletion}
+            disabled={isCancellingDeletion}
+            className="btn btn-link p-0 text-primary fw-bold text-decoration-underline ms-1 mb-1 align-baseline"
+          >
+            {isCancellingDeletion ? 'Cancelling...' : 'Cancel deletion'}
           </button>
         </div>
       )}
@@ -358,7 +410,7 @@ export default function Header() {
                         </Link>
                       </li>
                       <li>
-                        <Link href="#" className="dropdown-item">
+                        <Link href="/faq" className="dropdown-item">
                           <BsInfoCircle className="me-2" />
                           Help Center
                         </Link>

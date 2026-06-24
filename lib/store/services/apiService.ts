@@ -26,6 +26,10 @@ export interface AccountProfile {
   emer_first_name?: string | null;
   emer_last_name?: string | null;
   emer_phone_number?: string | null;
+  deletion_pending?: boolean;
+  deletion_scheduled_at?: string | null;
+  deletion_execute_at?: string | null;
+  deletion_reason?: string | null;
 }
 
 const baseQuery = fetchBaseQuery({

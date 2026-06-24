@@ -51,7 +51,9 @@ const LeftPanel = () => {
         <ul className="nav nav-pills-primary-soft flex-column">
           {menuItems.map((item, idx) => {
             const Icon = item.icon;
-            const activeItem = item.url === pathname;
+            const activeItem =
+              item.url === pathname ||
+              (item.url === '/user/delete-profile' && pathname === '/user/data-export');
             return (
               item.url &&
               Icon && (
