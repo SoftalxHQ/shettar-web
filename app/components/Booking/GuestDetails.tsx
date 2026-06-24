@@ -136,7 +136,7 @@ const GuestDetails = ({
           <Alert variant="danger" className="mt-4 mb-3 border-2" role="alert">
             <h6 className="alert-heading">Action Required: Update Profile</h6>
             <p className="mb-0 small fw-bold text-dark">
-              You must update your <strong>Next of Kin</strong> details in your profile settings before you can proceed with a booking.
+              You must update your <strong>Emergency Contact</strong> details in your profile settings before you can proceed with a booking.
               <Link href="/user/settings" className="ms-2 text-danger text-decoration-underline">Update Settings Now</Link>
             </p>
           </Alert>
@@ -146,7 +146,7 @@ const GuestDetails = ({
           <Alert variant="danger" className="mt-4 mb-3 border-2" role="alert">
             <h6 className="alert-heading">Action Required: Update Profile</h6>
             <p className="mb-0 small fw-bold text-dark">
-              You must update your <strong>Next of Kin</strong> details in your profile settings before you can proceed with a booking.
+              You must update your <strong>Emergency Contact</strong> details in your profile settings before you can proceed with a booking.
               <Link href="/user/settings" className="ms-2 text-danger text-decoration-underline">Update Settings Now</Link>
             </p>
           </Alert>

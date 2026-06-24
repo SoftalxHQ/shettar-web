@@ -287,28 +287,28 @@ const PersonalInformation = () => {
           />
 
           <Col xs={12} className="mt-4 pt-2 border-top">
-            <h5 className="mb-0">Next of Kin Details</h5>
-            <p className="small text-secondary">Person to contact in case of emergency.</p>
+            <h5 className="mb-0">Emergency Contact</h5>
+            <p className="small text-secondary">Someone we can reach if we need to get in touch about your account or bookings.</p>
           </Col>
 
           <TextFormInput
             name="emer_first_name"
             label="First Name"
-            placeholder="Next of kin first name"
+            placeholder="Emergency contact first name"
             containerClass="col-md-6"
             control={control}
           />
           <TextFormInput
             name="emer_last_name"
             label="Last Name"
-            placeholder="Next of kin last name"
+            placeholder="Emergency contact last name"
             containerClass="col-md-6"
             control={control}
           />
           <TextFormInput
             name="emer_phone_number"
             label="Phone Number"
-            placeholder="Next of kin phone number"
+            placeholder="Emergency contact phone number"
             containerClass="col-md-12"
             control={control}
           />

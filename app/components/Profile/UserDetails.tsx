@@ -182,7 +182,7 @@ const UserDetails = () => {
 
         {(profile?.emer_first_name || profile?.emer_last_name || profile?.emer_phone_number) && (
           <div className="mt-4 pt-4 border-top">
-            <h6 className="mb-3">Next of Kin Details</h6>
+            <h6 className="mb-3">Emergency Contact</h6>
             <Row className="g-4">
               <Field
                 icon={BsPersonBadge}
