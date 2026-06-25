@@ -76,6 +76,7 @@ const UtilityPurchase = () => {
   const [tvPlans, setTvPlans] = useState<DataVariation[]>([]);
   const [selectedTvPlan, setSelectedTvPlan] = useState<DataVariation | null>(null);
   const [verifyingTv, setVerifyingTv] = useState(false);
+  const [tvVerifyError, setTvVerifyError] = useState<string | null>(null);
 
   const [electricityProviders, setElectricityProviders] = useState<UtilityProvider[]>([]);
   const [selectedElectricityProvider, setSelectedElectricityProvider] = useState('');
@@ -84,6 +85,7 @@ const UtilityPurchase = () => {
   const [electricityVerification, setElectricityVerification] = useState<VerifyResult | null>(null);
   const [electricityAmount, setElectricityAmount] = useState('');
   const [verifyingElectricity, setVerifyingElectricity] = useState(false);
+  const [electricityVerifyError, setElectricityVerifyError] = useState<string | null>(null);
 
   const [loadingPlans, setLoadingPlans] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -187,11 +189,13 @@ const UtilityPurchase = () => {
     setTvVerification(null);
     setSelectedTvPlan(null);
     setTvRenewAmount('');
+    setTvVerifyError(null);
   }, [selectedTvProvider, smartcard]);
 
   useEffect(() => {
     setElectricityVerification(null);
     setElectricityAmount('');
+    setElectricityVerifyError(null);
   }, [selectedElectricityProvider, meterNumber, meterType]);
 
   useEffect(() => {
@@ -202,11 +206,13 @@ const UtilityPurchase = () => {
 
   const handleVerifyTv = async () => {
     if (!selectedTvProvider || !smartcard.trim()) {
-      toast.error('Enter a smartcard number');
+      setTvVerifyError('Enter a smartcard number');
+      setTvVerification(null);
       return;
     }
     setVerifyingTv(true);
-    setPurchaseError(null);
+    setTvVerifyError(null);
+    setTvVerification(null);
     try {
       const result = await verifyUtilityBill({
         category: 'tv',
@@ -221,11 +227,10 @@ const UtilityPurchase = () => {
           .then((plans) => setTvPlans(plans))
           .finally(() => setLoadingPlans(false));
       }
-      toast.success('Smartcard verified');
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Verification failed';
-      setPurchaseError(message);
-      toast.error(message);
+      setTvVerification(null);
+      setTvVerifyError(message);
     } finally {
       setVerifyingTv(false);
     }
@@ -233,11 +238,13 @@ const UtilityPurchase = () => {
 
   const handleVerifyElectricity = async () => {
     if (!selectedElectricityProvider || !meterNumber.trim()) {
-      toast.error('Enter a meter number');
+      setElectricityVerifyError('Enter a meter number');
+      setElectricityVerification(null);
       return;
     }
     setVerifyingElectricity(true);
-    setPurchaseError(null);
+    setElectricityVerifyError(null);
+    setElectricityVerification(null);
     try {
       const result = await verifyUtilityBill({
         category: 'electricity',
@@ -246,11 +253,10 @@ const UtilityPurchase = () => {
         meter_type: meterType,
       });
       setElectricityVerification(result.verification);
-      toast.success('Meter verified');
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Verification failed';
-      setPurchaseError(message);
-      toast.error(message);
+      setElectricityVerification(null);
+      setElectricityVerifyError(message);
     } finally {
       setVerifyingElectricity(false);
     }
@@ -459,7 +465,7 @@ const UtilityPurchase = () => {
   }
 
   return (
-    <div className="utility-purchase">
+    <div className="utility-purchase utility-purchase-scroll">
       <div className="utility-balance-card bg-primary text-white rounded-4 p-4 mb-4 d-flex justify-content-between align-items-center">
         <div>
           <p className="small mb-1 opacity-75">Wallet Balance</p>
@@ -613,6 +619,9 @@ const UtilityPurchase = () => {
                 {verifyingTv ? <Spinner animation="border" size="sm" /> : 'Verify'}
               </button>
             </div>
+            {tvVerifyError ? (
+              <p className="small text-danger mb-0 mt-1">{tvVerifyError}</p>
+            ) : null}
           </div>
 
           {tvVerification && (
@@ -766,6 +775,9 @@ const UtilityPurchase = () => {
                 {verifyingElectricity ? <Spinner animation="border" size="sm" /> : 'Verify'}
               </button>
             </div>
+            {electricityVerifyError ? (
+              <p className="small text-danger mb-0 mt-1">{electricityVerifyError}</p>
+            ) : null}
           </div>
 
           {electricityVerification && (
@@ -832,6 +844,12 @@ const UtilityPurchase = () => {
         .utility-wallet-icon { width: 48px; height: 48px; }
         .utility-input-box { min-height: 56px; }
         .utility-plan-card { transition: border-color 0.15s ease, background 0.15s ease; }
+        .utility-purchase-scroll {
+          max-height: calc(100dvh - 180px);
+          overflow-y: auto;
+          -webkit-overflow-scrolling: touch;
+          padding-bottom: 24px;
+        }
         @media (max-width: 767.98px) {
           .utility-footer-cta {
             position: sticky;

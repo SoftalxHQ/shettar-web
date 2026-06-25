@@ -204,7 +204,10 @@ const UserDetails = () => {
         <Modal.Header closeButton>
           <Modal.Title>Verify Phone Number</Modal.Title>
         </Modal.Header>
-        <Modal.Body className="p-4">
+        <Modal.Body
+          className="p-4"
+          style={{ maxHeight: 'min(70vh, 520px)', overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}
+        >
           <p className="text-secondary mb-4">
             We sent a 6-digit verification code to your phone number <strong>{profile?.phone_number}</strong>.
             Please enter it below to verify your phone number.
