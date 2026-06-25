@@ -2,6 +2,7 @@
 
 import { currency } from '@/app/states';
 import { useSponsoredListingTracking } from '@/app/hooks/useSponsoredListingTracking';
+import SkeletonImage from '@/app/components/SkeletonImage';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
@@ -97,12 +98,17 @@ const FeaturedHotelCard = ({
         {slides.length > 0 ? (
           <div className="featured-hotels__image-slideshow">
             {slides.map((src, slideIndex) => (
-              <img
+              <div
                 key={`${src}-${slideIndex}`}
-                src={src}
-                className={`card-img featured-hotels__slide-image${slideIndex === index ? ' is-active' : ''}`}
-                alt={name}
-              />
+                className={`featured-hotels__slide-image${slideIndex === index ? ' is-active' : ''}`}
+              >
+                <SkeletonImage
+                  src={src}
+                  alt={name}
+                  className="card-img"
+                  containerClassName="h-100"
+                />
+              </div>
             ))}
             {slides.length > 1 && (
               <div className="featured-hotels__slide-dots" aria-hidden="true">

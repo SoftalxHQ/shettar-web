@@ -1,6 +1,7 @@
 'use client';
 
 import FeaturedHotelCard from '@/app/components/FeaturedHotelCard';
+import Skeleton from '@/app/components/Skeleton';
 import { fetchSponsoredListings, type SponsoredHotel } from '@/app/helpers/sponsored-listings';
 import { resolveAdViewerContext } from '@/app/helpers/ad-viewer-context';
 import { AD_VIEWER_CONTEXT_UPDATED_EVENT } from '@/app/helpers/ad-location-prompt';
@@ -16,12 +17,12 @@ const FEATURED_LIMIT = 12;
 function FeaturedHotelCardSkeleton() {
   return (
     <Card className="card-img-scale overflow-hidden bg-transparent">
-      <div className="placeholder-glow">
-        <div className="placeholder card-img rounded-3 w-100 featured-hotels__image-fallback" />
-        <div className="card-body px-2">
-          <div className="placeholder col-8 rounded mb-2" style={{ height: 24 }} />
-          <div className="placeholder col-10 rounded" style={{ height: 20 }} />
-        </div>
+      <div className="card-img-scale-wrapper rounded-3 position-relative overflow-hidden">
+        <Skeleton height="100%" width="100%" text="Shettar" />
+      </div>
+      <div className="card-body px-2">
+        <div className="placeholder col-8 rounded mb-2 bg-body-secondary opacity-50" style={{ height: 24 }} />
+        <div className="placeholder col-10 rounded bg-body-secondary opacity-50" style={{ height: 20 }} />
       </div>
     </Card>
   );

@@ -49,6 +49,18 @@ const nextConfig: NextConfig = {
     quietDeps: true,
     silenceDeprecations: ['import', 'global-builtin', 'color-functions', 'if-function'],
   },
+  async headers() {
+    return [
+      {
+        source: '/.well-known/apple-app-site-association',
+        headers: [{ key: 'Content-Type', value: 'application/json' }],
+      },
+      {
+        source: '/.well-known/assetlinks.json',
+        headers: [{ key: 'Content-Type', value: 'application/json' }],
+      },
+    ];
+  },
 };
 
 export default nextConfig;

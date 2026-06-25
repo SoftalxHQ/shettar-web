@@ -1,0 +1,14 @@
+{
+  "webcredentials": {
+    "apps": ["TEAMID.com.softalx.shettar"]
+  },
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "TEAMID.com.softalx.shettar",
+        "paths": ["*"]
+      }
+    ]
+  }
+}
