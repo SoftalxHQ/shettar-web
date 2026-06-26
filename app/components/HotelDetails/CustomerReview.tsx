@@ -35,6 +35,9 @@ interface Review {
   admin_reply_by?: string | null;
   admin_replied_at?: string | null;
   comments?: ReviewComment[];
+  likes_count?: number;
+  dislikes_count?: number;
+  user_vote?: 1 | -1 | null;
 }
 
 type FormValues = {
@@ -97,6 +100,7 @@ const CustomerReview = ({ reviews, averageRating, ratingDistribution, businessId
   const [ratingError, setRatingError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [localReviews, setLocalReviews] = useState<Review[]>(reviews || []);
+  const [votingReviewId, setVotingReviewId] = useState<number | null>(null);
 
   useEffect(() => {
     setLocalReviews(reviews || []);
@@ -109,6 +113,9 @@ const CustomerReview = ({ reviews, averageRating, ratingDistribution, businessId
     const base = `${API_URL}/api/v1/businesses/${businessId}/reviews/${reviewId}/comments`;
     return commentId ? `${base}/${commentId}` : base;
   };
+
+  const businessReviewVoteUrl = (reviewId: number) =>
+    `${API_URL}/api/v1/businesses/${businessId}/reviews/${reviewId}/vote`;
 
   const authHeaders = () => {
     const token = getStoredToken();
@@ -174,6 +181,35 @@ const CustomerReview = ({ reviews, averageRating, ratingDistribution, businessId
     const data = await res.json();
     if (!res.ok || !data.comment) throw new Error(parseApiError(data, 'Failed to save vote'));
     mergeComment(reviewId, data.comment, 'update');
+  };
+
+  const handleVoteReview = async (reviewId: number, value: 1 | -1) => {
+    setVotingReviewId(reviewId);
+    try {
+      const res = await fetch(businessReviewVoteUrl(reviewId), {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify({ value }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.review) throw new Error(parseApiError(data, 'Failed to save vote'));
+      setLocalReviews((prev) =>
+        prev.map((r) =>
+          r.id === reviewId
+            ? {
+                ...r,
+                likes_count: data.review.likes_count,
+                dislikes_count: data.review.dislikes_count,
+                user_vote: data.review.user_vote,
+              }
+            : r
+        )
+      );
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to save vote');
+    } finally {
+      setVotingReviewId(null);
+    }
   };
 
   const reviewSchema = yup.object({
@@ -364,6 +400,11 @@ const CustomerReview = ({ reviews, averageRating, ratingDistribution, businessId
                     isAuthenticated={isAuthenticated}
                     showThread
                     reviewRoot={{ reviewId: review.id }}
+                    reviewLikesCount={review.likes_count}
+                    reviewDislikesCount={review.dislikes_count}
+                    reviewUserVote={review.user_vote}
+                    onVoteReview={isAuthenticated ? (value) => handleVoteReview(review.id, value) : undefined}
+                    votingReview={votingReviewId === review.id}
                     onReply={handleReply}
                     onUpdateComment={handleUpdateComment}
                     onDeleteComment={handleDeleteComment}

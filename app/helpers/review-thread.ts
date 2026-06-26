@@ -55,7 +55,9 @@ export function normalizeCommentId(id: number | string): number {
 }
 
 export function reviewComments(review: ReviewWithThread): ReviewComment[] {
-  if (review.comments?.length) return review.comments;
+  const fromApi = review.comments ?? [];
+  if (fromApi.length) return fromApi;
+
   if (review.admin_reply) {
     return [{
       id: -1,

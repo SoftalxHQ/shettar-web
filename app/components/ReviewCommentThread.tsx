@@ -22,6 +22,7 @@ import {
   isOwnGuestComment,
   isCommentDeletable,
   isCommentEditable,
+  isRealComment,
   canReplyToThread,
   replyParentId,
   commentBodyDisplay,
@@ -50,6 +51,11 @@ type Props = {
   onDeleteComment: (reviewId: number, commentId: number) => Promise<void>;
   onVoteComment?: (reviewId: number, commentId: number, value: 1 | -1) => Promise<void>;
   readOnlyVotes?: boolean;
+  reviewLikesCount?: number;
+  reviewDislikesCount?: number;
+  reviewUserVote?: 1 | -1 | null;
+  onVoteReview?: (value: 1 | -1) => Promise<void>;
+  votingReview?: boolean;
 };
 
 type SharedHandlers = {
@@ -234,10 +240,14 @@ function CommentContent({
   const likesCount = comment.likes_count ?? 0;
   const dislikesCount = comment.dislikes_count ?? 0;
   const userVote = comment.user_vote ?? null;
+  const votableComment = isRealComment(comment);
   const canVote =
+    votableComment &&
     !readOnlyVotes &&
     isAuthenticated &&
     Boolean(onVoteComment);
+  const hasVoteCounts = likesCount > 0 || dislikesCount > 0;
+  const showVoteControls = canVote || (readOnlyVotes && votableComment) || hasVoteCounts;
   const isVoting = votingCommentId === comment.id;
 
   const handleVote = async (value: 1 | -1) => {
@@ -315,37 +325,49 @@ function CommentContent({
         </p>
       )}
 
-      {!isEditing && (canVote || readOnlyVotes || likesCount > 0 || dislikesCount > 0 || (isAuthenticated && canReply)) && (
+      {!isEditing && (showVoteControls || (isAuthenticated && canReply)) && (
         <div className="d-flex align-items-center gap-1 mb-1">
-          {(canVote || readOnlyVotes || likesCount > 0) && (
-            <button
-              type="button"
-              className={`btn btn-link btn-sm p-1 rounded-circle d-inline-flex align-items-center gap-1 ${
-                userVote === 1 ? 'text-primary' : 'text-muted'
-              }`}
-              aria-label="Like"
-              style={{ height: 32 }}
-              disabled={!canVote || isVoting}
-              onClick={() => handleVote(1)}
-            >
-              <BsHandThumbsUp size={14} />
-              {likesCount > 0 && <span style={{ fontSize: 12, fontWeight: 600 }}>{likesCount}</span>}
-            </button>
+          {canVote && (
+            <>
+              <button
+                type="button"
+                className={`btn btn-link btn-sm p-1 rounded-circle d-inline-flex align-items-center gap-1 ${
+                  userVote === 1 ? 'text-primary' : 'text-muted'
+                }`}
+                aria-label="Like"
+                style={{ height: 32 }}
+                disabled={isVoting}
+                onClick={() => handleVote(1)}
+              >
+                <BsHandThumbsUp size={14} />
+                {likesCount > 0 && <span style={{ fontSize: 12, fontWeight: 600 }}>{likesCount}</span>}
+              </button>
+              <button
+                type="button"
+                className={`btn btn-link btn-sm p-1 rounded-circle d-inline-flex align-items-center gap-1 ${
+                  userVote === -1 ? 'text-primary' : 'text-muted'
+                }`}
+                aria-label="Dislike"
+                style={{ height: 32 }}
+                disabled={isVoting}
+                onClick={() => handleVote(-1)}
+              >
+                <BsHandThumbsDown size={14} />
+                {dislikesCount > 0 && <span style={{ fontSize: 12, fontWeight: 600 }}>{dislikesCount}</span>}
+              </button>
+            </>
           )}
-          {(canVote || readOnlyVotes || dislikesCount > 0) && (
-            <button
-              type="button"
-              className={`btn btn-link btn-sm p-1 rounded-circle d-inline-flex align-items-center gap-1 ${
-                userVote === -1 ? 'text-primary' : 'text-muted'
-              }`}
-              aria-label="Dislike"
-              style={{ height: 32 }}
-              disabled={!canVote || isVoting}
-              onClick={() => handleVote(-1)}
-            >
+          {!canVote && showVoteControls && likesCount > 0 && (
+            <span className="d-inline-flex align-items-center gap-1 h-32 px-2 text-muted text-xs fw-semibold">
+              <BsHandThumbsUp size={14} />
+              {likesCount}
+            </span>
+          )}
+          {!canVote && showVoteControls && dislikesCount > 0 && (
+            <span className="d-inline-flex align-items-center gap-1 h-32 px-2 text-muted text-xs fw-semibold">
               <BsHandThumbsDown size={14} />
-              {dislikesCount > 0 && <span style={{ fontSize: 12, fontWeight: 600 }}>{dislikesCount}</span>}
-            </button>
+              {dislikesCount}
+            </span>
           )}
           {isAuthenticated && canReply && (
             <button
@@ -461,6 +483,11 @@ export default function ReviewCommentThread({
   onDeleteComment,
   onVoteComment,
   readOnlyVotes = false,
+  reviewLikesCount,
+  reviewDislikesCount,
+  reviewUserVote,
+  onVoteReview,
+  votingReview = false,
 }: Props) {
   const [openReplyKey, setOpenReplyKey] = useState<string | null>(null);
   const [replyParentIdState, setReplyParentIdState] = useState<number | null>(null);
@@ -557,6 +584,8 @@ export default function ReviewCommentThread({
     setVotingCommentId(commentId);
     try {
       await onVoteComment(reviewId, commentId, value);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to save vote');
     } finally {
       setVotingCommentId(null);
     }
@@ -592,19 +621,74 @@ export default function ReviewCommentThread({
     businessName,
   };
 
+  const showReviewActions =
+    useReviewAnchor &&
+    (onVoteReview || (isAuthenticated && canReply) || (reviewLikesCount ?? 0) > 0 || (reviewDislikesCount ?? 0) > 0);
+
   return (
     <>
-      <div className="mt-3 mb-2">
-        {useReviewAnchor && isAuthenticated && canReply && (
-          <div className="d-flex align-items-center gap-1 mb-2">
-            <button
-              type="button"
-              className="btn btn-link btn-sm px-3 py-1 text-muted text-decoration-none fw-bold"
-              style={{ fontSize: 12 }}
-              onClick={() => toggleReply(null)}
-            >
-              Reply
-            </button>
+      <div className={useReviewAnchor ? 'mb-2' : 'mt-3 mb-2'}>
+        {showReviewActions && (
+          <div className="d-flex align-items-center gap-1 mb-1">
+            {onVoteReview && isAuthenticated ? (
+              <>
+                <button
+                  type="button"
+                  className={`btn btn-link btn-sm p-1 rounded-circle d-inline-flex align-items-center gap-1 ${
+                    reviewUserVote === 1 ? 'text-primary' : 'text-muted'
+                  }`}
+                  aria-label="Like review"
+                  style={{ height: 32 }}
+                  disabled={votingReview}
+                  onClick={() => onVoteReview(1)}
+                >
+                  <BsHandThumbsUp size={14} />
+                  {(reviewLikesCount ?? 0) > 0 && (
+                    <span style={{ fontSize: 12, fontWeight: 600 }}>{reviewLikesCount}</span>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  className={`btn btn-link btn-sm p-1 rounded-circle d-inline-flex align-items-center gap-1 ${
+                    reviewUserVote === -1 ? 'text-primary' : 'text-muted'
+                  }`}
+                  aria-label="Dislike review"
+                  style={{ height: 32 }}
+                  disabled={votingReview}
+                  onClick={() => onVoteReview(-1)}
+                >
+                  <BsHandThumbsDown size={14} />
+                  {(reviewDislikesCount ?? 0) > 0 && (
+                    <span style={{ fontSize: 12, fontWeight: 600 }}>{reviewDislikesCount}</span>
+                  )}
+                </button>
+              </>
+            ) : (
+              <>
+                {(reviewLikesCount ?? 0) > 0 && (
+                  <span className="d-inline-flex align-items-center gap-1 text-muted small fw-semibold px-2">
+                    <BsHandThumbsUp size={14} />
+                    {reviewLikesCount}
+                  </span>
+                )}
+                {(reviewDislikesCount ?? 0) > 0 && (
+                  <span className="d-inline-flex align-items-center gap-1 text-muted small fw-semibold px-2">
+                    <BsHandThumbsDown size={14} />
+                    {reviewDislikesCount}
+                  </span>
+                )}
+              </>
+            )}
+            {isAuthenticated && canReply && (
+              <button
+                type="button"
+                className="btn btn-link btn-sm px-3 py-1 text-muted text-decoration-none fw-bold"
+                style={{ fontSize: 12 }}
+                onClick={() => toggleReply(null)}
+              >
+                Reply
+              </button>
+            )}
           </div>
         )}
 

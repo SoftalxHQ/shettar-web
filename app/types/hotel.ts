@@ -55,6 +55,9 @@ export interface HotelReview {
   admin_reply_by?: string | null;
   admin_replied_at?: string | null;
   comments?: HotelReviewComment[];
+  likes_count?: number;
+  dislikes_count?: number;
+  user_vote?: 1 | -1 | null;
 }
 
 export interface HotelRatingBucket {
