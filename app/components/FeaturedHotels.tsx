@@ -46,7 +46,7 @@ const FeaturedHotels = () => {
     return () => mq.removeEventListener('change', update);
   }, []);
 
-  const useCarousel = hotels.length > 4 || (isMobile && hotels.length > 1);
+  const useCarousel = hotels.length > 4 || (isMobile && hotels.length > 0);
   const canScroll = hotels.length > (isMobile ? 1 : 4);
 
   const [emblaRef, emblaApi] = useEmblaCarousel({

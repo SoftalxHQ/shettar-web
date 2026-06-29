@@ -3,7 +3,7 @@
 import { useToggle } from '@/app/hooks';
 import { yupResolver } from '@hookform/resolvers/yup';
 import Nouislider from 'nouislider-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useSyncExternalStore } from 'react';
 import { Button, Card, Col, Collapse, Container, FormCheck, Row, CardBody } from 'react-bootstrap';
 import FormCheckInput from 'react-bootstrap/esm/FormCheckInput';
 import FormCheckLabel from 'react-bootstrap/esm/FormCheckLabel';
@@ -14,8 +14,9 @@ import * as yup from 'yup';
 import SelectFormInput from './form/SelectFormInput';
 import TextFormInput from './form/TextFormInput';
 
-import { useRouter, useSearchParams, usePathname } from 'next/navigation';
+import { useRouter, useSearchParams, usePathname, type ReadonlyURLSearchParams } from 'next/navigation';
 import { useHomeSearchOptional } from '@/app/contexts/HomeSearchContext';
+import { withBrowseCredentials } from '@/app/helpers/browse-gate';
 
 const filterAmenities = [
   { label: 'Air Conditioning', value: 'ac' },
@@ -30,75 +31,74 @@ const filterAmenities = [
   { label: 'Room Service', value: 'room_service' },
 ];
 
-const HotelGridFilter = () => {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const pathname = usePathname();
-  const homeSearch = useHomeSearchOptional();
+const filterSchema = yup.object({
+  hotelName: yup.string().default(''),
+});
 
-  const { isOpen, toggle } = useToggle();
-  const [priceRange, setPriceRange] = useState<string[]>(['0', '500000']);
-  const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
-  const [selectedStars, setSelectedStars] = useState<number[]>([]);
-  const [selectedHotelType, setSelectedHotelType] = useState<string>('-1');
-  const [categories, setCategories] = useState<{ id: number, name: string }[]>([]);
-  const [minRating, setMinRating] = useState<number>(0);
-  const [sortBy, setSortBy] = useState<string>('-1');
+type FilterFormValues = yup.InferType<typeof filterSchema>;
 
-  const [mounted, setMounted] = useState(false);
+type FilterUiState = {
+  priceRange: string[];
+  selectedAmenities: string[];
+  selectedStars: number[];
+  selectedHotelType: string;
+  minRating: number;
+  sortBy: string;
+  hotelName: string;
+};
 
-  useEffect(() => {
-    setMounted(true);
-    // Sync with URL after mounting to avoid hydration mismatch
-    setPriceRange([
+function parseFilterStateFromSearchParams(searchParams: ReadonlyURLSearchParams): FilterUiState {
+  return {
+    priceRange: [
       searchParams.get('min_price') || '0',
-      searchParams.get('max_price') || '500000'
-    ]);
-    setSelectedAmenities(searchParams.get('amenities')?.split(',') || []);
-    setSelectedStars(searchParams.get('stars')?.split(',').filter(Boolean).map(s => parseInt(s)) || []);
-    setSelectedHotelType(searchParams.get('hotel_types') || '-1');
-    setMinRating(parseFloat(searchParams.get('min_rating') || '0'));
-    setSortBy(searchParams.get('sort_by') || '-1');
-  }, [searchParams]);
+      searchParams.get('max_price') || '500000',
+    ],
+    selectedAmenities: searchParams.get('amenities')?.split(',').filter(Boolean) ?? [],
+    selectedStars:
+      searchParams.get('stars')?.split(',').filter(Boolean).map((s) => parseInt(s, 10)) ?? [],
+    selectedHotelType: searchParams.get('hotel_types') || '-1',
+    minRating: parseFloat(searchParams.get('min_rating') || '0'),
+    sortBy: searchParams.get('sort_by') || '-1',
+    hotelName: searchParams.get('name') || '',
+  };
+}
 
-  useEffect(() => {
-    // Fetch categories dynamically once on mount
-    const fetchCategories = async () => {
-      try {
-        const rawUrl = process.env.NEXT_PUBLIC_API_URL;
-        const baseUrl = (rawUrl && rawUrl !== 'undefined') ? rawUrl : "http://127.0.0.1:3000";
-        const API_URL = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
-        const res = await fetch(`${API_URL}/api/v1/businesses/categories`);
-        if (res.ok) {
-          const data = await res.json();
-          setCategories(data);
-        }
-      } catch (error) {
-        console.error('Failed to fetch categories:', error);
-      }
-    };
-    fetchCategories();
-  }, []);
+const emptySubscribe = () => () => {};
+const getClientMounted = () => true;
+const getServerMounted = () => false;
 
-  const filterSchema = yup.object({
-    hotelName: yup.string(),
-  });
+type FilterPanelProps = {
+  initial: FilterUiState;
+  categories: { id: number; name: string }[];
+  pathname: string;
+  searchParams: ReadonlyURLSearchParams;
+};
 
-  const { control, handleSubmit, setValue } = useForm({
+function HotelGridFilterPanel({
+  initial,
+  categories,
+  pathname,
+  searchParams,
+}: FilterPanelProps) {
+  const router = useRouter();
+  const homeSearch = useHomeSearchOptional();
+  const { isOpen, toggle } = useToggle();
+
+  const [priceRange, setPriceRange] = useState(initial.priceRange);
+  const [selectedAmenities, setSelectedAmenities] = useState(initial.selectedAmenities);
+  const [selectedStars, setSelectedStars] = useState(initial.selectedStars);
+  const [selectedHotelType, setSelectedHotelType] = useState(initial.selectedHotelType);
+  const [minRating, setMinRating] = useState(initial.minRating);
+  const [sortBy, setSortBy] = useState(initial.sortBy);
+
+  const { control, handleSubmit } = useForm<FilterFormValues>({
     resolver: yupResolver(filterSchema),
     defaultValues: {
-      hotelName: '',
-    }
+      hotelName: initial.hotelName,
+    },
   });
 
-  // Sync hotelName specifically after mount
-  useEffect(() => {
-    if (mounted) {
-      setValue('hotelName', searchParams.get('name') || '');
-    }
-  }, [mounted, searchParams, setValue]);
-
-  const onApplyFilter = (data: any) => {
+  const onApplyFilter = (data: FilterFormValues) => {
     const params = new URLSearchParams(searchParams.toString());
 
     if (data.hotelName) params.set('name', data.hotelName);
@@ -155,36 +155,8 @@ const HotelGridFilter = () => {
       if (val) params.set(key, val);
     });
 
-    setPriceRange(['0', '500000']);
-    setSelectedAmenities([]);
-    setSelectedStars([]);
-    setSelectedHotelType('-1');
-    setMinRating(0);
-    setSortBy('-1');
-    setValue('hotelName', '');
-
     router.push(`${pathname}?${params.toString()}`);
   };
-
-  if (!mounted) {
-    return (
-      <section className="pt-0 pb-4">
-        <Container className="position-relative">
-          <Row>
-            <Col xs={12}>
-              <div className="d-flex justify-content-between">
-                <input type="checkbox" className="btn-check" id="btn-check-soft" key="skeleton-check" readOnly />
-                <label className="btn btn-primary-soft btn-primary-check mb-0 items-center" htmlFor="btn-check-soft">
-                  <BsSliders className=" fa-fe me-2" />
-                  Show Filters
-                </label>
-              </div>
-            </Col>
-          </Row>
-        </Container>
-      </section>
-    );
-  }
 
   return (
     <section className="pt-0 pb-4">
@@ -229,7 +201,7 @@ const HotelGridFilter = () => {
                     <TextFormInput
                       name="hotelName"
                       className="form-control-lg"
-                      control={control as any}
+                      control={control}
                       label="Hotel Name"
                       placeholder="e.g. Black Tower"
                       containerClass="form-control-borderless"
@@ -385,6 +357,73 @@ const HotelGridFilter = () => {
         </Collapse>
       </Container>
     </section>
+  );
+};
+
+const HotelGridFilter = () => {
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const mounted = useSyncExternalStore(emptySubscribe, getClientMounted, getServerMounted);
+  const [categories, setCategories] = useState<{ id: number; name: string }[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const fetchCategories = async () => {
+      try {
+        const rawUrl = process.env.NEXT_PUBLIC_API_URL;
+        const baseUrl = rawUrl && rawUrl !== 'undefined' ? rawUrl : 'http://127.0.0.1:3000';
+        const API_URL = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+        const res = await fetch(
+          `${API_URL}/api/v1/businesses/categories`,
+          withBrowseCredentials()
+        );
+        if (!cancelled && res.ok) {
+          const data = await res.json();
+          setCategories(data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch categories:', error);
+      }
+    };
+
+    void fetchCategories();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const filterKey = searchParams.toString();
+  const initialFilters = parseFilterStateFromSearchParams(searchParams);
+
+  if (!mounted) {
+    return (
+      <section className="pt-0 pb-4">
+        <Container className="position-relative">
+          <Row>
+            <Col xs={12}>
+              <div className="d-flex justify-content-between">
+                <input type="checkbox" className="btn-check" id="btn-check-soft" key="skeleton-check" readOnly />
+                <label className="btn btn-primary-soft btn-primary-check mb-0 items-center" htmlFor="btn-check-soft">
+                  <BsSliders className=" fa-fe me-2" />
+                  Show Filters
+                </label>
+              </div>
+            </Col>
+          </Row>
+        </Container>
+      </section>
+    );
+  }
+
+  return (
+    <HotelGridFilterPanel
+      key={filterKey}
+      initial={initialFilters}
+      categories={categories}
+      pathname={pathname}
+      searchParams={searchParams}
+    />
   );
 };
 

@@ -84,3 +84,27 @@ export interface HotelDetail extends Hotel {
   images_url?: string[];
   can_reply_to_reviews?: boolean;
 }
+
+export interface RoomTypeBusinessSummary {
+  id?: number;
+  slug?: string;
+  name?: string;
+  city?: string;
+  state?: string;
+  address?: string;
+  check_in?: string;
+  check_out?: string;
+}
+
+export interface RoomTypeDetail {
+  id: number;
+  slug?: string;
+  name: string;
+  price?: number;
+  images?: Array<string | { id: number; url: string }>;
+  images_url?: string[];
+  business?: RoomTypeBusinessSummary;
+  amenities?: Record<string, boolean>;
+  available_rooms?: number;
+  other_room_types?: Record<string, unknown>[];
+}

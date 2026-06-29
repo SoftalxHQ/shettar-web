@@ -1,11 +1,16 @@
 'use client';
 
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useCallback, useEffect, useState } from 'react';
+import Link from 'next/link';
 import { useParams, usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Header, Footer, Skeleton } from '@/app/components';
-import AvailabilityFilter from '@/app/components/HotelDetails/AvailabilityFilter';
+import AvailabilityFilter, {
+  type AvailabilityFormType,
+} from '@/app/components/HotelDetails/AvailabilityFilter';
 import HotelGallery from '@/app/components/HotelDetails/HotelGallery';
 import AboutHotel from '@/app/components/HotelDetails/AboutHotel';
+import { withBrowseCredentials } from '@/app/helpers/browse-gate';
+import type { HotelDetail } from '@/app/types/hotel';
 
 const formatDateToLocalISO = (date: Date) => {
   const year = date.getFullYear();
@@ -22,11 +27,11 @@ function HotelDetailContent() {
 
   const hotelSlug = (params?.hotelSlug as string) || searchParams.get('slug');
 
-  const [hotel, setHotel] = useState<any>(null);
+  const [hotel, setHotel] = useState<HotelDetail | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchHotelDetail = async () => {
+  const fetchHotelDetail = useCallback(async () => {
     if (!hotelSlug) {
       setIsLoading(false);
       return;
@@ -50,12 +55,12 @@ function HotelDetailContent() {
         url += `?${query.toString()}`;
       }
 
-      const response = await fetch(url);
+      const response = await fetch(url, withBrowseCredentials());
       if (!response.ok) {
         throw new Error('Hotel not found');
       }
 
-      const data = await response.json();
+      const data = (await response.json()) as HotelDetail;
       setHotel(data);
     } catch (err) {
       console.error('Error fetching hotel details:', err);
@@ -63,13 +68,13 @@ function HotelDetailContent() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [hotelSlug, searchParams]);
 
   useEffect(() => {
     fetchHotelDetail();
-  }, [hotelSlug, searchParams]);
+  }, [fetchHotelDetail]);
 
-  const handleSearch = (searchData: any) => {
+  const handleSearch = (searchData: AvailabilityFormType) => {
     const query = new URLSearchParams(searchParams.toString());
 
     if (searchData.stayFor && Array.isArray(searchData.stayFor) && searchData.stayFor.length === 2) {
@@ -121,11 +126,17 @@ function HotelDetailContent() {
         <div className="container mt-5 pt-5 text-center py-5 my-5">
           <h2 className="text-danger mb-3">Hotel Not Found</h2>
           <p className="mb-4">{error || 'Please select a hotel from our list.'}</p>
-          <a href="/hotel/list" className="btn btn-primary px-4">Back to Hotels</a>
+          <Link href="/hotel/list" className="btn btn-primary px-4">
+            Back to Hotels
+          </Link>
         </div>
         <Footer />
       </>
     );
+  }
+
+  if (!hotel) {
+    return null;
   }
 
   return (
@@ -133,7 +144,7 @@ function HotelDetailContent() {
       <Header />
 
       <main>
-        <div className={isLoading ? "opacity-50 pointer-events-none" : ""}>
+        <div className={isLoading ? 'opacity-50 pointer-events-none' : ''}>
           <AvailabilityFilter hotel={hotel} onSearch={handleSearch} isLoading={isLoading} />
           <HotelGallery hotel={hotel} />
           <AboutHotel hotel={hotel} onRefresh={fetchHotelDetail} />
@@ -150,5 +161,5 @@ export default function HotelDetailPage() {
     <Suspense fallback={<div>Loading hotel details...</div>}>
       <HotelDetailContent />
     </Suspense>
-  )
+  );
 }

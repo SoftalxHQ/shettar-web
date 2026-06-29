@@ -1,6 +1,7 @@
 import { ReadonlyURLSearchParams } from 'next/navigation';
 import { Hotel } from '@/app/types/hotel';
 import { getStoredToken } from '@/app/helpers/auth';
+import { withBrowseCredentials } from '@/app/helpers/browse-gate';
 
 export type BusinessListMeta = {
   current_page: number;
@@ -212,9 +213,12 @@ export async function fetchBusinesses(options: {
     excludeFeatured: options.excludeFeatured,
   });
   const token = getStoredToken();
-  const response = await fetch(`${getApiBaseUrl()}/api/v1/businesses?${qs}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+  const response = await fetch(
+    `${getApiBaseUrl()}/api/v1/businesses?${qs}`,
+    withBrowseCredentials({
+      headers: { Authorization: `Bearer ${token}` },
+    })
+  );
   if (!response.ok) {
     throw new Error('Failed to fetch hotels');
   }

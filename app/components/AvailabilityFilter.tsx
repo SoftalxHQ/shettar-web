@@ -1,13 +1,18 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import { Button, Col, Dropdown, DropdownDivider, DropdownMenu, DropdownToggle, FormLabel, Row } from 'react-bootstrap';
 import { BsCalendar, BsDashCircle, BsGeoAlt, BsPerson, BsPlusCircle, BsSearch } from 'react-icons/bs';
-import { useSearchParams, useRouter, usePathname } from 'next/navigation';
+import { useSearchParams, useRouter, usePathname, type ReadonlyURLSearchParams } from 'next/navigation';
 import SelectFormInput from './form/SelectFormInput';
 import Flatpicker from './form/Flatpicker';
 import { persistRecentSearch } from '@/app/helpers/ad-viewer-context';
 import { useHomeSearchOptional } from '@/app/contexts/HomeSearchContext';
+import { withBrowseCredentials } from '@/app/helpers/browse-gate';
+import {
+  addDaysToDate,
+  stayForFromSearchParams,
+} from '@/app/helpers/stay-dates';
 
 type AvailabilityFormType = {
   location: string;
@@ -19,7 +24,9 @@ type AvailabilityFormType = {
   };
 };
 
-let locationsCache: any[] | null = null;
+type LocationOption = { display: string };
+
+let locationsCache: LocationOption[] | null = null;
 
 const formatDateToLocalISO = (date: Date) => {
   const year = date.getFullYear();
@@ -28,122 +35,64 @@ const formatDateToLocalISO = (date: Date) => {
   return `${year}-${month}-${day}`;
 };
 
-const parseDateFromLocalISO = (dateStr: string) => {
-  const [year, month, day] = dateStr.split('-').map(Number);
-  return new Date(year, month - 1, day);
+const emptySubscribe = () => () => {};
+
+function readClientDefaultStayFor(): Date[] {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return [today, addDaysToDate(today, 1)];
+}
+
+function useClientDefaultStayFor(): Date[] {
+  return useSyncExternalStore(emptySubscribe, readClientDefaultStayFor, () => []);
+}
+
+function buildHomeFormValue(
+  searchParams: ReadonlyURLSearchParams,
+  defaultStayFor: Date[],
+): AvailabilityFormType {
+  const rooms_str = searchParams.get('rooms');
+  const adults_str = searchParams.get('adults');
+  const children_str = searchParams.get('children');
+  const location_str = searchParams.get('location') || '';
+  const stayFor = stayForFromSearchParams(
+    searchParams.get('start_date'),
+    searchParams.get('end_date'),
+  );
+
+  return {
+    location: location_str,
+    stayFor: stayFor.length > 0 ? stayFor : defaultStayFor,
+    guests: {
+      adults: Math.max(1, adults_str ? parseInt(adults_str, 10) : 2),
+      children: children_str ? parseInt(children_str, 10) : 0,
+      rooms: rooms_str ? parseInt(rooms_str, 10) : 1,
+    },
+  };
+}
+
+type HomeFilterPanelProps = {
+  initial: AvailabilityFormType;
+  availableLocations: LocationOption[];
+  onSubmitSearch: (formValue: AvailabilityFormType) => void;
 };
 
-const AvailabilityFilter = () => {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const pathname = usePathname();
-  const homeSearch = useHomeSearchOptional();
-
-  const getInitialValue = (): AvailabilityFormType => {
-    const start_date_str = searchParams.get('start_date');
-    const end_date_str = searchParams.get('end_date');
-    const rooms_str = searchParams.get('rooms');
-    const adults_str = searchParams.get('adults');
-    const children_str = searchParams.get('children');
-    const location_str = searchParams.get('location') || '';
-
-    let stayFor: Date | Array<Date> = [new Date(), new Date(Date.now() + 24 * 60 * 60 * 1000)];
-
-    if (start_date_str && end_date_str) {
-      const s = parseDateFromLocalISO(start_date_str);
-      const e = parseDateFromLocalISO(end_date_str);
-      if (!isNaN(s.getTime()) && !isNaN(e.getTime())) {
-        stayFor = [s, e];
-      }
-    }
-
-    return {
-      location: location_str,
-      stayFor: stayFor,
-      guests: {
-        adults: Math.max(1, adults_str ? parseInt(adults_str) : 2), // At least 1 adult required
-        children: children_str ? parseInt(children_str) : 0,
-        rooms: rooms_str ? parseInt(rooms_str) : 1,
-      },
-    };
-  };
-
-  const [formValue, setFormValue] = useState<AvailabilityFormType>(getInitialValue());
-  const [availableLocations, setAvailableLocations] = useState<any[]>([]);
-
-  useEffect(() => {
-    setFormValue(getInitialValue());
-  }, [searchParams]);
-
-  useEffect(() => {
-    const fetchLocations = async () => {
-      if (locationsCache) {
-        setAvailableLocations(locationsCache);
-        return;
-      }
-
-      try {
-        const rawUrl = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:3000";
-        const API_URL = rawUrl.endsWith('/') ? rawUrl.slice(0, -1) : rawUrl;
-        const response = await fetch(`${API_URL}/api/v1/businesses/locations`);
-        if (response.ok) {
-          const data = await response.json();
-          locationsCache = data;
-          setAvailableLocations(data);
-        }
-      } catch (error) {
-        console.error('Error fetching locations:', error);
-      }
-    };
-    fetchLocations();
-  }, []);
+function HomeAvailabilityFilterPanel({
+  initial,
+  availableLocations,
+  onSubmitSearch,
+}: HomeFilterPanelProps) {
+  const [formValue, setFormValue] = useState(initial);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const query = new URLSearchParams();
-
-    if (Array.isArray(formValue.stayFor) && formValue.stayFor.length === 2) {
-      query.set('start_date', formatDateToLocalISO(formValue.stayFor[0]));
-      query.set('end_date', formatDateToLocalISO(formValue.stayFor[1]));
-    }
-
-    if (formValue.guests.rooms) {
-      query.set('rooms', formValue.guests.rooms.toString());
-    }
-
-    if (formValue.guests.adults) {
-      query.set('adults', formValue.guests.adults.toString());
-    }
-
-    if (formValue.guests.children !== undefined) {
-      query.set('children', formValue.guests.children.toString());
-    }
-
-    if (formValue.location) {
-      query.set('location', formValue.location);
-      persistRecentSearch(formValue.location);
-    }
-
-    const targetPage = pathname === '/'
-      ? '/'
-      : pathname.includes('/hotel/list')
-        ? '/hotel/list'
-        : '/hotel/grid';
-    router.push(`${targetPage}?${query.toString()}`);
-    homeSearch?.markSearched();
+    onSubmitSearch(formValue);
   };
 
-  const updateGuests = (type: keyof AvailabilityFormType['guests'], increase: boolean = true) => {
+  const updateGuests = (type: keyof AvailabilityFormType['guests'], increase = true) => {
     const val = formValue.guests[type];
-    let newVal: number;
-
-    if (increase) {
-      newVal = val + 1;
-    } else {
-      // Adults must be at least 1, others can go to 0
-      const minValue = type === 'adults' ? 1 : 0;
-      newVal = val > minValue ? val - 1 : minValue;
-    }
+    const minValue = type === 'adults' ? 1 : 0;
+    const newVal = increase ? val + 1 : val > minValue ? val - 1 : minValue;
 
     setFormValue({
       ...formValue,
@@ -169,11 +118,14 @@ const AvailabilityFilter = () => {
     return value;
   };
 
-  const flatpickrOptions = useMemo(() => ({
-    mode: 'range' as const,
-    dateFormat: 'd M',
-    minDate: 'today',
-  }), []);
+  const flatpickrOptions = useMemo(
+    () => ({
+      mode: 'range' as const,
+      dateFormat: 'd M',
+      minDate: 'today',
+    }),
+    [],
+  );
 
   return (
     <form className="bg-mode shadow rounded-3 position-relative p-4 pe-md-5 pb-5 pb-md-4 mb-4" onSubmit={handleSubmit}>
@@ -181,7 +133,6 @@ const AvailabilityFilter = () => {
         <Col lg={4}>
           <div className="form-control-border form-control-transparent form-fs-md items-center gap-2">
             <BsGeoAlt size={37} />
-
             <div className="flex-grow-1">
               <FormLabel className="form-label">Location</FormLabel>
               <SelectFormInput
@@ -202,7 +153,6 @@ const AvailabilityFilter = () => {
         <Col lg={4}>
           <div className="form-control-border form-control-transparent form-fs-md items-center gap-2">
             <BsCalendar size={37} />
-
             <div className="flex-grow-1">
               <FormLabel className="form-label">Check in - out</FormLabel>
               <Flatpicker
@@ -218,7 +168,6 @@ const AvailabilityFilter = () => {
         <Col lg={4}>
           <div className="form-control-border form-control-transparent form-fs-md items-center gap-2">
             <BsPerson size={37} />
-
             <div className="flex-grow-1">
               <label className="form-label">Guests &amp; rooms</label>
               <Dropdown className="guest-selector me-2">
@@ -226,10 +175,9 @@ const AvailabilityFilter = () => {
                   as="input"
                   className="form-guest-selector form-control selection-result"
                   value={getGuestsValue()}
-                  onChange={() => { }}
+                  onChange={() => {}}
                   readOnly
                 />
-
                 <DropdownMenu className="guest-selector-dropdown">
                   <li className="d-flex justify-content-between">
                     <div>
@@ -246,21 +194,14 @@ const AvailabilityFilter = () => {
                       </Button>
                     </div>
                   </li>
-
                   <DropdownDivider />
-
                   <li className="d-flex justify-content-between">
                     <div>
                       <h6 className="mb-0">Children</h6>
                       <small>Ages 13 below</small>
                     </div>
                     <div className="hstack gap-1 align-items-center">
-                      <Button
-                        variant="link"
-                        type="button"
-                        className="btn btn-link child-remove p-0 mb-0"
-                        onClick={() => updateGuests('children', false)}
-                      >
+                      <Button variant="link" type="button" className="btn btn-link child-remove p-0 mb-0" onClick={() => updateGuests('children', false)}>
                         <BsDashCircle className="  fs-5 fa-fw" />
                       </Button>
                       <h6 className="guest-selector-count mb-0 child">{formValue.guests.children ?? 0}</h6>
@@ -269,9 +210,7 @@ const AvailabilityFilter = () => {
                       </Button>
                     </div>
                   </li>
-
                   <DropdownDivider />
-
                   <li className="d-flex justify-content-between">
                     <div>
                       <h6 className="mb-0">Rooms</h6>
@@ -300,6 +239,97 @@ const AvailabilityFilter = () => {
         </button>
       </div>
     </form>
+  );
+}
+
+const AvailabilityFilter = () => {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const homeSearch = useHomeSearchOptional();
+  const defaultStayFor = useClientDefaultStayFor();
+  const [availableLocations, setAvailableLocations] = useState<LocationOption[]>(locationsCache ?? []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const fetchLocations = async () => {
+      if (locationsCache) {
+        setAvailableLocations(locationsCache);
+        return;
+      }
+
+      try {
+        const rawUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000';
+        const API_URL = rawUrl.endsWith('/') ? rawUrl.slice(0, -1) : rawUrl;
+        const response = await fetch(
+          `${API_URL}/api/v1/businesses/locations`,
+          withBrowseCredentials(),
+        );
+        if (!cancelled && response.ok) {
+          const data = await response.json();
+          locationsCache = data;
+          setAvailableLocations(data);
+        }
+      } catch (error) {
+        console.error('Error fetching locations:', error);
+      }
+    };
+
+    void fetchLocations();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const formKey = searchParams.toString();
+  const initial = buildHomeFormValue(searchParams, defaultStayFor);
+
+  const onSubmitSearch = useCallback(
+    (formValue: AvailabilityFormType) => {
+      const query = new URLSearchParams();
+
+      if (Array.isArray(formValue.stayFor) && formValue.stayFor.length === 2) {
+        query.set('start_date', formatDateToLocalISO(formValue.stayFor[0]));
+        query.set('end_date', formatDateToLocalISO(formValue.stayFor[1]));
+      }
+
+      if (formValue.guests.rooms) {
+        query.set('rooms', formValue.guests.rooms.toString());
+      }
+
+      if (formValue.guests.adults) {
+        query.set('adults', formValue.guests.adults.toString());
+      }
+
+      if (formValue.guests.children !== undefined) {
+        query.set('children', formValue.guests.children.toString());
+      }
+
+      if (formValue.location) {
+        query.set('location', formValue.location);
+        persistRecentSearch(formValue.location);
+      }
+
+      const targetPage =
+        pathname === '/'
+          ? '/'
+          : pathname.includes('/hotel/list')
+            ? '/hotel/list'
+            : '/hotel/grid';
+      router.push(`${targetPage}?${query.toString()}`);
+      homeSearch?.markSearched();
+    },
+    [homeSearch, pathname, router],
+  );
+
+  return (
+    <HomeAvailabilityFilterPanel
+      key={formKey}
+      initial={initial}
+      availableLocations={availableLocations}
+      onSubmitSearch={onSubmitSearch}
+    />
   );
 };
 

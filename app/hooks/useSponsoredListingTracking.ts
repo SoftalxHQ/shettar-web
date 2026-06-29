@@ -178,7 +178,7 @@ export function useSponsoredListingTracking(payload: TrackingPayload | null) {
           }
         });
       },
-      { threshold: [0.5] }
+      { threshold: [0.25, 0.5] }
     );
 
     observer.observe(el);

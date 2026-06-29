@@ -15,6 +15,8 @@
  *   PUT    /accounts/update_password  → apply reset code + new password
  */
 
+import { withBrowseCredentials } from '@/app/helpers/browse-gate';
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -144,14 +146,17 @@ export const getStoredToken = (): string | null => {
 export async function signIn(payload: SignInPayload): Promise<AuthResult> {
   try {
     const { turnstileToken, ...account } = payload;
-    const res = await fetch(`${API_URL}/accounts/sign_in`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        account,
-        ...(turnstileToken ? { turnstile_token: turnstileToken } : {}),
-      }),
-    });
+    const res = await fetch(
+      `${API_URL}/accounts/sign_in`,
+      withBrowseCredentials({
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          account,
+          ...(turnstileToken ? { turnstile_token: turnstileToken } : {}),
+        }),
+      })
+    );
 
     const data = await res.json();
 
@@ -208,14 +213,17 @@ export async function signIn(payload: SignInPayload): Promise<AuthResult> {
 export async function signUp(payload: SignUpPayload): Promise<AuthResult> {
   try {
     const { turnstileToken, ...account } = payload;
-    const res = await fetch(`${API_URL}/accounts/sign_up`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        account,
-        ...(turnstileToken ? { turnstile_token: turnstileToken } : {}),
-      }),
-    });
+    const res = await fetch(
+      `${API_URL}/accounts/sign_up`,
+      withBrowseCredentials({
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          account,
+          ...(turnstileToken ? { turnstile_token: turnstileToken } : {}),
+        }),
+      })
+    );
 
     const data = await res.json();
 
@@ -261,14 +269,17 @@ export async function signUp(payload: SignUpPayload): Promise<AuthResult> {
  */
 export async function requestPasswordReset(email: string, turnstileToken?: string | null): Promise<AuthResult> {
   try {
-    const res = await fetch(`${API_URL}/accounts/reset_password`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        account: { email },
-        ...(turnstileToken ? { turnstile_token: turnstileToken } : {}),
-      }),
-    });
+    const res = await fetch(
+      `${API_URL}/accounts/reset_password`,
+      withBrowseCredentials({
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          account: { email },
+          ...(turnstileToken ? { turnstile_token: turnstileToken } : {}),
+        }),
+      })
+    );
 
     const data = await res.json();
 

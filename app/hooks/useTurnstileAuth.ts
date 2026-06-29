@@ -1,39 +1,32 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import TurnstileField, { isTurnstileEnabled, type TurnstileFieldHandle } from '@/app/components/TurnstileField';
-import { useTurnstileBrowse } from '@/app/contexts/TurnstileBrowseContext';
+import { getStoredBrowseClearanceToken } from '@/app/helpers/browse-gate';
 
 /**
- * Shared Turnstile state for auth forms — reuses the homepage browse token when still valid.
+ * Shared Turnstile state for auth forms — skips the widget when browse clearance exists.
  */
 export function useTurnstileAuth() {
-  const { turnstileToken: browseToken, clearTurnstileToken } = useTurnstileBrowse();
   const turnstileRequired = isTurnstileEnabled();
+  const hasBrowseClearance = Boolean(getStoredBrowseClearanceToken());
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const turnstileRef = useRef<TurnstileFieldHandle>(null);
 
-  useEffect(() => {
-    if (browseToken) {
-      setTurnstileToken(browseToken);
-    }
-  }, [browseToken]);
-
-  const showTurnstileWidget = turnstileRequired && !turnstileToken;
+  const showTurnstileWidget = turnstileRequired && !turnstileToken && !hasBrowseClearance;
+  const securityCheckRequired = turnstileRequired && !turnstileToken && !hasBrowseClearance;
 
   const resetTurnstile = () => {
-    clearTurnstileToken();
     setTurnstileToken(null);
     turnstileRef.current?.reset();
   };
 
   const consumeTurnstileOnSuccess = () => {
-    clearTurnstileToken();
     setTurnstileToken(null);
   };
 
   return {
-    turnstileRequired,
+    turnstileRequired: securityCheckRequired,
     turnstileToken,
     setTurnstileToken,
     turnstileRef,

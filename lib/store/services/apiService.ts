@@ -1,10 +1,17 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import type { BaseQueryFn } from "@reduxjs/toolkit/query";
+import type { BaseQueryFn, FetchBaseQueryMeta } from "@reduxjs/toolkit/query";
 import type { RootState } from "../store";
 import { clearCredentials, setCredentials, setUser } from "../slices/authSlice";
 import type { StoredUser } from "@/app/helpers/auth";
 import { wipeAllClientAuthStorage } from "@/app/helpers/auth";
+import { getBrowseApiHeaders, isBrowseGateEnabled, isBrowseClearanceRequiredResponse, redirectToBrowseVerify } from "@/app/helpers/browse-gate";
 import type { NotificationItem } from "@/lib/store/slices/notificationsSlice";
+
+function authorizationHeaderFromMeta(
+  meta: Pick<FetchBaseQueryMeta, "response"> | undefined,
+): string | null {
+  return meta?.response?.headers.get("Authorization") ?? null;
+}
 
 // ─── AccountProfile type (mirrors app/hooks/useAccountProfile.tsx) ────────────
 export interface AccountProfile {
@@ -34,17 +41,32 @@ export interface AccountProfile {
 
 const baseQuery = fetchBaseQuery({
   baseUrl: process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:3000",
+  credentials: "include",
   prepareHeaders: (headers, { getState }) => {
     const token = (getState() as RootState).auth.token;
     if (token) {
       headers.set("Authorization", `Bearer ${token}`);
     }
+    const browseHeaders = getBrowseApiHeaders();
+    Object.entries(browseHeaders).forEach(([key, value]) => {
+      headers.set(key, value);
+    });
     return headers;
   },
 });
 
 const baseQueryWithReauth: BaseQueryFn = async (args, api, extraOptions) => {
   const result = await baseQuery(args, api, extraOptions);
+  if (
+    isBrowseGateEnabled() &&
+    result.error?.status === 403 &&
+    typeof result.error.data === "object" &&
+    result.error.data &&
+    isBrowseClearanceRequiredResponse(403, result.error.data)
+  ) {
+    redirectToBrowseVerify();
+    return result;
+  }
   if (result.error?.status === 401) {
     const hadToken = !!(api.getState() as RootState).auth.token;
     // Clear legacy + persisted Redux auth before dispatch so no effect can re-inject stale credentials.
@@ -147,10 +169,8 @@ export const apiService = createApi({
       async onQueryStarted(_args, { dispatch, queryFulfilled }) {
         try {
           const { data, meta } = await queryFulfilled;
-          const authHeader = (meta as any)?.response?.headers?.get(
-            "Authorization",
-          );
-          const token = authHeader?.replace("Bearer ", "") ?? "";
+          const authHeader = authorizationHeaderFromMeta(meta);
+          const token = authHeader?.replace(/^Bearer\s+/i, "").trim() ?? "";
           const user = data.data;
           if (token && user) {
             dispatch(setCredentials({ token, user }));
@@ -170,10 +190,8 @@ export const apiService = createApi({
       async onQueryStarted(_args, { dispatch, queryFulfilled }) {
         try {
           const { data, meta } = await queryFulfilled;
-          const authHeader = (meta as any)?.response?.headers?.get(
-            "Authorization",
-          );
-          const token = authHeader?.replace("Bearer ", "") ?? "";
+          const authHeader = authorizationHeaderFromMeta(meta);
+          const token = authHeader?.replace(/^Bearer\s+/i, "").trim() ?? "";
           const user = data.data ?? data.status?.data;
           if (token && user) {
             dispatch(setCredentials({ token, user }));

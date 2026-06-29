@@ -1,12 +1,17 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import Link from 'next/link';
 import { useParams, usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Header } from '@/app/components';
 import RoomGallery from '@/app/components/RoomDetails/RoomGallery';
 import Footer from '@/app/components/Footer';
 import { Skeleton } from '@/app/components';
-import AvailabilityFilter from '@/app/components/HotelDetails/AvailabilityFilter';
+import AvailabilityFilter, {
+  type AvailabilityFormType,
+} from '@/app/components/HotelDetails/AvailabilityFilter';
+import { withBrowseCredentials } from '@/app/helpers/browse-gate';
+import type { RoomTypeDetail } from '@/app/types/hotel';
 
 const formatDateToLocalISO = (date: Date) => {
   const year = date.getFullYear();
@@ -23,7 +28,7 @@ export default function RoomDetailPage() {
   const searchParams = useSearchParams();
   const pathname = usePathname();
 
-  const [roomType, setRoomType] = useState<any>(null);
+  const [roomType, setRoomType] = useState<RoomTypeDetail | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -47,13 +52,13 @@ export default function RoomDetailPage() {
         url += `?${query.toString()}`;
       }
 
-      const response = await fetch(url);
+      const response = await fetch(url, withBrowseCredentials());
 
       if (!response.ok) {
         throw new Error('Room details not found');
       }
 
-      const data = await response.json();
+      const data = (await response.json()) as RoomTypeDetail;
       setRoomType(data);
     } catch (err) {
       console.error('Error fetching room details:', err);
@@ -67,7 +72,7 @@ export default function RoomDetailPage() {
     fetchRoomDetail();
   }, [fetchRoomDetail]);
 
-  const handleSearch = (searchData: any) => {
+  const handleSearch = (searchData: AvailabilityFormType) => {
     const query = new URLSearchParams(searchParams.toString());
 
     if (searchData.stayFor && Array.isArray(searchData.stayFor) && searchData.stayFor.length === 2) {
@@ -75,7 +80,7 @@ export default function RoomDetailPage() {
       query.set('end_date', formatDateToLocalISO(searchData.stayFor[1]));
     }
 
-    if (searchData.guests && searchData.guests.rooms) {
+    if (searchData.guests?.rooms) {
       query.set('rooms', searchData.guests.rooms.toString());
     }
 
@@ -110,7 +115,9 @@ export default function RoomDetailPage() {
         <div className="container mt-5 pt-5 text-center py-5">
           <h2 className="text-danger">Error</h2>
           <p>{error || 'Something went wrong.'}</p>
-          <a href="/hotel/list" className="btn btn-primary">Back to Hotels</a>
+          <Link href="/hotel/list" className="btn btn-primary">
+            Back to Hotels
+          </Link>
         </div>
         <Footer />
       </>
@@ -121,7 +128,7 @@ export default function RoomDetailPage() {
     <>
       <Header />
       <main>
-        <div className={isLoading ? "opacity-50 pointer-events-none" : ""}>
+        <div className={isLoading ? 'opacity-50 pointer-events-none' : ''}>
           {roomType.business && (
             <AvailabilityFilter
               hotel={roomType.business}

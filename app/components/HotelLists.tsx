@@ -33,6 +33,7 @@ const PAGE_LIMIT = 20;
 function mapSponsoredToHotel(s: SponsoredHotel): Hotel {
   return {
     ...s,
+    sponsored: true,
     feature: ['Sponsored'],
     features: ['Sponsored'],
     schemes: s.schemes ?? ['Free Cancellation', 'Instant Confirmation'],
@@ -116,6 +117,8 @@ const HotelLists = () => {
   }, [fetchHotels]);
 
   const displayHotels = [...sponsoredHotels, ...organicHotels];
+  const hasSponsored = sponsoredHotels.length > 0;
+  const hasOrganic = organicHotels.length > 0;
 
   if (!hasSearch) {
     return null;
@@ -185,7 +188,30 @@ const HotelLists = () => {
                   {error}
                 </Alert>
               ) : displayHotels.length > 0 ? (
-                displayHotels.map((hotel) => <HotelListCard key={hotel.id} hotel={hotel} />)
+                <>
+                  {hasSponsored && (
+                    <div>
+                      <p className="text-uppercase text-secondary small fw-bold mb-3" style={{ letterSpacing: '0.08em' }}>
+                        Sponsored
+                      </p>
+                      {sponsoredHotels.map((hotel) => (
+                        <HotelListCard key={hotel.id} hotel={hotel} />
+                      ))}
+                    </div>
+                  )}
+                  {hasOrganic && (
+                    <div className={hasSponsored ? 'mt-4' : undefined}>
+                      {hasSponsored && (
+                        <p className="text-uppercase text-secondary small fw-bold mb-3" style={{ letterSpacing: '0.08em' }}>
+                          All results
+                        </p>
+                      )}
+                      {organicHotels.map((hotel) => (
+                        <HotelListCard key={hotel.id} hotel={hotel} />
+                      ))}
+                    </div>
+                  )}
+                </>
               ) : (
                 <div className="text-center py-5">
                   <h4>No hotels found</h4>

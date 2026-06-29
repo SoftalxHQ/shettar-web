@@ -33,16 +33,16 @@ function locationLabel(city?: string, state?: string, address?: string): string 
   return 'Location';
 }
 
-function useAutoSlideImages(images: string[], intervalMs = 3500) {
-  const slides = useMemo(
-    () => images.filter(Boolean),
-    [images]
-  );
+function FeaturedHotelImageSlideshow({
+  slides,
+  name,
+  intervalMs = 3500,
+}: {
+  slides: string[];
+  name: string;
+  intervalMs?: number;
+}) {
   const [index, setIndex] = useState(0);
-
-  useEffect(() => {
-    setIndex(0);
-  }, [slides.join('|')]);
 
   useEffect(() => {
     if (slides.length <= 1) return;
@@ -50,9 +50,35 @@ function useAutoSlideImages(images: string[], intervalMs = 3500) {
       setIndex((current) => (current + 1) % slides.length);
     }, intervalMs);
     return () => window.clearInterval(timer);
-  }, [slides, intervalMs]);
+  }, [slides.length, intervalMs]);
 
-  return { slides, index };
+  return (
+    <div className="featured-hotels__image-slideshow">
+      {slides.map((src, slideIndex) => (
+        <div
+          key={`${src}-${slideIndex}`}
+          className={`featured-hotels__slide-image${slideIndex === index ? ' is-active' : ''}`}
+        >
+          <SkeletonImage
+            src={src}
+            alt={name}
+            className="card-img"
+            containerClassName="h-100"
+          />
+        </div>
+      ))}
+      {slides.length > 1 && (
+        <div className="featured-hotels__slide-dots" aria-hidden="true">
+          {slides.slice(0, 8).map((_, dotIndex) => (
+            <span
+              key={dotIndex}
+              className={`featured-hotels__slide-dot${dotIndex === index ? ' is-active' : ''}`}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 const FeaturedHotelCard = ({
@@ -73,12 +99,13 @@ const FeaturedHotelCard = ({
   const searchParams = useSearchParams();
   const searchQuery = searchParams.toString();
   const hotelDetailLink = `/hotel/${slug || id}${searchQuery ? `?${searchQuery}` : ''}`;
-  const { slides, index } = useAutoSlideImages(images);
+  const slides = useMemo(() => images.filter(Boolean), [images]);
+  const slidesKey = slides.join('|');
   const hasRating = rating > 0;
   const displayRating = hasRating ? rating.toFixed(1).replace(/\.0$/, '') : null;
 
   const { ref, trackClick } = useSponsoredListingTracking(
-    adCampaignId
+    sponsored && adCampaignId
       ? {
           ad_campaign_id: adCampaignId,
           business_id: id,
@@ -96,31 +123,7 @@ const FeaturedHotelCard = ({
           <span className="badge bg-secondary position-absolute top-0 end-0 m-2 z-1">Sponsored</span>
         )}
         {slides.length > 0 ? (
-          <div className="featured-hotels__image-slideshow">
-            {slides.map((src, slideIndex) => (
-              <div
-                key={`${src}-${slideIndex}`}
-                className={`featured-hotels__slide-image${slideIndex === index ? ' is-active' : ''}`}
-              >
-                <SkeletonImage
-                  src={src}
-                  alt={name}
-                  className="card-img"
-                  containerClassName="h-100"
-                />
-              </div>
-            ))}
-            {slides.length > 1 && (
-              <div className="featured-hotels__slide-dots" aria-hidden="true">
-                {slides.slice(0, 8).map((_, dotIndex) => (
-                  <span
-                    key={dotIndex}
-                    className={`featured-hotels__slide-dot${dotIndex === index ? ' is-active' : ''}`}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
+          <FeaturedHotelImageSlideshow key={slidesKey} slides={slides} name={name} />
         ) : (
           <div className="card-img bg-light d-flex align-items-center justify-content-center featured-hotels__image-fallback">
             <span className="text-secondary small opacity-50">No image</span>

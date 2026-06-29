@@ -1,12 +1,15 @@
 'use client';
 
-import { useEffect, useState, Suspense } from 'react';
+import { useCallback, useEffect, useState, Suspense } from 'react';
+import Link from 'next/link';
 import { useParams, useSearchParams } from 'next/navigation';
 import { Header } from '@/app/components';
 import Hero from '@/app/components/Booking/Hero';
 import BookingDetails from '@/app/components/Booking/BookingDetails';
 import Footer from '@/app/components/Footer';
 import { Skeleton } from '@/app/components';
+import { withBrowseCredentials } from '@/app/helpers/browse-gate';
+import type { RoomTypeDetail } from '@/app/types/hotel';
 
 function BookingPageContent() {
   const params = useParams();
@@ -35,38 +38,41 @@ function BookingPageContent() {
   const endDate = searchParams.get('end_date') || getDefaultEndDate();
   const rooms = searchParams.get('rooms');
 
-  const [roomType, setRoomType] = useState<any>(null);
+  const [roomType, setRoomType] = useState<RoomTypeDetail | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchRoomDetail = async () => {
-      if (!hotelSlug || !roomSlug) {
-        setIsLoading(false);
-        return;
+  const fetchRoomDetail = useCallback(async () => {
+    if (!hotelSlug || !roomSlug) {
+      setIsLoading(false);
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
+      const response = await fetch(
+        `${API_URL}/api/v1/businesses/${hotelSlug}/room_types/${roomSlug}`,
+        withBrowseCredentials()
+      );
+
+      if (!response.ok) {
+        throw new Error('Booking details not found');
       }
 
-      setIsLoading(true);
-      try {
-        const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
-        const response = await fetch(`${API_URL}/api/v1/businesses/${hotelSlug}/room_types/${roomSlug}`);
-
-        if (!response.ok) {
-          throw new Error('Booking details not found');
-        }
-
-        const data = await response.json();
-        setRoomType(data);
-      } catch (err) {
-        console.error('Error fetching booking details:', err);
-        setError('Unable to load booking details.');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchRoomDetail();
+      const data = (await response.json()) as RoomTypeDetail;
+      setRoomType(data);
+    } catch (err) {
+      console.error('Error fetching booking details:', err);
+      setError('Unable to load booking details.');
+    } finally {
+      setIsLoading(false);
+    }
   }, [hotelSlug, roomSlug]);
+
+  useEffect(() => {
+    fetchRoomDetail();
+  }, [fetchRoomDetail]);
 
   if (isLoading) {
     return (
@@ -90,7 +96,9 @@ function BookingPageContent() {
       <div className="container mt-5 pt-5 text-center py-5">
         <h2 className="text-danger">Error</h2>
         <p>{error || 'Missing booking information.'}</p>
-        <a href="/hotel/list" className="btn btn-primary">Back to Hotels</a>
+        <Link href="/hotel/list" className="btn btn-primary">
+          Back to Hotels
+        </Link>
       </div>
     );
   }

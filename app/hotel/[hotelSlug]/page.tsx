@@ -10,6 +10,7 @@ import AboutHotel from '@/app/components/HotelDetails/AboutHotel';
 import { Hotel } from '@/app/types/hotel';
 import { Skeleton } from '@/app/components';
 import { getStoredToken } from '@/app/helpers/auth';
+import { withBrowseCredentials } from '@/app/helpers/browse-gate';
 
 const formatDateToLocalISO = (date: Date) => {
   const year = date.getFullYear();
@@ -56,9 +57,12 @@ export default function HotelDetailPage() {
       }
 
       const token = getStoredToken();
-      const response = await fetch(url, {
-        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
-      });
+      const response = await fetch(
+        url,
+        withBrowseCredentials({
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        })
+      );
 
       if (!response.ok) {
         let message = 'Unable to load hotel details.';

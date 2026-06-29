@@ -110,7 +110,7 @@
   }
 
   &__slide {
-    flex: 0 0 calc(100% / 1.5);
+    flex: 0 0 calc(100% * 2 / 3);
     min-width: 0;
     padding-inline: calc(var(--bs-gutter-x) * 0.5);
 

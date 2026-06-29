@@ -8,6 +8,7 @@ import { BsStarFill, BsSearch } from 'react-icons/bs';
 import { FaAngleDown } from 'react-icons/fa6';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import Nouislider from 'nouislider-react';
+import { withBrowseCredentials } from '@/app/helpers/browse-gate';
 
 const HotelListFilter = () => {
   const router = useRouter();
@@ -43,7 +44,10 @@ const HotelListFilter = () => {
         const rawUrl = process.env.NEXT_PUBLIC_API_URL;
         const baseUrl = (rawUrl && rawUrl !== 'undefined') ? rawUrl : "http://127.0.0.1:3000";
         const API_URL = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
-        const res = await fetch(`${API_URL}/api/v1/businesses/categories`);
+        const res = await fetch(
+          `${API_URL}/api/v1/businesses/categories`,
+          withBrowseCredentials()
+        );
         if (res.ok) {
           const data = await res.json();
           setCategories(data);

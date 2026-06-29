@@ -18,7 +18,6 @@ import { apiService } from './services/apiService';
 import { actionCableMiddleware } from './middleware/actionCableMiddleware';
 import AccountNotificationsSync from '@/app/components/AccountNotificationsSync';
 import PushNotificationRegistrar from '@/app/components/PushNotificationRegistrar';
-import { TurnstileBrowseProvider } from '@/app/contexts/TurnstileBrowseContext';
 import { changeHTMLAttribute } from '@/app/utils/html-layout';
 import type { RootState, AppDispatch } from './store';
 
@@ -72,14 +71,12 @@ export default function ReduxProvider({ children }: { children: React.ReactNode 
 
   return (
     <Provider store={store}>
-      <PersistGate loading={null} persistor={persistor}>
-        <TurnstileBrowseProvider>
+        <PersistGate loading={null} persistor={persistor}>
           <ThemeSync />
           <AccountNotificationsSync />
           <PushNotificationRegistrar />
           {children}
-        </TurnstileBrowseProvider>
-      </PersistGate>
+        </PersistGate>
     </Provider>
   );
 }

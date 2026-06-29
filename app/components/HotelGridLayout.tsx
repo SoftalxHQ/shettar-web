@@ -27,6 +27,7 @@ const PAGE_LIMIT = 20;
 function mapSponsoredToHotel(s: SponsoredHotel): Hotel {
   return {
     ...s,
+    sponsored: true,
     feature: ['Sponsored'],
     is_favorite: s.is_favorite,
   };
@@ -122,8 +123,7 @@ const HotelGridLayout = () => {
   }, [fetchBusinessPage, hasSearch, searchParams]);
 
   const hasMore = meta ? meta.current_page < meta.total_pages : false;
-  const displayHotels = [...sponsoredHotels, ...organicHotels];
-  const totalCount = displayHotels.length;
+  const totalCount = sponsoredHotels.length + organicHotels.length;
 
   const handleLoadMore = async () => {
     if (!meta || meta.current_page >= meta.total_pages || loadingMore) return;
@@ -195,7 +195,25 @@ const HotelGridLayout = () => {
           </Alert>
         ) : totalCount > 0 ? (
           <>
-            <Row className="g-4">{displayHotels.map(renderHotelCard)}</Row>
+            {sponsoredHotels.length > 0 && (
+              <div className="mb-4">
+                <p className="text-uppercase text-secondary small fw-bold mb-3" style={{ letterSpacing: '0.08em' }}>
+                  Sponsored
+                </p>
+                <Row className="g-4">{sponsoredHotels.map(renderHotelCard)}</Row>
+              </div>
+            )}
+
+            {organicHotels.length > 0 && (
+              <div className={sponsoredHotels.length > 0 ? 'mt-2' : undefined}>
+                {sponsoredHotels.length > 0 && (
+                  <p className="text-uppercase text-secondary small fw-bold mb-3" style={{ letterSpacing: '0.08em' }}>
+                    All results
+                  </p>
+                )}
+                <Row className="g-4">{organicHotels.map(renderHotelCard)}</Row>
+              </div>
+            )}
 
             {hasMore && (
               <Row className="mt-4">
