@@ -122,9 +122,7 @@ export function isBrowseClearanceRequiredResponse(status: number, body: unknown)
 }
 
 export async function handleBrowseClearanceResponse(response: Response): Promise<Response> {
-  if (typeof window === 'undefined' || !isBrowseGateEnabled()) {
-    return response;
-  }
+  if (typeof window === 'undefined') return response;
   if (response.status !== 403) return response;
 
   const body = await response.clone().json().catch(() => null);

@@ -8,7 +8,7 @@ import { AD_VIEWER_CONTEXT_UPDATED_EVENT } from '@/app/helpers/ad-location-promp
 import { getStoredToken } from '@/app/helpers/auth';
 import { useHomeSearch } from '@/app/contexts/HomeSearchContext';
 import useEmblaCarousel from 'embla-carousel-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Card, Col, Container, Row } from 'react-bootstrap';
 import { BsArrowLeft, BsArrowRight } from 'react-icons/bs';
 
@@ -49,36 +49,38 @@ const FeaturedHotels = () => {
   const useCarousel = hotels.length > 4 || (isMobile && hotels.length > 0);
   const canScroll = hotels.length > (isMobile ? 1 : 4);
 
-  const [emblaRef, emblaApi] = useEmblaCarousel({
-    align: 'start',
-    containScroll: 'trimSnaps',
-    dragFree: false,
-    watchDrag: useCarousel,
-  });
+  const emblaOptions = useMemo(
+    () => ({
+      align: 'start' as const,
+      containScroll: 'trimSnaps' as const,
+      dragFree: false,
+      watchDrag: useCarousel,
+    }),
+    [useCarousel],
+  );
+
+  const [emblaRef, emblaApi] = useEmblaCarousel(emblaOptions);
 
   const [prevEnabled, setPrevEnabled] = useState(false);
   const [nextEnabled, setNextEnabled] = useState(false);
 
-  const onSelect = useCallback(() => {
-    if (!emblaApi) return;
-    setPrevEnabled(emblaApi.canScrollPrev());
-    setNextEnabled(emblaApi.canScrollNext());
-  }, [emblaApi]);
-
   useEffect(() => {
     if (!emblaApi) return;
-    onSelect();
-    emblaApi.on('select', onSelect);
-    emblaApi.on('reInit', onSelect);
-    return () => {
-      emblaApi.off('select', onSelect);
-      emblaApi.off('reInit', onSelect);
+
+    const updateScrollButtons = () => {
+      setPrevEnabled(emblaApi.canScrollPrev());
+      setNextEnabled(emblaApi.canScrollNext());
     };
-  }, [emblaApi, onSelect]);
 
-  useEffect(() => {
-    emblaApi?.reInit();
-  }, [emblaApi, hotels.length, isMobile, useCarousel]);
+    updateScrollButtons();
+    emblaApi.on('select', updateScrollButtons);
+    emblaApi.on('reInit', updateScrollButtons);
+
+    return () => {
+      emblaApi.off('select', updateScrollButtons);
+      emblaApi.off('reInit', updateScrollButtons);
+    };
+  }, [emblaApi]);
 
   useEffect(() => {
     if (hasSearched) {

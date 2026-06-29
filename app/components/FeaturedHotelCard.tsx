@@ -104,16 +104,20 @@ const FeaturedHotelCard = ({
   const hasRating = rating > 0;
   const displayRating = hasRating ? rating.toFixed(1).replace(/\.0$/, '') : null;
 
-  const { ref, trackClick } = useSponsoredListingTracking(
-    sponsored && adCampaignId
-      ? {
-          ad_campaign_id: adCampaignId,
-          business_id: id,
-          ad_placement: adPlacement,
-          impression_key: impressionKey,
-        }
-      : null
+  const trackingPayload = useMemo(
+    () =>
+      sponsored && adCampaignId
+        ? {
+            ad_campaign_id: adCampaignId,
+            business_id: id,
+            ad_placement: adPlacement,
+            impression_key: impressionKey,
+          }
+        : null,
+    [sponsored, adCampaignId, id, adPlacement, impressionKey],
   );
+
+  const { ref, trackClick } = useSponsoredListingTracking(trackingPayload);
 
   return (
     <div ref={ref}>
