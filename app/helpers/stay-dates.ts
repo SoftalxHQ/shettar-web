@@ -23,3 +23,33 @@ export function stayForFromSearchParams(
 
   return [start, end];
 }
+
+const EMPTY_STAY: Date[] = [];
+let cachedDefaultStay: Date[] | null = null;
+let cachedDefaultStayDay = '';
+
+function localDayKey(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+/** Cached today/tomorrow pair for client defaults — stable reference per calendar day. */
+export function getClientDefaultStayForSnapshot(): Date[] {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const dayKey = localDayKey(today);
+
+  if (cachedDefaultStay && cachedDefaultStayDay === dayKey) {
+    return cachedDefaultStay;
+  }
+
+  cachedDefaultStayDay = dayKey;
+  cachedDefaultStay = [today, addDaysToDate(today, 1)];
+  return cachedDefaultStay;
+}
+
+export function getServerDefaultStayForSnapshot(): Date[] {
+  return EMPTY_STAY;
+}

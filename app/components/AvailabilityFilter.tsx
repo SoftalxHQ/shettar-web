@@ -10,7 +10,8 @@ import { persistRecentSearch } from '@/app/helpers/ad-viewer-context';
 import { useHomeSearchOptional } from '@/app/contexts/HomeSearchContext';
 import { withBrowseCredentials, handleBrowseClearanceResponse } from '@/app/helpers/browse-gate';
 import {
-  addDaysToDate,
+  getClientDefaultStayForSnapshot,
+  getServerDefaultStayForSnapshot,
   stayForFromSearchParams,
 } from '@/app/helpers/stay-dates';
 
@@ -37,14 +38,12 @@ const formatDateToLocalISO = (date: Date) => {
 
 const emptySubscribe = () => () => {};
 
-function readClientDefaultStayFor(): Date[] {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  return [today, addDaysToDate(today, 1)];
-}
-
 function useClientDefaultStayFor(): Date[] {
-  return useSyncExternalStore(emptySubscribe, readClientDefaultStayFor, () => []);
+  return useSyncExternalStore(
+    emptySubscribe,
+    getClientDefaultStayForSnapshot,
+    getServerDefaultStayForSnapshot,
+  );
 }
 
 function buildHomeFormValue(
