@@ -82,4 +82,5 @@ export interface HotelDetail extends Hotel {
   city?: string;
   state?: string;
   images_url?: string[];
+  can_reply_to_reviews?: boolean;
 }

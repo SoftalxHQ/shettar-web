@@ -56,6 +56,8 @@ type Props = {
   reviewUserVote?: 1 | -1 | null;
   onVoteReview?: (value: 1 | -1) => Promise<void>;
   votingReview?: boolean;
+  /** When false (default), reply UI is hidden — e.g. hotel page requires a booking. */
+  canReplyToReviews?: boolean;
 };
 
 type SharedHandlers = {
@@ -488,6 +490,7 @@ export default function ReviewCommentThread({
   reviewUserVote,
   onVoteReview,
   votingReview = false,
+  canReplyToReviews = false,
 }: Props) {
   const [openReplyKey, setOpenReplyKey] = useState<string | null>(null);
   const [replyParentIdState, setReplyParentIdState] = useState<number | null>(null);
@@ -513,7 +516,7 @@ export default function ReviewCommentThread({
   const reviewCollapsed = useReviewAnchor && collapsedIds.has(reviewCollapseKey(reviewRoot!.reviewId));
   const totalReplies = allComments.filter((c) => c.id > 0).length;
   const reviewComposerKey = replyKey(null);
-  const canReply = canReplyToThread(review);
+  const canReply = isAuthenticated && canReplyToThread(review, canReplyToReviews);
   const showReviewComposer = useReviewAnchor && isAuthenticated && canReply && openReplyKey === reviewComposerKey;
 
   const businessComment = allComments.find((c) => c.author_role === 'business');

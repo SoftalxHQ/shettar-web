@@ -201,8 +201,8 @@ export function isOwnGuestComment(comment: ReviewComment, accountId?: number | n
     comment.author_id === accountId;
 }
 
-export function canReplyToThread(_review: ReviewWithThread): boolean {
-  return true;
+export function canReplyToThread(_review: ReviewWithThread, canReplyToReviews = false): boolean {
+  return canReplyToReviews;
 }
 
 export function replyParentId(comment: ReviewComment): number | null {

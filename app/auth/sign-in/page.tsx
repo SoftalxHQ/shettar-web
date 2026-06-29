@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import * as yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
@@ -11,6 +11,7 @@ import { PasswordFormInput, TextFormInput } from '@/app/components';
 import Image from 'next/image';
 import toast from 'react-hot-toast';
 import { signIn } from '@/app/helpers/auth';
+import { browserSupportsWebAuthn, startPasskeySignIn } from '@/app/helpers/passkeys';
 import { useLayoutContext } from '@/app/states';
 
 type FormValues = {
@@ -22,6 +23,12 @@ const SignIn = () => {
   const router = useRouter();
   const { refreshAuth, refreshAccount } = useLayoutContext();
   const [isLoading, setIsLoading] = useState(false);
+  const [passkeySupported, setPasskeySupported] = useState(false);
+  const [passkeyLoading, setPasskeyLoading] = useState(false);
+
+  useEffect(() => {
+    setPasskeySupported(browserSupportsWebAuthn());
+  }, []);
 
   const loginSchema = yup.object({
     email: yup.string().email('Please enter a valid email').required('Please enter your email'),
@@ -49,6 +56,26 @@ const SignIn = () => {
       }
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const onPasskeySignIn = async () => {
+    setPasskeyLoading(true);
+    const toastId = toast.loading('Signing in with passkey…');
+
+    try {
+      const result = await startPasskeySignIn();
+
+      if (result.ok) {
+        toast.success('Welcome back! 👋', { id: toastId });
+        await refreshAuth();
+        await refreshAccount();
+        router.push('/');
+      } else {
+        toast.error(result.message, { id: toastId });
+      }
+    } finally {
+      setPasskeyLoading(false);
     }
   };
 
@@ -115,6 +142,33 @@ const SignIn = () => {
                       )}
                     </Button>
                   </div>
+
+                  {passkeySupported && (
+                    <>
+                      <div className="position-relative text-center my-3">
+                        <hr className="my-0" />
+                        <span className="position-absolute top-50 start-50 translate-middle bg-white px-2 small text-muted">
+                          or
+                        </span>
+                      </div>
+                      <Button
+                        variant="outline-primary"
+                        type="button"
+                        className="w-100 shadow-sm"
+                        disabled={isLoading || passkeyLoading}
+                        onClick={onPasskeySignIn}
+                      >
+                        {passkeyLoading ? (
+                          <>
+                            <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" />
+                            Signing in…
+                          </>
+                        ) : (
+                          'Sign in with passkey'
+                        )}
+                      </Button>
+                    </>
+                  )}
 
                 </form>
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { Card, CardBody, CardHeader, Spinner } from 'react-bootstrap';
+import { Button, Card, CardBody, CardHeader, Spinner } from 'react-bootstrap';
 import toast from 'react-hot-toast';
 import { useAppSelector } from '@/lib/store/hooks';
 import {
@@ -9,12 +9,43 @@ import {
   updateNotificationPreferences,
   type NotificationPreferences,
 } from '@/app/helpers/notification-preferences';
+import {
+  browserSupportsWebAuthn,
+  listPasskeys,
+  registerPasskey,
+  revokePasskey,
+  type PasskeySummary,
+} from '@/app/helpers/passkeys';
 
 const SecuritySettings = () => {
   const token = useAppSelector((s) => s.auth.token);
   const [loginAlertsEnabled, setLoginAlertsEnabled] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [passkeySupported, setPasskeySupported] = useState(false);
+  const [passkeys, setPasskeys] = useState<PasskeySummary[]>([]);
+  const [passkeysLoading, setPasskeysLoading] = useState(false);
+  const [registeringPasskey, setRegisteringPasskey] = useState(false);
+  const [revokingPasskeyId, setRevokingPasskeyId] = useState<number | null>(null);
+
+  useEffect(() => {
+    setPasskeySupported(browserSupportsWebAuthn());
+  }, []);
+
+  const loadPasskeys = useCallback(async () => {
+    if (!token) {
+      setPasskeys([]);
+      return;
+    }
+
+    setPasskeysLoading(true);
+    try {
+      const items = await listPasskeys(token);
+      setPasskeys(items);
+    } finally {
+      setPasskeysLoading(false);
+    }
+  }, [token]);
 
   useEffect(() => {
     if (!token) {
@@ -34,6 +65,10 @@ const SecuritySettings = () => {
       cancelled = true;
     };
   }, [token]);
+
+  useEffect(() => {
+    void loadPasskeys();
+  }, [loadPasskeys]);
 
   const handleToggleLoginAlerts = useCallback(
     async (nextValue: boolean) => {
@@ -63,6 +98,53 @@ const SecuritySettings = () => {
     },
     [loginAlertsEnabled, token]
   );
+
+  const handleRegisterPasskey = async () => {
+    if (!token) return;
+
+    setRegisteringPasskey(true);
+    const toastId = toast.loading('Registering passkey…');
+
+    try {
+      const result = await registerPasskey(token);
+      if (!result.ok) {
+        toast.error(result.message, { id: toastId });
+        return;
+      }
+
+      toast.success(result.message, { id: toastId });
+      await loadPasskeys();
+    } finally {
+      setRegisteringPasskey(false);
+    }
+  };
+
+  const handleRevokePasskey = async (passkeyId: number) => {
+    if (!token) return;
+
+    setRevokingPasskeyId(passkeyId);
+    const toastId = toast.loading('Removing passkey…');
+
+    try {
+      const result = await revokePasskey(token, passkeyId);
+      if (!result.ok) {
+        toast.error(result.message, { id: toastId });
+        return;
+      }
+
+      toast.success(result.message, { id: toastId });
+      setPasskeys((prev) => prev.filter((p) => p.id !== passkeyId));
+    } finally {
+      setRevokingPasskeyId(null);
+    }
+  };
+
+  const formatPasskeyDate = (iso: string | null) => {
+    if (!iso) return 'Never';
+    const date = new Date(iso);
+    if (Number.isNaN(date.getTime())) return 'Unknown';
+    return date.toLocaleString();
+  };
 
   return (
     <Card className="border">
@@ -99,6 +181,75 @@ const SecuritySettings = () => {
             )}
           </div>
         )}
+
+        <div className="border-top pt-4 mb-4">
+          <div className="d-flex justify-content-between align-items-start gap-3 mb-3">
+            <div>
+              <h6 className="mb-1">Passkeys</h6>
+              <p className="mb-0 small text-muted">
+                Sign in without a password using your device&apos;s biometrics or security key.
+              </p>
+            </div>
+            {token && passkeySupported && (
+              <Button
+                variant="outline-primary"
+                size="sm"
+                className="flex-shrink-0"
+                disabled={registeringPasskey || passkeysLoading}
+                onClick={handleRegisterPasskey}
+              >
+                {registeringPasskey ? (
+                  <>
+                    <Spinner animation="border" size="sm" className="me-2" />
+                    Registering…
+                  </>
+                ) : (
+                  'Register passkey'
+                )}
+              </Button>
+            )}
+          </div>
+
+          {!token ? null : !passkeySupported ? (
+            <p className="mb-0 small text-muted">Passkeys are not supported in this browser.</p>
+          ) : passkeysLoading ? (
+            <div className="py-2 text-center">
+              <Spinner animation="border" size="sm" />
+            </div>
+          ) : passkeys.length === 0 ? (
+            <p className="mb-0 small text-muted">No passkeys registered yet.</p>
+          ) : (
+            <ul className="list-group list-group-flush">
+              {passkeys.map((passkey) => (
+                <li
+                  key={passkey.id}
+                  className="list-group-item px-0 d-flex justify-content-between align-items-center gap-3"
+                >
+                  <div className="min-w-0">
+                    <div className="fw-semibold text-truncate">{passkey.nickname || 'Passkey'}</div>
+                    <div className="small text-muted">
+                      Added {formatPasskeyDate(passkey.created_at)}
+                      {passkey.last_used_at ? ` · Last used ${formatPasskeyDate(passkey.last_used_at)}` : ''}
+                    </div>
+                  </div>
+                  <Button
+                    variant="outline-danger"
+                    size="sm"
+                    className="flex-shrink-0"
+                    disabled={revokingPasskeyId === passkey.id}
+                    onClick={() => handleRevokePasskey(passkey.id)}
+                  >
+                    {revokingPasskeyId === passkey.id ? (
+                      <Spinner animation="border" size="sm" />
+                    ) : (
+                      'Remove'
+                    )}
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
 
         <div className="border-top pt-4">
           <div className="d-flex justify-content-between align-items-center mb-3">

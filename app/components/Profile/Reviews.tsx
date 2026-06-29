@@ -119,7 +119,7 @@ const Reviews = () => {
       });
 
       if (response.ok) {
-        setReviews((prev: any[]) => prev.filter((r) => r.id !== reviewToDeleteId));
+        setReviews((prev) => prev.filter((r) => r.id !== reviewToDeleteId));
         toast.success('Review deleted successfully');
         setShowDeleteModal(false);
       } else {
@@ -135,7 +135,7 @@ const Reviews = () => {
     }
   };
 
-  const handleEditClick = (review: any) => {
+  const handleEditClick = (review: ReviewItem) => {
     setEditingReviewId(review.id);
     setEditForm({ rating: review.rating, content: review.content });
   };
@@ -159,7 +159,7 @@ const Reviews = () => {
       });
 
       if (response.ok) {
-        setReviews((prev: any[]) =>
+        setReviews((prev) =>
           prev.map((r) =>
             r.id === id ? { ...r, rating: editForm.rating, content: editForm.content } : r
           )
@@ -282,7 +282,7 @@ const Reviews = () => {
               <BsStar size={50} className="text-muted opacity-25" />
             </div>
             <h5>No reviews yet</h5>
-            <p className="text-secondary small">You haven't reviewed any hotels yet. Reviews help others make better choices!</p>
+            <p className="text-secondary small">{`You haven't reviewed any hotels yet. Reviews help others make better choices!`}</p>
           </div>
         ) : (
           <>
@@ -416,6 +416,7 @@ const Reviews = () => {
                         onUpdateComment={handleUpdateComment}
                         onDeleteComment={handleDeleteComment}
                         onVoteComment={handleVoteComment}
+                        canReplyToReviews
                       />
                       {isFirst && shouldShowViewAll && (
                         <button

@@ -50,6 +50,7 @@ interface CustomerReviewProps {
   ratingDistribution?: { rating: number; count: number; percentage: number }[];
   businessId: string | number;
   onReviewPosted?: () => void;
+  canReplyToReviews?: boolean;
 }
 
 // ── Star Rating Picker ─────────────────────────────────────────────────────────
@@ -94,7 +95,7 @@ const StarPicker = ({
 
 // ── Main Component ─────────────────────────────────────────────────────────────
 
-const CustomerReview = ({ reviews, averageRating, ratingDistribution, businessId, onReviewPosted }: CustomerReviewProps) => {
+const CustomerReview = ({ reviews, averageRating, ratingDistribution, businessId, onReviewPosted, canReplyToReviews = false }: CustomerReviewProps) => {
   const { isAuthenticated, account } = useLayoutContext();
   const [rating, setRating] = useState(5);
   const [ratingError, setRatingError] = useState('');
@@ -409,6 +410,7 @@ const CustomerReview = ({ reviews, averageRating, ratingDistribution, businessId
                     onUpdateComment={handleUpdateComment}
                     onDeleteComment={handleDeleteComment}
                     onVoteComment={isAuthenticated ? handleVoteComment : undefined}
+                    canReplyToReviews={canReplyToReviews}
                   />
                 </div>
               </div>

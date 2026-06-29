@@ -159,6 +159,7 @@ const AboutHotel = ({ hotel, onRefresh }: AboutHotelProps) => {
                 ratingDistribution={hotel.rating_distribution}
                 businessId={hotel.id}
                 onReviewPosted={onRefresh}
+                canReplyToReviews={hotel.can_reply_to_reviews ?? false}
               />
 
               <HotelPolicies hotel={hotel} />
