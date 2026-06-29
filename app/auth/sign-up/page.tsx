@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import * as yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
@@ -8,6 +8,7 @@ import { Button, Card, CardBody, Col, Container, Row } from 'react-bootstrap';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { PasswordFormInput, TextFormInput } from '@/app/components';
+import TurnstileField, { isTurnstileEnabled, type TurnstileFieldHandle } from '@/app/components/TurnstileField';
 import { BsArrowLeft, BsArrowRight, BsCheckCircleFill } from 'react-icons/bs';
 import Image from 'next/image';
 import toast from 'react-hot-toast';
@@ -28,6 +29,9 @@ const SignUp = () => {
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const turnstileRef = useRef<TurnstileFieldHandle>(null);
+  const turnstileRequired = isTurnstileEnabled();
 
   const registerSchema = yup.object({
     firstName: yup.string().required('Please enter your first name'),
@@ -60,6 +64,11 @@ const SignUp = () => {
       return;
     }
 
+    if (turnstileRequired && !turnstileToken) {
+      toast.error('Please complete the security check.');
+      return;
+    }
+
     setIsLoading(true);
     const toastId = toast.loading('Creating your account…');
 
@@ -70,6 +79,7 @@ const SignUp = () => {
         email: values.email,
         password: values.password,
         password_confirmation: values.confirmPassword,
+        turnstileToken,
       });
 
       if (result.ok) {
@@ -82,6 +92,7 @@ const SignUp = () => {
           ? result.errors.join(' • ')
           : result.message;
         toast.error(detail, { id: toastId });
+        turnstileRef.current?.reset();
       }
     } finally {
       setIsLoading(false);
@@ -202,6 +213,12 @@ const SignUp = () => {
                         </label>
                       </div>
 
+                      <TurnstileField
+                        ref={turnstileRef}
+                        className="mb-3"
+                        onToken={setTurnstileToken}
+                      />
+
                       <div className="d-flex gap-3">
                         <Button
                           variant="light"
@@ -216,7 +233,7 @@ const SignUp = () => {
                           variant="primary"
                           type="submit"
                           className="w-100 shadow-sm flex-grow-1"
-                          disabled={isLoading}
+                          disabled={isLoading || (turnstileRequired && !turnstileToken)}
                         >
                           {isLoading ? (
                             <>

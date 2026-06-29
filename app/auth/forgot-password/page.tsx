@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import * as yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
@@ -8,6 +8,7 @@ import { Button, Card, CardBody, Col, Container, Row } from 'react-bootstrap';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { TextFormInput, PasswordFormInput } from '@/app/components';
+import TurnstileField, { isTurnstileEnabled, type TurnstileFieldHandle } from '@/app/components/TurnstileField';
 import Image from 'next/image';
 import {
   BsArrowLeft,
@@ -63,6 +64,9 @@ const ForgotPassword = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const turnstileRef = useRef<TurnstileFieldHandle>(null);
+  const turnstileRequired = isTurnstileEnabled();
 
   // ── Email form ──
   const emailForm = useForm<EmailFormValues>({
@@ -70,16 +74,22 @@ const ForgotPassword = () => {
   });
 
   const onEmailSubmit = async (values: EmailFormValues) => {
+    if (turnstileRequired && !turnstileToken) {
+      toast.error('Please complete the security check.');
+      return;
+    }
+
     setIsLoading(true);
     const toastId = toast.loading('Sending reset code…');
     try {
-      const result = await requestPasswordReset(values.email);
+      const result = await requestPasswordReset(values.email, turnstileToken);
       if (result.ok) {
         setEmail(values.email);
         toast.success('Reset code sent! Check your inbox.', { id: toastId });
         setStep('reset');
       } else {
         toast.error(result.message, { id: toastId });
+        turnstileRef.current?.reset();
       }
     } finally {
       setIsLoading(false);
@@ -332,11 +342,17 @@ const ForgotPassword = () => {
                     control={emailForm.control}
                   />
 
+                  <TurnstileField
+                    ref={turnstileRef}
+                    className="mb-3"
+                    onToken={setTurnstileToken}
+                  />
+
                   <Button
                     variant="primary"
                     type="submit"
                     className="w-100 mb-0 shadow"
-                    disabled={isLoading}
+                    disabled={isLoading || (turnstileRequired && !turnstileToken)}
                   >
                     {isLoading ? (
                       <>

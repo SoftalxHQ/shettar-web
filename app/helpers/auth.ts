@@ -39,6 +39,7 @@ export interface StoredUser {
 export interface SignInPayload {
   email: string;
   password: string;
+  turnstileToken?: string | null;
 }
 
 export interface SignUpPayload {
@@ -47,6 +48,7 @@ export interface SignUpPayload {
   email: string;
   password: string;
   password_confirmation: string;
+  turnstileToken?: string | null;
 }
 
 export interface AuthResult {
@@ -140,10 +142,14 @@ export const getStoredToken = (): string | null => {
  */
 export async function signIn(payload: SignInPayload): Promise<AuthResult> {
   try {
+    const { turnstileToken, ...account } = payload;
     const res = await fetch(`${API_URL}/accounts/sign_in`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ account: payload }),
+      body: JSON.stringify({
+        account,
+        ...(turnstileToken ? { turnstile_token: turnstileToken } : {}),
+      }),
     });
 
     const data = await res.json();
@@ -200,10 +206,14 @@ export async function signIn(payload: SignInPayload): Promise<AuthResult> {
  */
 export async function signUp(payload: SignUpPayload): Promise<AuthResult> {
   try {
+    const { turnstileToken, ...account } = payload;
     const res = await fetch(`${API_URL}/accounts/sign_up`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ account: payload }),
+      body: JSON.stringify({
+        account,
+        ...(turnstileToken ? { turnstile_token: turnstileToken } : {}),
+      }),
     });
 
     const data = await res.json();
@@ -248,12 +258,15 @@ export async function signUp(payload: SignUpPayload): Promise<AuthResult> {
  * POST /accounts/reset_password
  * Sends a 6-digit reset code to the account's email address.
  */
-export async function requestPasswordReset(email: string): Promise<AuthResult> {
+export async function requestPasswordReset(email: string, turnstileToken?: string | null): Promise<AuthResult> {
   try {
     const res = await fetch(`${API_URL}/accounts/reset_password`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ account: { email } }),
+      body: JSON.stringify({
+        account: { email },
+        ...(turnstileToken ? { turnstile_token: turnstileToken } : {}),
+      }),
     });
 
     const data = await res.json();

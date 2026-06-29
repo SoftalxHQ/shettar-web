@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import * as yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
@@ -8,6 +8,7 @@ import { Button, Card, CardBody, Col, Container, Row } from 'react-bootstrap';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { PasswordFormInput, TextFormInput } from '@/app/components';
+import TurnstileField, { isTurnstileEnabled, type TurnstileFieldHandle } from '@/app/components/TurnstileField';
 import Image from 'next/image';
 import toast from 'react-hot-toast';
 import { signIn } from '@/app/helpers/auth';
@@ -25,6 +26,9 @@ const SignIn = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [passkeySupported, setPasskeySupported] = useState(false);
   const [passkeyLoading, setPasskeyLoading] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const turnstileRef = useRef<TurnstileFieldHandle>(null);
+  const turnstileRequired = isTurnstileEnabled();
 
   useEffect(() => {
     setPasskeySupported(browserSupportsWebAuthn());
@@ -40,11 +44,20 @@ const SignIn = () => {
   });
 
   const onSubmit = async (values: FormValues) => {
+    if (turnstileRequired && !turnstileToken) {
+      toast.error('Please complete the security check.');
+      return;
+    }
+
     setIsLoading(true);
     const toastId = toast.loading('Signing in…');
 
     try {
-      const result = await signIn({ email: values.email, password: values.password });
+      const result = await signIn({
+        email: values.email,
+        password: values.password,
+        turnstileToken,
+      });
 
       if (result.ok) {
         toast.success('Welcome back! 👋', { id: toastId });
@@ -53,6 +66,7 @@ const SignIn = () => {
         router.push('/');
       } else {
         toast.error(result.message, { id: toastId });
+        turnstileRef.current?.reset();
       }
     } finally {
       setIsLoading(false);
@@ -125,12 +139,18 @@ const SignIn = () => {
                     </label>
                   </div>
 
+                  <TurnstileField
+                    ref={turnstileRef}
+                    className="mb-3"
+                    onToken={setTurnstileToken}
+                  />
+
                   <div>
                     <Button
                       variant="primary"
                       type="submit"
                       className="w-100 mb-0 shadow-sm"
-                      disabled={isLoading}
+                      disabled={isLoading || (turnstileRequired && !turnstileToken)}
                     >
                       {isLoading ? (
                         <>
