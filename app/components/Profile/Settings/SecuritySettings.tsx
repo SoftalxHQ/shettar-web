@@ -107,6 +107,10 @@ const SecuritySettings = () => {
 
     try {
       const result = await registerPasskey(token);
+      if (result.cancelled) {
+        toast.dismiss(toastId);
+        return;
+      }
       if (!result.ok) {
         toast.error(result.message, { id: toastId });
         return;

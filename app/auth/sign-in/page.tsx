@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import * as yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
@@ -8,11 +8,11 @@ import { Button, Card, CardBody, Col, Container, Row } from 'react-bootstrap';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { PasswordFormInput, TextFormInput } from '@/app/components';
-import TurnstileField, { isTurnstileEnabled, type TurnstileFieldHandle } from '@/app/components/TurnstileField';
 import Image from 'next/image';
 import toast from 'react-hot-toast';
 import { signIn } from '@/app/helpers/auth';
 import { browserSupportsWebAuthn, startPasskeySignIn } from '@/app/helpers/passkeys';
+import { useTurnstileAuth } from '@/app/hooks/useTurnstileAuth';
 import { useLayoutContext } from '@/app/states';
 
 type FormValues = {
@@ -26,9 +26,16 @@ const SignIn = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [passkeySupported, setPasskeySupported] = useState(false);
   const [passkeyLoading, setPasskeyLoading] = useState(false);
-  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
-  const turnstileRef = useRef<TurnstileFieldHandle>(null);
-  const turnstileRequired = isTurnstileEnabled();
+  const {
+    turnstileRequired,
+    turnstileToken,
+    setTurnstileToken,
+    turnstileRef,
+    showTurnstileWidget,
+    resetTurnstile,
+    consumeTurnstileOnSuccess,
+    TurnstileField,
+  } = useTurnstileAuth();
 
   useEffect(() => {
     setPasskeySupported(browserSupportsWebAuthn());
@@ -60,13 +67,14 @@ const SignIn = () => {
       });
 
       if (result.ok) {
+        consumeTurnstileOnSuccess();
         toast.success('Welcome back! 👋', { id: toastId });
         await refreshAuth();
         await refreshAccount();
         router.push('/');
       } else {
         toast.error(result.message, { id: toastId });
-        turnstileRef.current?.reset();
+        resetTurnstile();
       }
     } finally {
       setIsLoading(false);
@@ -80,19 +88,25 @@ const SignIn = () => {
     try {
       const result = await startPasskeySignIn();
 
+      if (result.cancelled) {
+        toast.dismiss(toastId);
+        return;
+      }
+
       if (result.ok) {
         toast.success('Welcome back! 👋', { id: toastId });
         await refreshAuth();
         await refreshAccount();
         router.push('/');
-      } else {
+      } else if (result.message) {
         toast.error(result.message, { id: toastId });
+      } else {
+        toast.dismiss(toastId);
       }
     } finally {
       setPasskeyLoading(false);
     }
   };
-
 
   return (
     <section className="vh-xxl-100 p-0 m-0 d-flex align-items-center bg-light">
@@ -139,11 +153,13 @@ const SignIn = () => {
                     </label>
                   </div>
 
-                  <TurnstileField
-                    ref={turnstileRef}
-                    className="mb-3"
-                    onToken={setTurnstileToken}
-                  />
+                  {showTurnstileWidget && (
+                    <TurnstileField
+                      ref={turnstileRef}
+                      className="mb-3"
+                      onToken={setTurnstileToken}
+                    />
+                  )}
 
                   <div>
                     <Button

@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import * as yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
@@ -8,11 +8,11 @@ import { Button, Card, CardBody, Col, Container, Row } from 'react-bootstrap';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { PasswordFormInput, TextFormInput } from '@/app/components';
-import TurnstileField, { isTurnstileEnabled, type TurnstileFieldHandle } from '@/app/components/TurnstileField';
 import { BsArrowLeft, BsArrowRight, BsCheckCircleFill } from 'react-icons/bs';
 import Image from 'next/image';
 import toast from 'react-hot-toast';
 import { signUp } from '@/app/helpers/auth';
+import { useTurnstileAuth } from '@/app/hooks/useTurnstileAuth';
 import { useLayoutContext } from '@/app/states';
 
 type FormValues = {
@@ -29,9 +29,16 @@ const SignUp = () => {
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
-  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
-  const turnstileRef = useRef<TurnstileFieldHandle>(null);
-  const turnstileRequired = isTurnstileEnabled();
+  const {
+    turnstileRequired,
+    turnstileToken,
+    setTurnstileToken,
+    turnstileRef,
+    showTurnstileWidget,
+    resetTurnstile,
+    consumeTurnstileOnSuccess,
+    TurnstileField,
+  } = useTurnstileAuth();
 
   const registerSchema = yup.object({
     firstName: yup.string().required('Please enter your first name'),
@@ -83,6 +90,7 @@ const SignUp = () => {
       });
 
       if (result.ok) {
+        consumeTurnstileOnSuccess();
         toast.success('Account created! Welcome to Shettar!', { id: toastId, duration: 4000 });
         await refreshAuth();
         await refreshAccount();
@@ -92,7 +100,7 @@ const SignUp = () => {
           ? result.errors.join(' • ')
           : result.message;
         toast.error(detail, { id: toastId });
-        turnstileRef.current?.reset();
+        resetTurnstile();
       }
     } finally {
       setIsLoading(false);
@@ -213,11 +221,13 @@ const SignUp = () => {
                         </label>
                       </div>
 
-                      <TurnstileField
-                        ref={turnstileRef}
-                        className="mb-3"
-                        onToken={setTurnstileToken}
-                      />
+                      {showTurnstileWidget && (
+                        <TurnstileField
+                          ref={turnstileRef}
+                          className="mb-3"
+                          onToken={setTurnstileToken}
+                        />
+                      )}
 
                       <div className="d-flex gap-3">
                         <Button

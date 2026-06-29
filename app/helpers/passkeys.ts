@@ -22,6 +22,21 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000';
 
 export { browserSupportsWebAuthn };
 
+function isPasskeyUserCancellation(err: unknown): boolean {
+  if (!err) return false;
+
+  if (err instanceof DOMException) {
+    return err.name === 'NotAllowedError' || err.name === 'AbortError';
+  }
+
+  if (err instanceof Error) {
+    if (err.name === 'NotAllowedError' || err.name === 'AbortError') return true;
+    if (/not allowed|timed out|cancelled|canceled|abort/i.test(err.message)) return true;
+  }
+
+  return false;
+}
+
 export type PasskeySummary = {
   id: number;
   nickname: string;
@@ -32,6 +47,7 @@ export type PasskeySummary = {
 type PasskeyResult = {
   ok: boolean;
   message: string;
+  cancelled?: boolean;
 };
 
 function authHeaders(token: string): HeadersInit {
@@ -106,6 +122,9 @@ export async function startPasskeySignIn(email?: string): Promise<AuthResult> {
     saveAuthSession(user, token);
     return { ok: true, message: 'Signed in with passkey.', user, token };
   } catch (err) {
+    if (isPasskeyUserCancellation(err)) {
+      return { ok: false, cancelled: true, message: '' };
+    }
     const message = err instanceof Error ? err.message : 'Passkey sign-in failed.';
     return { ok: false, message };
   }
@@ -153,6 +172,9 @@ export async function registerPasskey(token: string, nickname?: string): Promise
       message: createData.status?.message ?? 'Passkey registered successfully.',
     };
   } catch (err) {
+    if (isPasskeyUserCancellation(err)) {
+      return { ok: false, cancelled: true, message: '' };
+    }
     const message = err instanceof Error ? err.message : 'Passkey registration failed.';
     return { ok: false, message };
   }

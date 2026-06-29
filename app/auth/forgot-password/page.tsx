@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import * as yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
@@ -8,7 +8,7 @@ import { Button, Card, CardBody, Col, Container, Row } from 'react-bootstrap';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { TextFormInput, PasswordFormInput } from '@/app/components';
-import TurnstileField, { isTurnstileEnabled, type TurnstileFieldHandle } from '@/app/components/TurnstileField';
+import { useTurnstileAuth } from '@/app/hooks/useTurnstileAuth';
 import Image from 'next/image';
 import {
   BsArrowLeft,
@@ -64,9 +64,16 @@ const ForgotPassword = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
-  const turnstileRef = useRef<TurnstileFieldHandle>(null);
-  const turnstileRequired = isTurnstileEnabled();
+  const {
+    turnstileRequired,
+    turnstileToken,
+    setTurnstileToken,
+    turnstileRef,
+    showTurnstileWidget,
+    resetTurnstile,
+    consumeTurnstileOnSuccess,
+    TurnstileField,
+  } = useTurnstileAuth();
 
   // ── Email form ──
   const emailForm = useForm<EmailFormValues>({
@@ -84,12 +91,13 @@ const ForgotPassword = () => {
     try {
       const result = await requestPasswordReset(values.email, turnstileToken);
       if (result.ok) {
+        consumeTurnstileOnSuccess();
         setEmail(values.email);
         toast.success('Reset code sent! Check your inbox.', { id: toastId });
         setStep('reset');
       } else {
         toast.error(result.message, { id: toastId });
-        turnstileRef.current?.reset();
+        resetTurnstile();
       }
     } finally {
       setIsLoading(false);
@@ -342,11 +350,13 @@ const ForgotPassword = () => {
                     control={emailForm.control}
                   />
 
-                  <TurnstileField
-                    ref={turnstileRef}
-                    className="mb-3"
-                    onToken={setTurnstileToken}
-                  />
+                  {showTurnstileWidget && (
+                    <TurnstileField
+                      ref={turnstileRef}
+                      className="mb-3"
+                      onToken={setTurnstileToken}
+                    />
+                  )}
 
                   <Button
                     variant="primary"

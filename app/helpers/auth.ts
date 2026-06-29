@@ -58,6 +58,7 @@ export interface AuthResult {
   user?: StoredUser;
   token?: string;
   errorCode?: string; // e.g. 'email_not_verified'
+  cancelled?: boolean;
 }
 
 // ─── Storage helpers ──────────────────────────────────────────────────────────
