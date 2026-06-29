@@ -8,7 +8,7 @@ import SelectFormInput from './form/SelectFormInput';
 import Flatpicker from './form/Flatpicker';
 import { persistRecentSearch } from '@/app/helpers/ad-viewer-context';
 import { useHomeSearchOptional } from '@/app/contexts/HomeSearchContext';
-import { withBrowseCredentials } from '@/app/helpers/browse-gate';
+import { withBrowseCredentials, handleBrowseClearanceResponse } from '@/app/helpers/browse-gate';
 import {
   addDaysToDate,
   stayForFromSearchParams,
@@ -262,9 +262,11 @@ const AvailabilityFilter = () => {
       try {
         const rawUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000';
         const API_URL = rawUrl.endsWith('/') ? rawUrl.slice(0, -1) : rawUrl;
-        const response = await fetch(
-          `${API_URL}/api/v1/businesses/locations`,
-          withBrowseCredentials(),
+        const response = await handleBrowseClearanceResponse(
+          await fetch(
+            `${API_URL}/api/v1/businesses/locations`,
+            withBrowseCredentials(),
+          ),
         );
         if (!cancelled && response.ok) {
           const data = await response.json();

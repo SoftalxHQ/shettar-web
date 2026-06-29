@@ -3,61 +3,62 @@
 import { useState, useEffect } from 'react';
 import { useToggle } from '@/app/hooks';
 import { currency } from '@/app/states';
-import { Card, CardBody, Col, Collapse } from 'react-bootstrap';
+import { Card, Col, Collapse } from 'react-bootstrap';
 import { BsStarFill, BsSearch } from 'react-icons/bs';
 import { FaAngleDown } from 'react-icons/fa6';
-import { useRouter, useSearchParams, usePathname } from 'next/navigation';
+import { useRouter, useSearchParams, usePathname, type ReadonlyURLSearchParams } from 'next/navigation';
 import Nouislider from 'nouislider-react';
-import { withBrowseCredentials } from '@/app/helpers/browse-gate';
+import { withBrowseCredentials, handleBrowseClearanceResponse } from '@/app/helpers/browse-gate';
 
-const HotelListFilter = () => {
+type ListFilterUiState = {
+  hotelName: string;
+  selectedAmenities: string[];
+  selectedStars: number[];
+  selectedHotelTypes: number[];
+  minRating: number;
+  priceRange: string[];
+};
+
+function parseListFilterStateFromSearchParams(
+  searchParams: ReadonlyURLSearchParams,
+): ListFilterUiState {
+  return {
+    hotelName: searchParams.get('name') || '',
+    selectedAmenities: searchParams.get('amenities')?.split(',').filter(Boolean) ?? [],
+    selectedStars:
+      searchParams.get('stars')?.split(',').filter(Boolean).map((s) => parseInt(s, 10)) ?? [],
+    selectedHotelTypes:
+      searchParams.get('hotel_types')?.split(',').filter(Boolean).map((s) => parseInt(s, 10)) ?? [],
+    minRating: parseFloat(searchParams.get('min_rating') || '0'),
+    priceRange: [
+      searchParams.get('min_price') || '0',
+      searchParams.get('max_price') || '500000',
+    ],
+  };
+}
+
+type ListFilterPanelProps = {
+  initial: ListFilterUiState;
+  categories: { id: number; name: string }[];
+  pathname: string;
+  searchParams: ReadonlyURLSearchParams;
+};
+
+function HotelListFilterPanel({
+  initial,
+  categories,
+  pathname,
+  searchParams,
+}: ListFilterPanelProps) {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const pathname = usePathname();
-
   const { isOpen: hotelTypeIsOpen, toggle: hotelTypeToggle } = useToggle();
   const { isOpen: hotelAmenitiesIsOpen, toggle: hotelAmenitiesToggle } = useToggle();
-  const [hotelName, setHotelName] = useState(searchParams.get('name') || '');
-  const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
-  const [selectedStars, setSelectedStars] = useState<number[]>([]);
-  const [selectedHotelTypes, setSelectedHotelTypes] = useState<number[]>([]);
-  const [categories, setCategories] = useState<{ id: number, name: string }[]>([]);
-  const [minRating, setMinRating] = useState<number>(0);
-  const [priceRange, setPriceRange] = useState<string[]>(['0', '500000']);
-
-  useEffect(() => {
-    setHotelName(searchParams.get('name') || '');
-    setSelectedAmenities(searchParams.get('amenities')?.split(',') || []);
-    setSelectedStars(searchParams.get('stars')?.split(',').filter(Boolean).map(s => parseInt(s)) || []);
-    setSelectedHotelTypes(searchParams.get('hotel_types')?.split(',').filter(Boolean).map(s => parseInt(s)) || []);
-    setMinRating(parseFloat(searchParams.get('min_rating') || '0'));
-    setPriceRange([
-      searchParams.get('min_price') || '0',
-      searchParams.get('max_price') || '500000'
-    ]);
-  }, [searchParams]);
-
-  useEffect(() => {
-    // Fetch categories dynamically once on mount
-    const fetchCategories = async () => {
-      try {
-        const rawUrl = process.env.NEXT_PUBLIC_API_URL;
-        const baseUrl = (rawUrl && rawUrl !== 'undefined') ? rawUrl : "http://127.0.0.1:3000";
-        const API_URL = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
-        const res = await fetch(
-          `${API_URL}/api/v1/businesses/categories`,
-          withBrowseCredentials()
-        );
-        if (res.ok) {
-          const data = await res.json();
-          setCategories(data);
-        }
-      } catch (error) {
-        console.error('Failed to fetch categories:', error);
-      }
-    };
-    fetchCategories();
-  }, []);
+  const [hotelName, setHotelName] = useState(initial.hotelName);
+  const [selectedAmenities, setSelectedAmenities] = useState(initial.selectedAmenities);
+  const [selectedStars, setSelectedStars] = useState(initial.selectedStars);
+  const [selectedHotelTypes, setSelectedHotelTypes] = useState(initial.selectedHotelTypes);
+  const [minRating, setMinRating] = useState(initial.minRating);
+  const [priceRange, setPriceRange] = useState(initial.priceRange);
 
   const updateFilter = (key: string, value: string | null) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -72,38 +73,29 @@ const HotelListFilter = () => {
   };
 
   const handleStarToggle = (star: number) => {
-    let newStars: number[];
-    if (selectedStars.includes(star)) {
-      newStars = selectedStars.filter(s => s !== star);
-    } else {
-      newStars = [...selectedStars, star];
-    }
+    const newStars = selectedStars.includes(star)
+      ? selectedStars.filter((s) => s !== star)
+      : [...selectedStars, star];
     updateFilter('stars', newStars.length > 0 ? newStars.join(',') : null);
   };
 
   const handleHotelTypeToggle = (id: number) => {
-    let newTypes: number[];
-    if (selectedHotelTypes.includes(id)) {
-      newTypes = selectedHotelTypes.filter(t => t !== id);
-    } else {
-      newTypes = [...selectedHotelTypes, id];
-    }
+    const newTypes = selectedHotelTypes.includes(id)
+      ? selectedHotelTypes.filter((t) => t !== id)
+      : [...selectedHotelTypes, id];
     updateFilter('hotel_types', newTypes.length > 0 ? newTypes.join(',') : null);
   };
 
   const handleAmenityToggle = (amenity: string) => {
-    let newAmenities: string[];
-    if (selectedAmenities.includes(amenity)) {
-      newAmenities = selectedAmenities.filter(a => a !== amenity);
-    } else {
-      newAmenities = [...selectedAmenities, amenity];
-    }
+    const newAmenities = selectedAmenities.includes(amenity)
+      ? selectedAmenities.filter((a) => a !== amenity)
+      : [...selectedAmenities, amenity];
     updateFilter('amenities', newAmenities.length > 0 ? newAmenities.join(',') : null);
   };
 
   const handleNameSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    updateFilter('name', hotelName);
+    updateFilter('name', hotelName || null);
   };
 
   const handlePriceChange = (value: number[]) => {
@@ -115,19 +107,16 @@ const HotelListFilter = () => {
 
   const clearAll = () => {
     const params = new URLSearchParams();
-    // Preserve core search params
     const preserve = ['start_date', 'end_date', 'rooms', 'location'];
-    preserve.forEach(key => {
+    preserve.forEach((key) => {
       const val = searchParams.get(key);
       if (val) params.set(key, val);
     });
     router.push(`${pathname}?${params.toString()}`);
   };
 
-
   return (
     <div className="rounded-3 shadow">
-      {/* Hotel Name Search */}
       <Card className="rounded-0 rounded-top p-4 border-0">
         <h6 className="mb-2">Hotel Name</h6>
         <form onSubmit={handleNameSearch} className="form-control-borderless">
@@ -202,11 +191,11 @@ const HotelListFilter = () => {
         <div className="col-12 mt-3">
           <div className="noui-wrapper">
             <div className="d-flex justify-content-between flex-wrap mb-2">
-              <span className="fw-bold">{currency}{parseInt(priceRange[0]).toLocaleString()}</span>
-              <span className="fw-bold">{currency}{parseInt(priceRange[1]).toLocaleString()}</span>
+              <span className="fw-bold">{currency}{parseInt(priceRange[0], 10).toLocaleString()}</span>
+              <span className="fw-bold">{currency}{parseInt(priceRange[1], 10).toLocaleString()}</span>
             </div>
             <Nouislider
-              start={[parseInt(priceRange[0]), parseInt(priceRange[1])]}
+              start={[parseInt(priceRange[0], 10), parseInt(priceRange[1], 10)]}
               range={{
                 min: 0,
                 max: 500000,
@@ -312,8 +301,8 @@ const HotelListFilter = () => {
             { label: 'Gym', value: 'gym' },
             { label: 'Restaurant', value: 'restaurant' },
             { label: 'Parking', value: 'parking' },
-          ].map((item, idx) => (
-            <div className="form-check" key={idx}>
+          ].map((item) => (
+            <div className="form-check" key={item.value}>
               <input
                 className="form-check-input"
                 type="checkbox"
@@ -335,8 +324,8 @@ const HotelListFilter = () => {
                 { label: 'Kitchenette', value: 'kitchenette' },
                 { label: 'Room Service', value: 'room_service' },
                 { label: 'Laundry', value: 'laundry' },
-              ].map((item, idx) => (
-                <div className="form-check" key={`more-${idx}`}>
+              ].map((item) => (
+                <div className="form-check" key={item.value}>
                   <input
                     className="form-check-input"
                     type="checkbox"
@@ -369,7 +358,55 @@ const HotelListFilter = () => {
         </button>
       </div>
     </div>
-  )
+  );
 }
 
-export default HotelListFilter
+const HotelListFilter = () => {
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const [categories, setCategories] = useState<{ id: number; name: string }[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const fetchCategories = async () => {
+      try {
+        const rawUrl = process.env.NEXT_PUBLIC_API_URL;
+        const baseUrl = rawUrl && rawUrl !== 'undefined' ? rawUrl : 'http://127.0.0.1:3000';
+        const API_URL = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+        const res = await handleBrowseClearanceResponse(
+          await fetch(
+            `${API_URL}/api/v1/businesses/categories`,
+            withBrowseCredentials(),
+          ),
+        );
+        if (!cancelled && res.ok) {
+          const data = await res.json();
+          setCategories(data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch categories:', error);
+      }
+    };
+
+    void fetchCategories();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const filterKey = searchParams.toString();
+  const initial = parseListFilterStateFromSearchParams(searchParams);
+
+  return (
+    <HotelListFilterPanel
+      key={filterKey}
+      initial={initial}
+      categories={categories}
+      pathname={pathname}
+      searchParams={searchParams}
+    />
+  );
+};
+
+export default HotelListFilter;

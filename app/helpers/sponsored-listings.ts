@@ -1,5 +1,5 @@
 import { getApiBaseUrl, mapBusinessToFeaturedHotel, type FeaturedHotel } from '@/app/helpers/businesses';
-import { withBrowseCredentials } from '@/app/helpers/browse-gate';
+import { withBrowseCredentials, handleBrowseClearanceResponse } from '@/app/helpers/browse-gate';
 import type { AdViewerContext } from '@/app/helpers/ad-viewer-context';
 import type { ReadonlyURLSearchParams } from 'next/navigation';
 
@@ -68,9 +68,11 @@ export async function fetchSponsoredListings(options: SponsoredFetchOptions): Pr
   const defaultLimit = options.placement === 'search_results' ? SEARCH_RESULTS_SPONSORED_LIMIT : 12;
   params.set('limit', String(options.limit ?? defaultLimit));
 
-  const res = await fetch(
-    `${getApiBaseUrl()}/api/v1/sponsored_listings?${params}`,
-    withBrowseCredentials()
+  const res = await handleBrowseClearanceResponse(
+    await fetch(
+      `${getApiBaseUrl()}/api/v1/sponsored_listings?${params}`,
+      withBrowseCredentials(),
+    ),
   );
   if (!res.ok) throw new Error('Failed to fetch sponsored listings');
 

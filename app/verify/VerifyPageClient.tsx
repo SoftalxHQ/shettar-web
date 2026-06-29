@@ -1,8 +1,8 @@
 'use client';
 
 import { useCallback, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import TurnstileField from '@/app/components/TurnstileField';
+import { useSearchParams } from 'next/navigation';
+import TurnstileField, { isTurnstileEnabled } from '@/app/components/TurnstileField';
 import { submitBrowseVerification } from '@/app/helpers/browse-clearance';
 
 function safeReturnPath(raw: string | null): string {
@@ -13,11 +13,11 @@ function safeReturnPath(raw: string | null): string {
 }
 
 export default function VerifyPageClient() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const returnTo = safeReturnPath(searchParams.get('returnTo'));
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const turnstileConfigured = isTurnstileEnabled();
 
   const handleToken = useCallback(
     async (token: string | null) => {
@@ -33,9 +33,10 @@ export default function VerifyPageClient() {
         return;
       }
 
-      router.replace(returnTo);
+      // Full navigation so middleware sees the clearance cookie and catalog fetches hydrate.
+      window.location.assign(returnTo);
     },
-    [returnTo, router, submitting]
+    [returnTo, submitting]
   );
 
   return (
@@ -51,12 +52,21 @@ export default function VerifyPageClient() {
 
         <div className="card border-0 shadow-sm rounded-4">
           <div className="card-body p-4 p-sm-5">
-            <TurnstileField
-              className="d-flex justify-content-center"
-              onToken={handleToken}
-            />
-            {submitting && (
-              <p className="text-center text-secondary small mt-3 mb-0">Verifying…</p>
+            {!turnstileConfigured ? (
+              <p className="text-danger small mb-0 text-center" role="alert">
+                Browse verification is not configured for this environment. Set{' '}
+                <code>NEXT_PUBLIC_TURNSTILE_SITE_KEY</code> on the web deploy.
+              </p>
+            ) : (
+              <>
+                <TurnstileField
+                  className="d-flex justify-content-center"
+                  onToken={handleToken}
+                />
+                {submitting && (
+                  <p className="text-center text-secondary small mt-3 mb-0">Verifying…</p>
+                )}
+              </>
             )}
             {error && (
               <p className="text-center text-danger small mt-3 mb-0" role="alert">

@@ -16,7 +16,7 @@ import TextFormInput from './form/TextFormInput';
 
 import { useRouter, useSearchParams, usePathname, type ReadonlyURLSearchParams } from 'next/navigation';
 import { useHomeSearchOptional } from '@/app/contexts/HomeSearchContext';
-import { withBrowseCredentials } from '@/app/helpers/browse-gate';
+import { withBrowseCredentials, handleBrowseClearanceResponse } from '@/app/helpers/browse-gate';
 
 const filterAmenities = [
   { label: 'Air Conditioning', value: 'ac' },
@@ -374,9 +374,11 @@ const HotelGridFilter = () => {
         const rawUrl = process.env.NEXT_PUBLIC_API_URL;
         const baseUrl = rawUrl && rawUrl !== 'undefined' ? rawUrl : 'http://127.0.0.1:3000';
         const API_URL = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
-        const res = await fetch(
-          `${API_URL}/api/v1/businesses/categories`,
-          withBrowseCredentials()
+        const res = await handleBrowseClearanceResponse(
+          await fetch(
+            `${API_URL}/api/v1/businesses/categories`,
+            withBrowseCredentials(),
+          ),
         );
         if (!cancelled && res.ok) {
           const data = await res.json();

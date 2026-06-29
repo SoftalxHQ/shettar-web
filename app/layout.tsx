@@ -9,6 +9,7 @@ export const metadata: Metadata = {
 
 import { Toaster } from 'react-hot-toast';
 import ReduxProvider from '@/lib/store/ReduxProvider';
+import BrowseGateBootstrap from '@/app/components/BrowseGateBootstrap';
 
 export default function RootLayout({
   children,
@@ -64,6 +65,7 @@ export default function RootLayout({
           }}
         />
         <ReduxProvider>
+          <BrowseGateBootstrap />
           {children}
         </ReduxProvider>
       </body>
