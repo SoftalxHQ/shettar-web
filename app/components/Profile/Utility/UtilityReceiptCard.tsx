@@ -19,6 +19,7 @@ export type UtilityReceipt = {
   purchasedAt: string;
   billersCode?: string;
   customerName?: string;
+  customerAddress?: string;
   token?: string;
   units?: string;
   meterType?: string;
@@ -112,6 +113,11 @@ const UtilityReceiptCard = forwardRef<HTMLDivElement, UtilityReceiptCardProps>(
       isTopup ? receipt.network : receipt.plan,
     ].filter(Boolean) as string[];
 
+    const meterOrSmartcard = receipt.billersCode || receipt.recipient;
+    const recipientDisplay = isElectricity || isTv
+      ? meterOrSmartcard || '—'
+      : receipt.customerName || receipt.recipient || '—';
+
     return (
       <div className="receipt-wrap">
         <div className="utility-receipt print-card" ref={componentRef}>
@@ -148,7 +154,7 @@ const UtilityReceiptCard = forwardRef<HTMLDivElement, UtilityReceiptCardProps>(
               <div className="details-strip">
                 <div className="detail-col">
                   <span className="detail-label">{isTopup ? 'DESTINATION' : isBooking ? 'HOTEL' : isOrder ? 'LOCATION' : 'RECIPIENT'}</span>
-                  <span className="detail-value">{receipt.customerName || receipt.recipient || '—'}</span>
+                  <span className="detail-value">{recipientDisplay}</span>
                   <span className="detail-hint">{recipientLabel}</span>
                 </div>
                 <div className="detail-col">
@@ -176,6 +182,14 @@ const UtilityReceiptCard = forwardRef<HTMLDivElement, UtilityReceiptCardProps>(
                 {formattedGross ? <SummaryRow label="Amount Paid" value={formattedGross} /> : null}
                 {formattedFee ? <SummaryRow label="Processing Fee" value={formattedFee} /> : null}
                 {receipt.plan ? <SummaryRow label={isTv ? 'Bouquet' : 'Plan'} value={receipt.plan} /> : null}
+                {isElectricity && meterOrSmartcard ? (
+                  <SummaryRow label="Meter Number" value={meterOrSmartcard} />
+                ) : null}
+                {isTv && meterOrSmartcard ? (
+                  <SummaryRow label="Smartcard Number" value={meterOrSmartcard} />
+                ) : null}
+                {receipt.customerName ? <SummaryRow label="Customer Name" value={receipt.customerName} /> : null}
+                {receipt.customerAddress ? <SummaryRow label="Address" value={receipt.customerAddress} /> : null}
                 {receipt.meterType ? <SummaryRow label="Meter Type" value={receipt.meterType} /> : null}
                 {receipt.token ? <SummaryRow label="Token" value={receipt.token} accent /> : null}
                 {receipt.units ? <SummaryRow label="Units" value={receipt.units} /> : null}

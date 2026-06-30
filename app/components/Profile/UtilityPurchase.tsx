@@ -381,6 +381,7 @@ const UtilityPurchase = () => {
           recipient: meterNumber.trim(),
           network: selectedElectricityProvider,
           customerName: electricityVerification.customer_name,
+          customerAddress: electricityVerification.customer_address,
           billersCode: meterNumber.trim(),
           meterType,
           token: result.token,

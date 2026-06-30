@@ -12,6 +12,7 @@ export type WalletTransactionMetadata = {
   plan?: string;
   billers_code?: string;
   customer_name?: string;
+  customer_address?: string;
   meter_type?: string;
   electricity_token?: string;
   units?: string;
@@ -154,6 +155,7 @@ function mapUtilityTransactionToReceipt(txn: WalletTransactionForReceipt): Utili
     purchasedAt: txn.created_at,
     billersCode: meta?.billers_code,
     customerName: meta?.customer_name,
+    customerAddress: meta?.customer_address,
     token: meta?.electricity_token,
     units: meta?.units,
     meterType: meta?.meter_type,
