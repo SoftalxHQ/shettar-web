@@ -33,7 +33,12 @@ messaging.onBackgroundMessage((payload) => {
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  const route = event.notification?.data?.route;
+  const data = event.notification?.data || {};
+  let route = data.route;
+  if (data.source === 'review_reply' || data.source === 'review_comment_reply') {
+    const businessId = data.business_slug || data.business_unique_id || data.business_id;
+    if (businessId) route = `/hotel/${businessId}`;
+  }
   const url = route ? new URL(route, self.location.origin).href : self.location.origin;
   event.waitUntil(clients.openWindow(url));
 });

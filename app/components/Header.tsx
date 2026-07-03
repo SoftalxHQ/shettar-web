@@ -48,7 +48,7 @@ import {
 import Link from 'next/link';
 import { type IconType } from 'react-icons';
 import { useNotifications } from '@/app/context/NotificationContext';
-import { getNotificationVisual } from '@/app/helpers/notification-display';
+import { getNotificationVisual, routeFromNotificationData } from '@/app/helpers/notification-display';
 
 function timeAgo(dateString: string) {
   const date = new Date(dateString);
@@ -108,6 +108,12 @@ export default function Header() {
   const [isSendingCode, setIsSendingCode] = useState(false);
   const [isCancellingDeletion, setIsCancellingDeletion] = useState(false);
   const [deletionCountdown, setDeletionCountdown] = useState('00:00:00');
+
+  const openNotification = async (notification: (typeof notifications)[number]) => {
+    if (!notification.read_at) await markAsRead(notification.id);
+    const route = routeFromNotificationData(notification.data);
+    if (route) router.push(route);
+  };
 
   useEffect(() => {
     if (!account?.deletion_pending || !account.deletion_execute_at) return;
@@ -293,7 +299,7 @@ export default function Header() {
                             <li key={notification.id}>
                               <ListGroupItem
                                 className={clsx('list-group-item-action rounded border-0 mb-1 p-3', { 'notif-unread': !notification.read_at })}
-                                onClick={() => !notification.read_at && markAsRead(notification.id)}
+                                onClick={() => openNotification(notification)}
                               >
                                 <div className="d-flex align-items-start">
                                   {(() => {

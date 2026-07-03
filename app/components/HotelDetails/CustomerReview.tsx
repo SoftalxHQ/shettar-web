@@ -95,6 +95,8 @@ const StarPicker = ({
 
 // ── Main Component ─────────────────────────────────────────────────────────────
 
+const REVIEWS_PAGE_SIZE = 5;
+
 const CustomerReview = ({ reviews, averageRating, ratingDistribution, businessId, onReviewPosted, canReplyToReviews = false }: CustomerReviewProps) => {
   const { isAuthenticated, account } = useLayoutContext();
   const [rating, setRating] = useState(5);
@@ -102,9 +104,11 @@ const CustomerReview = ({ reviews, averageRating, ratingDistribution, businessId
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [localReviews, setLocalReviews] = useState<Review[]>(reviews || []);
   const [votingReviewId, setVotingReviewId] = useState<number | null>(null);
+  const [visibleReviewCount, setVisibleReviewCount] = useState(REVIEWS_PAGE_SIZE);
 
   useEffect(() => {
     setLocalReviews(reviews || []);
+    setVisibleReviewCount(REVIEWS_PAGE_SIZE);
   }, [reviews]);
 
   const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
@@ -226,6 +230,12 @@ const CustomerReview = ({ reviews, averageRating, ratingDistribution, businessId
 
   const displayRating = averageRating || 0;
   const displayCount = reviews?.length || 0;
+  const visibleReviews = localReviews.slice(0, visibleReviewCount);
+  const hasMoreReviews = localReviews.length > visibleReviewCount;
+
+  const loadMoreReviews = () => {
+    setVisibleReviewCount((prev) => Math.min(prev + REVIEWS_PAGE_SIZE, localReviews.length));
+  };
 
   const onSubmit = async (values: FormValues) => {
     if (rating < 1) {
@@ -343,7 +353,7 @@ const CustomerReview = ({ reviews, averageRating, ratingDistribution, businessId
 
         {/* Reviews list */}
         <div className="vstack gap-5">
-          {localReviews?.map((review, idx) => (
+          {visibleReviews?.map((review, idx) => (
             <div key={review.id || idx}>
               <div className="d-flex gap-4 mb-3">
                 {/* Avatar */}
@@ -411,12 +421,25 @@ const CustomerReview = ({ reviews, averageRating, ratingDistribution, businessId
                     onDeleteComment={handleDeleteComment}
                     onVoteComment={isAuthenticated ? handleVoteComment : undefined}
                     canReplyToReviews={canReplyToReviews}
+                    defaultRepliesCollapsed
                   />
                 </div>
               </div>
-              {idx < localReviews.length - 1 && <hr className="my-4 opacity-50" />}
+              {idx < visibleReviews.length - 1 && <hr className="my-4 opacity-50" />}
             </div>
           ))}
+
+          {hasMoreReviews && (
+            <div className="text-center pt-2">
+              <Button variant="primary" className="px-4 rounded-pill" onClick={loadMoreReviews}>
+                Load more
+              </Button>
+            </div>
+          )}
+
+          {!hasMoreReviews && localReviews.length > REVIEWS_PAGE_SIZE && (
+            <p className="text-center text-secondary small mb-0">No more reviews</p>
+          )}
 
           {(!reviews || reviews.length === 0) && (
             <div className="text-center py-5 bg-body-tertiary rounded-4 mb-4">

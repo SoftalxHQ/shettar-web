@@ -1,10 +1,9 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { Button, Col, Dropdown, DropdownDivider, DropdownMenu, DropdownToggle, FormLabel, Row } from 'react-bootstrap';
 import { BsCalendar, BsDashCircle, BsGeoAlt, BsPerson, BsPlusCircle, BsSearch } from 'react-icons/bs';
 import { useSearchParams, useRouter, usePathname, type ReadonlyURLSearchParams } from 'next/navigation';
-import SelectFormInput from './form/SelectFormInput';
 import Flatpicker from './form/Flatpicker';
 import { persistRecentSearch } from '@/app/helpers/ad-viewer-context';
 import { useHomeSearchOptional } from '@/app/contexts/HomeSearchContext';
@@ -25,9 +24,10 @@ type AvailabilityFormType = {
   };
 };
 
-type LocationOption = { display: string };
+type LocationOption = { display: string; city?: string; state?: string };
 
-let locationsCache: LocationOption[] | null = null;
+const LOCATION_SUGGESTION_LIMIT = 5;
+const LOCATION_SUGGESTION_DELAY_MS = 500;
 
 const formatDateToLocalISO = (date: Date) => {
   const year = date.getFullYear();
@@ -72,16 +72,61 @@ function buildHomeFormValue(
 
 type HomeFilterPanelProps = {
   initial: AvailabilityFormType;
-  availableLocations: LocationOption[];
   onSubmitSearch: (formValue: AvailabilityFormType) => void;
 };
 
 function HomeAvailabilityFilterPanel({
   initial,
-  availableLocations,
   onSubmitSearch,
 }: HomeFilterPanelProps) {
   const [formValue, setFormValue] = useState(initial);
+  const [locationSuggestions, setLocationSuggestions] = useState<LocationOption[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+  const locationBlurTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const apiUrl = useMemo(() => {
+    const rawUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000';
+    return rawUrl.endsWith('/') ? rawUrl.slice(0, -1) : rawUrl;
+  }, []);
+
+  useEffect(() => {
+    const query = formValue.location.trim();
+    if (query.length === 0) {
+      setLocationSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setLoadingSuggestions(true);
+      try {
+        const response = await handleBrowseClearanceResponse(
+          await fetch(
+            `${apiUrl}/api/v1/businesses/locations?q=${encodeURIComponent(query)}&suggestions=1`,
+            withBrowseCredentials({
+              cache: 'no-store',
+              headers: {
+                'Cache-Control': 'no-cache',
+              },
+            }),
+          ),
+        );
+        if (response.ok) {
+          const data = await response.json();
+          setLocationSuggestions(Array.isArray(data) ? data.slice(0, LOCATION_SUGGESTION_LIMIT) : []);
+          setShowSuggestions(true);
+        }
+      } catch (error) {
+        console.error('Error fetching locations:', error);
+        setLocationSuggestions([]);
+      } finally {
+        setLoadingSuggestions(false);
+      }
+    }, LOCATION_SUGGESTION_DELAY_MS);
+
+    return () => clearTimeout(timer);
+  }, [apiUrl, formValue.location]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -132,19 +177,51 @@ function HomeAvailabilityFilterPanel({
         <Col lg={4}>
           <div className="form-control-border form-control-transparent form-fs-md items-center gap-2">
             <BsGeoAlt size={37} />
-            <div className="flex-grow-1">
+            <div className="flex-grow-1 position-relative">
               <FormLabel className="form-label">Location</FormLabel>
-              <SelectFormInput
+              <input
+                type="text"
+                className="form-control"
+                name="shettar_location_query"
+                placeholder="City/Town, State"
                 value={formValue.location}
-                onChange={(val) => setFormValue({ ...formValue, location: val })}
-              >
-                <option value="" disabled hidden>
-                  City/Town, State
-                </option>
-                {availableLocations.map((loc, idx) => (
-                  <option key={idx} value={loc.display}>{loc.display}</option>
-                ))}
-              </SelectFormInput>
+                autoComplete="new-password"
+                onChange={(event) => setFormValue({ ...formValue, location: event.target.value })}
+                onFocus={() => {
+                  if (formValue.location.trim()) setShowSuggestions(true);
+                }}
+                onBlur={() => {
+                  locationBlurTimer.current = setTimeout(() => setShowSuggestions(false), 150);
+                }}
+              />
+              {showSuggestions && formValue.location.trim() && (
+                <div
+                  className="list-group position-absolute w-100 shadow border rounded-bottom bg-body"
+                  style={{ zIndex: 1050, top: '100%' }}
+                >
+                  {loadingSuggestions && (
+                    <div className="list-group-item small text-secondary bg-body">Searching...</div>
+                  )}
+                  {!loadingSuggestions &&
+                    locationSuggestions.map((loc) => (
+                      <button
+                        key={loc.display}
+                        type="button"
+                        className="list-group-item list-group-item-action text-start bg-body"
+                        onMouseDown={(event) => event.preventDefault()}
+                        onClick={() => {
+                          setFormValue({ ...formValue, location: loc.display });
+                          setShowSuggestions(false);
+                        }}
+                      >
+                        {loc.display}
+                      </button>
+                    ))}
+                  {!loadingSuggestions && locationSuggestions.length === 0 && (
+                    <div className="list-group-item small text-secondary bg-body">No verified locations found</div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </Col>
@@ -247,41 +324,6 @@ const AvailabilityFilter = () => {
   const pathname = usePathname();
   const homeSearch = useHomeSearchOptional();
   const defaultStayFor = useClientDefaultStayFor();
-  const [availableLocations, setAvailableLocations] = useState<LocationOption[]>(locationsCache ?? []);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    const fetchLocations = async () => {
-      if (locationsCache) {
-        setAvailableLocations(locationsCache);
-        return;
-      }
-
-      try {
-        const rawUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000';
-        const API_URL = rawUrl.endsWith('/') ? rawUrl.slice(0, -1) : rawUrl;
-        const response = await handleBrowseClearanceResponse(
-          await fetch(
-            `${API_URL}/api/v1/businesses/locations`,
-            withBrowseCredentials(),
-          ),
-        );
-        if (!cancelled && response.ok) {
-          const data = await response.json();
-          locationsCache = data;
-          setAvailableLocations(data);
-        }
-      } catch (error) {
-        console.error('Error fetching locations:', error);
-      }
-    };
-
-    void fetchLocations();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   const formKey = searchParams.toString();
   const initial = buildHomeFormValue(searchParams, defaultStayFor);
@@ -328,7 +370,6 @@ const AvailabilityFilter = () => {
     <HomeAvailabilityFilterPanel
       key={formKey}
       initial={initial}
-      availableLocations={availableLocations}
       onSubmitSearch={onSubmitSearch}
     />
   );

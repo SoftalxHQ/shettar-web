@@ -7,8 +7,9 @@ import { Card, CardBody, CardHeader, ListGroup, ListGroupItem, Button } from 're
 import { BsBellFill, BsCheckAll, BsTrash } from 'react-icons/bs';
 import clsx from 'clsx';
 import DeleteConfirmModal from '@/app/components/Common/DeleteConfirmModal';
-import { getNotificationVisual } from '@/app/helpers/notification-display';
+import { getNotificationVisual, routeFromNotificationData } from '@/app/helpers/notification-display';
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 function timeAgo(dateString: string) {
   const date = new Date(dateString);
@@ -38,6 +39,7 @@ function getNotificationIcon(
 
 const NotificationsPage = () => {
   const { notifications, unreadCount, markAsRead, deleteNotification, loading } = useNotifications();
+  const router = useRouter();
   const [deleteModal, setDeleteModal] = useState<{ show: boolean; id: number | 'all' | null; isAll: boolean }>({
     show: false,
     id: null,
@@ -46,6 +48,12 @@ const NotificationsPage = () => {
 
   const handleDeleteClick = (id: number | 'all', isAll = false) => {
     setDeleteModal({ show: true, id, isAll });
+  };
+
+  const openNotification = async (notification: NotificationItem) => {
+    if (!notification.read_at) await markAsRead(notification.id);
+    const route = routeFromNotificationData(notification.data);
+    if (route) router.push(route);
   };
 
   return (
@@ -96,6 +104,9 @@ const NotificationsPage = () => {
                 <ListGroupItem
                   key={notification.id}
                   className={clsx('p-4 border-0 border-bottom', { 'bg-light bg-opacity-50': !notification.read_at })}
+                  role={routeFromNotificationData(notification.data) ? 'button' : undefined}
+                  style={routeFromNotificationData(notification.data) ? { cursor: 'pointer' } : undefined}
+                  onClick={() => openNotification(notification)}
                 >
                   <div className="d-sm-flex justify-content-between align-items-center">
                     <div className="d-flex align-items-start">
@@ -125,7 +136,10 @@ const NotificationsPage = () => {
                           variant="link"
                           size="sm"
                           className="p-0 text-secondary text-primary-hover mt-2 mt-sm-0"
-                          onClick={() => markAsRead(notification.id)}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            markAsRead(notification.id);
+                          }}
                         >
                           Mark as read
                         </Button>
@@ -134,7 +148,10 @@ const NotificationsPage = () => {
                         variant="link"
                         size="sm"
                         className="p-0 text-danger-hover mt-2 mt-sm-0"
-                        onClick={() => handleDeleteClick(notification.id)}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          handleDeleteClick(notification.id);
+                        }}
                         title="Delete notification"
                       >
                         <BsTrash size={16} />

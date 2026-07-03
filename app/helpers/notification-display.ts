@@ -75,6 +75,20 @@ export function getNotificationVisual(input: {
   return { icon: BsBellFill, color: 'text-info', bg: 'bg-info' };
 }
 
+export function routeFromNotificationData(data?: Record<string, unknown> | null): string | null {
+  const source = typeof data?.source === 'string' ? data.source : '';
+
+  if (source === 'review_reply' || source === 'review_comment_reply') {
+    const businessId = data?.business_slug || data?.business_unique_id || data?.business_id;
+    if (typeof businessId === 'string' && businessId) return `/hotel/${businessId}`;
+    if (typeof businessId === 'number') return `/hotel/${businessId}`;
+  }
+
+  if (typeof data?.route === 'string' && data.route) return data.route;
+
+  return null;
+}
+
 export function notificationToastEmoji(input: {
   title?: string;
   message?: string;

@@ -58,6 +58,8 @@ type Props = {
   votingReview?: boolean;
   /** When false (default), reply UI is hidden — e.g. hotel page requires a booking. */
   canReplyToReviews?: boolean;
+  /** When true, reply threads start collapsed (business show page). */
+  defaultRepliesCollapsed?: boolean;
 };
 
 type SharedHandlers = {
@@ -491,6 +493,7 @@ export default function ReviewCommentThread({
   onVoteReview,
   votingReview = false,
   canReplyToReviews = false,
+  defaultRepliesCollapsed = false,
 }: Props) {
   const [openReplyKey, setOpenReplyKey] = useState<string | null>(null);
   const [replyParentIdState, setReplyParentIdState] = useState<number | null>(null);
@@ -502,7 +505,10 @@ export default function ReviewCommentThread({
   const [votingCommentId, setVotingCommentId] = useState<number | null>(null);
   const [deleteCommentId, setDeleteCommentId] = useState<number | null>(null);
   const [isDeletingComment, setIsDeletingComment] = useState(false);
-  const [collapsedIds, setCollapsedIds] = useState<Set<number>>(new Set());
+  const [collapsedIds, setCollapsedIds] = useState<Set<number>>(() => {
+    if (!defaultRepliesCollapsed || !reviewRoot) return new Set();
+    return new Set([reviewCollapseKey(reviewRoot.reviewId)]);
+  });
 
   if (!showThread) return null;
 
