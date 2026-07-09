@@ -14,7 +14,7 @@ export type UtilityReceipt = {
   recipient: string;
   network: string;
   plan?: string;
-  status: 'delivered' | 'pending';
+  status: 'delivered' | 'pending' | 'failed' | 'refunded';
   requestId?: string;
   purchasedAt: string;
   billersCode?: string;
@@ -23,7 +23,8 @@ export type UtilityReceipt = {
   token?: string;
   units?: string;
   meterType?: string;
-  receiptKind?: 'utility' | 'topup' | 'booking' | 'order';
+  receiptKind?: 'utility' | 'topup' | 'booking' | 'order' | 'refund';
+  failureReason?: string;
   paymentMethod?: string;
   grossAmount?: string;
   fee?: string;
@@ -65,8 +66,11 @@ const UtilityReceiptCard = forwardRef<HTMLDivElement, UtilityReceiptCardProps>(
     const handlePrint = useReactToPrint({ contentRef: componentRef as React.RefObject<HTMLDivElement> });
 
     const isPending = receipt.status === 'pending';
+    const isFailed = receipt.status === 'failed';
+    const isRefunded = receipt.status === 'refunded';
     const isBooking = receipt.receiptKind === 'booking';
     const isOrder = receipt.receiptKind === 'order';
+    const isRefund = receipt.receiptKind === 'refund' || isRefunded;
     const isTopup = receipt.receiptKind === 'topup' || receipt.type.toLowerCase().includes('top-up') || receipt.type.toLowerCase().includes('top up');
     const typeLower = receipt.type.toLowerCase();
     const isData = !isTopup && !isBooking && !isOrder && typeLower.includes('data');
@@ -77,8 +81,17 @@ const UtilityReceiptCard = forwardRef<HTMLDivElement, UtilityReceiptCardProps>(
     const recipientLabel = isBooking ? 'HOTEL' : isOrder ? 'ROOM' : isTopup ? 'WALLET' : isElectricity ? 'METER' : isTv ? 'SMARTCARD' : 'PHONE';
     const serviceTag = isBooking ? 'Hotel Stay' : isOrder ? 'Room Service' : isTopup ? 'Wallet Funding' : isElectricity ? 'Electricity Token' : isTv ? 'TV Subscription' : isData ? 'Data Bundle' : 'Airtime VTU';
     const brandLabel = isBooking || isOrder ? 'Shettar Travel & Dining' : isTopup ? 'Shettar Wallet Services' : 'Shettar Utility Services';
-    const statusLabel = isPending ? 'Processing' : isTopup || isBooking || isOrder ? 'Completed' : 'Delivered';
-    const totalLabel = isTopup ? 'Amount Credited' : 'Total Paid';
+    const statusLabel = isPending
+      ? 'Processing'
+      : isFailed
+        ? 'Failed'
+        : isRefunded
+          ? 'Refunded'
+          : isTopup || isBooking || isOrder
+            ? 'Completed'
+            : 'Delivered';
+    const statusClass = isFailed ? 'text-danger' : isRefunded ? 'text-success' : isPending ? 'text-warning' : 'summary-value-accent';
+    const totalLabel = isRefund ? 'Amount Refunded' : isTopup ? 'Amount Credited' : 'Total Paid';
     const referenceLabel = isBooking ? 'RESERVATION NUMBER' : isOrder ? 'ORDER NUMBER' : 'TRANSACTION REFERENCE';
     const summaryTitle = isTopup || isBooking || isOrder ? 'PAYMENT SUMMARY' : 'PURCHASE SUMMARY';
     const detailsTitle = isTopup || isBooking || isOrder ? 'TRANSACTION DETAILS' : 'WHAT YOU PURCHASED';
@@ -193,7 +206,11 @@ const UtilityReceiptCard = forwardRef<HTMLDivElement, UtilityReceiptCardProps>(
                 {receipt.meterType ? <SummaryRow label="Meter Type" value={receipt.meterType} /> : null}
                 {receipt.token ? <SummaryRow label="Token" value={receipt.token} accent /> : null}
                 {receipt.units ? <SummaryRow label="Units" value={receipt.units} /> : null}
-                <SummaryRow label="Status" value={statusLabel} accent={!isPending} />
+                {receipt.failureReason ? <SummaryRow label="Reason" value={receipt.failureReason} /> : null}
+                <div className="summary-row">
+                  <span className="summary-label">Status</span>
+                  <span className={`summary-value fw-bold ${statusClass}`}>{statusLabel}</span>
+                </div>
                 <SummaryRow
                   label="Payment Method"
                   value={isTopup || isBooking || isOrder ? receipt.paymentMethod || 'Shettar Wallet' : 'Shettar Wallet'}

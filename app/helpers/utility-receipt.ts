@@ -29,6 +29,10 @@ export type WalletTransactionMetadata = {
   restaurant_order_id?: number;
   room_number?: string;
   refund?: boolean;
+  failure_reason?: string;
+  original_request_id?: string;
+  refunded_transaction_id?: number;
+  type?: string;
   promo_code?: string;
   promo_discount_amount?: number;
   subtotal_before_discount?: number;
@@ -78,7 +82,30 @@ function transactionAmount(txn: WalletTransactionForReceipt): string {
   return formatMoney(txn.metadata?.amount_charged) || String(txn.amount);
 }
 
+function resolveUtilityPurchaseStatus(txn: WalletTransactionForReceipt): UtilityReceipt['status'] {
+  const meta = txn.metadata;
+  const txnStatus = txn.status.toLowerCase();
+
+  if (txn.transaction_type?.toLowerCase() === 'refund' || meta?.refund === true) {
+    return 'refunded';
+  }
+  if (txnStatus === 'failed' || meta?.provider_status === 'failed') {
+    return 'failed';
+  }
+  if (meta?.provider_status === 'pending' || txnStatus === 'pending') {
+    return 'pending';
+  }
+  return 'delivered';
+}
+
+export function isRefundTransaction(txn: WalletTransactionForReceipt): boolean {
+  if (txn.transaction_type?.toLowerCase() === 'refund') return true;
+  return txn.metadata?.refund === true;
+}
+
 export function isUtilityTransaction(txn: WalletTransactionForReceipt): boolean {
+  if (isRefundTransaction(txn)) return false;
+
   const productType = txn.metadata?.product_type;
   return Boolean(productType && UTILITY_PRODUCT_TYPES.has(productType as UtilityProductType));
 }
@@ -123,6 +150,7 @@ export function isBookingTransaction(txn: WalletTransactionForReceipt): boolean 
 
 export function isReceiptTransaction(txn: WalletTransactionForReceipt): boolean {
   return (
+    isRefundTransaction(txn) ||
     isUtilityTransaction(txn) ||
     isTopupTransaction(txn) ||
     isBookingTransaction(txn) ||
@@ -130,13 +158,54 @@ export function isReceiptTransaction(txn: WalletTransactionForReceipt): boolean 
   );
 }
 
+function mapRefundTransactionToReceipt(txn: WalletTransactionForReceipt): UtilityReceipt | null {
+  if (!isRefundTransaction(txn)) return null;
+
+  const meta = txn.metadata;
+  const productType = meta?.product_type as UtilityProductType | undefined;
+
+  if (productType && UTILITY_PRODUCT_TYPES.has(productType)) {
+    const recipient =
+      productType === 'tv' || productType === 'electricity'
+        ? meta?.billers_code || meta?.phone_number || ''
+        : meta?.phone_number || '';
+
+    return {
+      receiptKind: 'refund',
+      type: `${TYPE_LABELS[productType]} Refund`,
+      amount: String(txn.amount),
+      recipient,
+      network: meta?.provider || meta?.network || '',
+      plan: meta?.plan,
+      status: 'refunded',
+      requestId: meta?.original_request_id || meta?.vtpass_request_id,
+      purchasedAt: txn.created_at,
+      billersCode: meta?.billers_code,
+      customerName: meta?.customer_name,
+      customerAddress: meta?.customer_address,
+      meterType: meta?.meter_type,
+      failureReason: meta?.failure_reason,
+      paymentMethod: formatPaymentMethodLabel(txn.payment_method),
+    };
+  }
+
+  return {
+    receiptKind: 'refund',
+    type: 'Wallet Refund',
+    amount: String(txn.amount),
+    recipient: 'Shettar Wallet',
+    network: 'Shettar Wallet',
+    status: 'refunded',
+    purchasedAt: txn.created_at,
+    failureReason: meta?.failure_reason,
+    paymentMethod: formatPaymentMethodLabel(txn.payment_method),
+  };
+}
+
 function mapUtilityTransactionToReceipt(txn: WalletTransactionForReceipt): UtilityReceipt | null {
   const meta = txn.metadata;
   const productType = meta?.product_type as UtilityProductType | undefined;
   if (!productType || !UTILITY_PRODUCT_TYPES.has(productType)) return null;
-
-  const isPending =
-    meta?.provider_status === 'pending' || txn.status.toLowerCase() === 'pending';
 
   const recipient =
     productType === 'tv' || productType === 'electricity'
@@ -150,7 +219,7 @@ function mapUtilityTransactionToReceipt(txn: WalletTransactionForReceipt): Utili
     recipient,
     network: meta?.provider || meta?.network || '',
     plan: meta?.plan,
-    status: isPending ? 'pending' : 'delivered',
+    status: resolveUtilityPurchaseStatus(txn),
     requestId: meta?.vtpass_request_id,
     purchasedAt: txn.created_at,
     billersCode: meta?.billers_code,
@@ -235,6 +304,7 @@ function mapOrderTransactionToReceipt(txn: WalletTransactionForReceipt): Utility
 
 export function mapTransactionToReceipt(txn: WalletTransactionForReceipt): UtilityReceipt | null {
   return (
+    mapRefundTransactionToReceipt(txn) ||
     mapUtilityTransactionToReceipt(txn) ||
     mapTopupTransactionToReceipt(txn) ||
     mapBookingTransactionToReceipt(txn) ||
@@ -252,6 +322,7 @@ export function resolveReceiptReference(receipt: UtilityReceipt): string {
   if (receipt.receiptKind === 'topup') return `TOP-${suffix}`;
   if (receipt.receiptKind === 'booking') return `BKN-${suffix}`;
   if (receipt.receiptKind === 'order') return `ORD-${suffix}`;
+  if (receipt.receiptKind === 'refund') return `REF-${suffix}`;
 
   return `UTL-${suffix}`;
 }
