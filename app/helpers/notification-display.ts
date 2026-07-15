@@ -84,7 +84,31 @@ export function routeFromNotificationData(data?: Record<string, unknown> | null)
     if (typeof businessId === 'number') return `/hotel/${businessId}`;
   }
 
-  if (typeof data?.route === 'string' && data.route) return data.route;
+  const utilitySources = [
+    'airtime',
+    'data',
+    'tv',
+    'electricity',
+    'airtime_refund',
+    'data_refund',
+    'tv_refund',
+    'electricity_refund',
+  ];
+  const transactionId = data?.transaction_id;
+  if (utilitySources.includes(source) && (typeof transactionId === 'number' || typeof transactionId === 'string')) {
+    return `/user/transactions?receipt=${transactionId}`;
+  }
+
+  if (typeof data?.route === 'string' && data.route) {
+    const receiptMatch = data.route.match(/[?&]receipt=([^&]+)/);
+    if (receiptMatch?.[1]) {
+      return `/user/transactions?receipt=${receiptMatch[1]}`;
+    }
+    if (data.route === '/transactions' || data.route.startsWith('/transactions?')) {
+      return data.route.replace(/^\/transactions/, '/user/transactions');
+    }
+    return data.route;
+  }
 
   return null;
 }

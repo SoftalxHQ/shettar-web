@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Card, CardBody, CardHeader, Table, Badge, Button } from 'react-bootstrap';
 import { BsDownload } from 'react-icons/bs';
 import { currency } from '@/app/states';
@@ -37,6 +38,13 @@ interface Transaction {
   created_at: string;
 }
 
+type TransactionsPagination = {
+  page?: number;
+  last: number;
+  count?: number;
+  limit?: number;
+};
+
 function getPromoBreakdown(txn: Transaction) {
   const meta = txn.metadata;
   if (!meta?.promo_code) return null;
@@ -54,10 +62,12 @@ function getPromoBreakdown(txn: Transaction) {
 }
 
 const Transactions = () => {
+  const searchParams = useSearchParams();
+  const receiptParam = searchParams.get('receipt');
   const [loading, setLoading] = useState(true);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [page, setPage] = useState(1);
-  const [pagination, setPagination] = useState<any>(null);
+  const [pagination, setPagination] = useState<TransactionsPagination | null>(null);
   const [isExporting, setIsExporting] = useState(false);
   const [selectedReceipt, setSelectedReceipt] = useState<UtilityReceipt | null>(null);
   const { apiFetch } = useApi();
@@ -124,6 +134,44 @@ const Transactions = () => {
   useEffect(() => {
     fetchTransactions(page);
   }, [page]);
+
+  useEffect(() => {
+    if (!receiptParam) return;
+
+    let cancelled = false;
+    const openReceiptFromQuery = async () => {
+      const fromList = transactions.find((t) => String(t.id) === String(receiptParam));
+      if (fromList) {
+        const mapped = mapTransactionToReceipt(fromList);
+        if (mapped) {
+          setSelectedReceipt(mapped);
+          return;
+        }
+      }
+
+      try {
+        const token = getStoredToken();
+        const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
+        const response = await apiFetch(`${API_URL}/api/v1/wallet_transactions/${receiptParam}`, {
+          headers: {
+            Authorization: token ? `Bearer ${token}` : '',
+            'Content-Type': 'application/json',
+          },
+        });
+        if (!response.ok || cancelled) return;
+        const data = await response.json();
+        const mapped = data.transaction ? mapTransactionToReceipt(data.transaction) : null;
+        if (mapped && !cancelled) setSelectedReceipt(mapped);
+      } catch (error) {
+        console.error('Error opening receipt from notification:', error);
+      }
+    };
+
+    void openReceiptFromQuery();
+    return () => {
+      cancelled = true;
+    };
+  }, [receiptParam, transactions, apiFetch]);
 
   const getStatusBadge = (status: string) => {
     const s = status.toLowerCase();
