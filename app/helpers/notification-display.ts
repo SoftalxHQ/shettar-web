@@ -84,18 +84,8 @@ export function routeFromNotificationData(data?: Record<string, unknown> | null)
     if (typeof businessId === 'number') return `/hotel/${businessId}`;
   }
 
-  const utilitySources = [
-    'airtime',
-    'data',
-    'tv',
-    'electricity',
-    'airtime_refund',
-    'data_refund',
-    'tv_refund',
-    'electricity_refund',
-  ];
   const transactionId = data?.transaction_id;
-  if (utilitySources.includes(source) && (typeof transactionId === 'number' || typeof transactionId === 'string')) {
+  if (typeof transactionId === 'number' || (typeof transactionId === 'string' && transactionId)) {
     return `/user/transactions?receipt=${transactionId}`;
   }
 
