@@ -54,21 +54,27 @@ const UtilityReceiptModal = ({ receipt, onClose }: UtilityReceiptModalProps) => 
   const reference = receipt ? resolveReceiptReference(receipt) : undefined;
 
   return (
-    <Modal show={Boolean(receipt)} onHide={onClose} centered size="lg" scrollable>
+    <Modal
+      show={Boolean(receipt)}
+      onHide={onClose}
+      centered
+      scrollable
+      dialogClassName="utility-receipt-modal"
+    >
       <Modal.Header closeButton>
         <Modal.Title>Transaction Receipt</Modal.Title>
       </Modal.Header>
-      <Modal.Body className="p-3 p-md-4">
+      <Modal.Body className="p-2 p-sm-3">
         {receipt ? (
           <UtilityReceiptCard ref={cardRef} receipt={receipt} hideInlineActions />
         ) : null}
       </Modal.Body>
       {receipt ? (
-        <Modal.Footer className="d-flex flex-wrap gap-2 justify-content-between">
-          <Button variant="outline-secondary" onClick={onClose}>
+        <Modal.Footer className="d-flex flex-column flex-sm-row flex-wrap gap-2 justify-content-between align-items-stretch">
+          <Button variant="outline-secondary" onClick={onClose} className="order-sm-0">
             Close
           </Button>
-          <div className="d-flex flex-wrap gap-2">
+          <div className="d-flex flex-column flex-sm-row flex-wrap gap-2">
             <Button
               variant="outline-primary"
               size="sm"
@@ -99,6 +105,24 @@ const UtilityReceiptModal = ({ receipt, onClose }: UtilityReceiptModalProps) => 
           </div>
         </Modal.Footer>
       ) : null}
+      <style jsx global>{`
+        .utility-receipt-modal {
+          max-width: min(440px, calc(100vw - 1.5rem));
+          margin-left: auto;
+          margin-right: auto;
+        }
+
+        @media (max-width: 575.98px) {
+          .utility-receipt-modal {
+            max-width: calc(100vw - 1rem);
+            margin: 0.5rem auto;
+          }
+
+          .utility-receipt-modal .modal-footer .btn {
+            width: 100%;
+          }
+        }
+      `}</style>
     </Modal>
   );
 };

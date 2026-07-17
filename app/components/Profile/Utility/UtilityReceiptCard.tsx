@@ -264,6 +264,8 @@ const UtilityReceiptCard = forwardRef<HTMLDivElement, UtilityReceiptCardProps>(
         <style jsx>{`
           .receipt-wrap {
             width: 100%;
+            max-width: 400px;
+            margin-inline: auto;
           }
 
           .utility-receipt {
@@ -543,6 +545,44 @@ const UtilityReceiptCard = forwardRef<HTMLDivElement, UtilityReceiptCardProps>(
           }
 
           @media (max-width: 575.98px) {
+            .receipt-wrap {
+              max-width: 100%;
+            }
+
+            .ticket-header {
+              padding: 14px 16px;
+              gap: 10px;
+            }
+
+            .ticket-id {
+              font-size: 15px;
+            }
+
+            .header-icon {
+              width: 36px;
+              height: 36px;
+            }
+
+            .receipt-body {
+              padding: 14px;
+            }
+
+            .service-row,
+            .details-strip,
+            .summary-box {
+              padding: 12px;
+            }
+
+            .service-icon {
+              width: 40px;
+              height: 40px;
+              border-radius: 11px;
+            }
+
+            .service-title {
+              font-size: 15px;
+            }
+
             .details-strip {
               flex-direction: column;
               gap: 14px;
@@ -550,6 +590,18 @@ const UtilityReceiptCard = forwardRef<HTMLDivElement, UtilityReceiptCardProps>(
 
             .detail-col-end {
               text-align: left;
+            }
+
+            .total-amount {
+              font-size: 18px;
+            }
+
+            .receipt-actions {
+              flex-direction: column;
+            }
+
+            .receipt-actions :global(.btn) {
+              width: 100%;
             }
           }
 
