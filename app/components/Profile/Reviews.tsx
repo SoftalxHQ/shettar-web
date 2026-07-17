@@ -20,6 +20,7 @@ import { useLayoutContext } from '@/app/states';
 import { useApi } from '@/app/hooks/useApi';
 import { toast } from 'react-hot-toast';
 import { Skeleton } from '../';
+import { normalizeApiMediaUrl } from '@/app/helpers/businesses';
 
 type ReviewItem = { id: number; rating: number; content: string; date: string; created_at?: string; hotel_name: string; hotel_image?: string | null; business_id: number; business_slug?: string | null; business_unique_id?: string | null; admin_reply?: string | null; admin_reply_by?: string | null; deletable?: boolean; comments?: ReviewComment[] };
 function hotelPathFromReview(review: ReviewItem): string | null {
@@ -296,7 +297,7 @@ const Reviews = () => {
                   {hotelPath ? (
                     <Link href={hotelPath}>
                       <Image
-                        src={review.hotel_image || '/assets/images/category_luxury.jpg'}
+                        src={normalizeApiMediaUrl(review.hotel_image) || '/assets/images/category_luxury.jpg'}
                         className="card-img rounded-2 shadow-sm"
                         style={{ objectFit: 'cover' }}
                         alt={review.hotel_name}
@@ -304,7 +305,7 @@ const Reviews = () => {
                     </Link>
                   ) : (
                     <Image
-                      src={review.hotel_image || '/assets/images/category_luxury.jpg'}
+                      src={normalizeApiMediaUrl(review.hotel_image) || '/assets/images/category_luxury.jpg'}
                       className="card-img rounded-2 shadow-sm"
                       style={{ objectFit: 'cover' }}
                       alt={review.hotel_name}

@@ -20,10 +20,10 @@ const footerLinks = [
   {
     title: 'Explore',
     items: [
-      { name: 'Hotels', link: '/hotel' },
-      { name: 'Near Me', link: '/hotel' },
-      { name: 'Best Deals', link: '/hotel' },
-      { name: 'Luxury Stays', link: '/hotel' },
+      { name: 'Find Hotels', link: '/hotel/list' },
+      { name: 'Browse Hotels', link: '/hotel/grid' },
+      { name: 'Refund Policy', link: '/refund' },
+      { name: 'Privacy Policy', link: '/privacy' },
     ],
   },
 ];
@@ -86,16 +86,16 @@ export default function FooterWithLinks() {
             <h5 className="text-white mb-3 mb-md-4">Explore</h5>
             <Nav className="flex-column text-primary-hover">
               <NavItem>
-                <NavLink className="text-body-secondary ps-0" href="/hotel">Hotels</NavLink>
+                <NavLink className="text-body-secondary ps-0" href="/hotel/list">Find Hotels</NavLink>
               </NavItem>
               <NavItem>
-                <NavLink className="text-body-secondary ps-0" href="/hotel">Near Me</NavLink>
+                <NavLink className="text-body-secondary ps-0" href="/hotel/grid">Browse Hotels</NavLink>
               </NavItem>
               <NavItem>
-                <NavLink className="text-body-secondary ps-0" href="/hotel">Best Deals</NavLink>
+                <NavLink className="text-body-secondary ps-0" href="/refund">Refund Policy</NavLink>
               </NavItem>
               <NavItem>
-                <NavLink className="text-body-secondary ps-0" href="/hotel">Luxury Stays</NavLink>
+                <NavLink className="text-body-secondary ps-0" href="/privacy">Privacy Policy</NavLink>
               </NavItem>
             </Nav>
           </Col>

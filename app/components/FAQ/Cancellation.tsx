@@ -10,30 +10,32 @@ const Cancellation = () => {
       </CardHeader>
       <CardBody className="p-4 pt-0">
         <div className="mt-4">
-          <h6 className="fw-normal">How can I cancel my taxi booking?</h6>
+          <h6 className="fw-normal">How do I cancel a booking?</h6>
           <p className="mb-0 text-secondary">
-            Yet remarkably appearance gets him his projection. Diverted endeavor bed peculiar men the not desirous. Acuteness abilities ask can
-            offending furnished fulfilled sex. Warrant fifteen exposed ye at mistake. Blush since so in noisy still built up an again. As young ye
-            hopes no he place means. Partiality diminution gay yet entreaties admiration. In mention perhaps attempt pointed suppose. Unknown ye
-            chamber of warrant of Norland arrived.
+            Go to Bookings in your account, open the reservation you want to cancel and select Cancel. You&apos;ll see any
+            applicable cancellation terms before you confirm, so there are no surprises.
           </p>
         </div>
         <div className="mt-4">
-          <h6 className="fw-normal">How do I cancel my booking in this situation?</h6>
+          <h6 className="fw-normal">Will I get a refund if I cancel?</h6>
           <p className="mb-0 text-secondary">
-            Supposing so be resolving breakfast am or perfectly. It drew a hill from me. Valley by oh twenty direct me so. Departure defective
-            arranging rapturous did believe him all had supported. Family months lasted simple set nature vulgar him. Picture for attempt joy excited
-            ten carried manners talking how. Suspicion neglected the resolving agreement perceived at an. Comfort reached gay perhaps chamber his six
-            detract besides add.
+            Eligible cancellations are refunded automatically to your Shettar Wallet, where you can reuse the balance for your
+            next booking or withdraw it. The amount refunded depends on the hotel&apos;s cancellation policy and how close the
+            cancellation is to your check-in date.
           </p>
         </div>
         <div className="mt-4">
-          <h6 className="fw-normal">How can I cancel or postpone a reservation I made through BOOKING?</h6>
+          <h6 className="fw-normal">Why do cancellation terms differ between hotels?</h6>
           <p className="mb-0 text-secondary">
-            Supposing so be resolving breakfast am or perfectly. It drew a hill from me. Valley by oh twenty direct me so. Departure defective
-            arranging rapturous did believe him all had supported. Family months lasted simple set nature vulgar him. Picture for attempt joy excited
-            ten carried manners talking how. Suspicion neglected the resolving agreement perceived at an. Comfort reached gay perhaps chamber his six
-            detract besides add.
+            Each hotel sets its own cancellation policy — some offer free cancellation up to a certain time, while others are
+            non-refundable. The exact terms are always shown on the room details and again before you confirm your booking.
+          </p>
+        </div>
+        <div className="mt-4">
+          <h6 className="fw-normal">How long does a refund take?</h6>
+          <p className="mb-0 text-secondary">
+            Refunds to your Shettar Wallet are typically instant. If you then withdraw to your bank account, the transfer time
+            depends on your bank, but usually completes within a few minutes to 24 hours.
           </p>
         </div>
       </CardBody>

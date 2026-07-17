@@ -10,6 +10,7 @@ import toast from 'react-hot-toast';
 import { useLayoutContext } from '@/app/states';
 import { saveAccountProfile } from '@/app/hooks/useAccountProfile';
 import { Flatpicker } from '@/app/components';
+import { normalizeApiMediaUrl } from '@/app/helpers/businesses';
 
 type FormValues = {
   first_name: string;
@@ -108,7 +109,7 @@ const PersonalInformation = () => {
     }
   };
 
-  const avatarSrc = avatarPreview ?? profile?.avatar_url ?? null;
+  const avatarSrc = avatarPreview ?? (normalizeApiMediaUrl(profile?.avatar_url) || null);
 
   if (isLoading && !profile) {
     return (

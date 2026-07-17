@@ -8,6 +8,7 @@ import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { resendPhoneVerification, verifyPhone } from '@/app/helpers/auth';
 import { Button, Modal, Form } from 'react-bootstrap';
+import { normalizeApiMediaUrl } from '@/app/helpers/businesses';
 
 const Field = ({ icon: Icon, label, value }: { icon: any; label: string; value?: string | null }) => (
   <Col md={6}>
@@ -109,7 +110,7 @@ const UserDetails = () => {
             {profile?.avatar_url ? (
               <Image
                 className="avatar-img rounded-circle border border-primary border-3 shadow"
-                src={profile.avatar_url}
+                src={normalizeApiMediaUrl(profile.avatar_url)}
                 alt="avatar"
                 width={80}
                 height={80}

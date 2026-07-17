@@ -1,5 +1,6 @@
 'use client';
 
+import { normalizeApiMediaUrl } from '@/app/helpers/businesses';
 import { Card, CardBody, Image, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { BsPencilSquare } from 'react-icons/bs';
 import Link from 'next/link';
@@ -16,7 +17,7 @@ const LeftPanel = () => {
 
   const fullName = account ? `${account.first_name} ${account.last_name}` : 'User';
   const email = account?.email || '';
-  const avatar = account?.avatar_url || '/images/avatar/01.jpg';
+  const avatar = normalizeApiMediaUrl(account?.avatar_url) || '/images/avatar/01.jpg';
 
   return (
     <Card className="bg-light w-100">

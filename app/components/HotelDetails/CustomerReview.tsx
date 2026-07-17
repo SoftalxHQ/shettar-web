@@ -16,6 +16,7 @@ import { useLayoutContext } from '@/app/states';
 import { getStoredToken } from '@/app/helpers/auth';
 import toast from 'react-hot-toast';
 import Image from 'next/image';
+import { normalizeApiMediaUrl } from '@/app/helpers/businesses';
 
 interface Review {
   id: number;
@@ -360,7 +361,7 @@ const CustomerReview = ({ reviews, averageRating, ratingDistribution, businessId
                 <div className="flex-shrink-0">
                   {review.reviewer_avatar ? (
                     <Image
-                      src={review.reviewer_avatar}
+                      src={normalizeApiMediaUrl(review.reviewer_avatar)}
                       className="rounded-circle shadow-sm"
                       style={{ objectFit: 'cover' }}
                       width={56}

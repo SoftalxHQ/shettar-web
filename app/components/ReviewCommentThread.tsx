@@ -15,6 +15,7 @@ import {
   BsSend,
   BsPencilSquare,
 } from 'react-icons/bs';
+import { normalizeApiMediaUrl } from '@/app/helpers/businesses';
 import {
   reviewComments,
   childComments,
@@ -147,10 +148,11 @@ function CommentAvatar({
   isBusiness: boolean;
   size: number;
 }) {
-  if (avatarUrl) {
+  const src = normalizeApiMediaUrl(avatarUrl);
+  if (src) {
     return (
       <img
-        src={avatarUrl}
+        src={src}
         alt=""
         className="rounded-circle flex-shrink-0 object-fit-cover"
         style={{ width: size, height: size }}

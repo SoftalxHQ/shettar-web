@@ -23,12 +23,19 @@ const UtilityReceiptModal = ({ receipt, onClose }: UtilityReceiptModalProps) => 
 
   const runExport = async (
     action: 'share' | 'png' | 'pdf',
-    fn: () => Promise<void | 'shared' | 'downloaded'>
+    fn: (el: HTMLElement) => Promise<void | 'shared' | 'downloaded'>
   ) => {
-    if (!cardRef.current || exporting) return;
+    if (exporting) return;
+
+    const el = cardRef.current;
+    if (!el) {
+      toast.error('Receipt is still loading. Please try again.');
+      return;
+    }
+
     setExporting(action);
     try {
-      const result = await fn();
+      const result = await fn(el);
       if (action === 'share') {
         toast.success(result === 'shared' ? 'Receipt shared' : 'Receipt downloaded');
       } else if (action === 'png') {
@@ -43,6 +50,8 @@ const UtilityReceiptModal = ({ receipt, onClose }: UtilityReceiptModalProps) => 
       setExporting(null);
     }
   };
+
+  const reference = receipt ? resolveReceiptReference(receipt) : undefined;
 
   return (
     <Modal show={Boolean(receipt)} onHide={onClose} centered size="lg" scrollable>
@@ -64,11 +73,7 @@ const UtilityReceiptModal = ({ receipt, onClose }: UtilityReceiptModalProps) => 
               variant="outline-primary"
               size="sm"
               disabled={Boolean(exporting)}
-              onClick={() =>
-                runExport('share', () =>
-                  shareReceiptPng(cardRef.current!, receipt.requestId)
-                )
-              }
+              onClick={() => runExport('share', (el) => shareReceiptPng(el, reference))}
             >
               {exporting === 'share' ? <Spinner size="sm" className="me-2" /> : <BsShare className="me-2" />}
               Share
@@ -77,11 +82,7 @@ const UtilityReceiptModal = ({ receipt, onClose }: UtilityReceiptModalProps) => 
               variant="outline-primary"
               size="sm"
               disabled={Boolean(exporting)}
-              onClick={() =>
-                runExport('png', () =>
-                  downloadReceiptPng(cardRef.current!, receipt.requestId)
-                )
-              }
+              onClick={() => runExport('png', (el) => downloadReceiptPng(el, reference))}
             >
               {exporting === 'png' ? <Spinner size="sm" className="me-2" /> : <BsDownload className="me-2" />}
               Download Image
@@ -90,11 +91,7 @@ const UtilityReceiptModal = ({ receipt, onClose }: UtilityReceiptModalProps) => 
               variant="primary"
               size="sm"
               disabled={Boolean(exporting)}
-              onClick={() =>
-                runExport('pdf', () =>
-                  downloadReceiptPdf(cardRef.current!, resolveReceiptReference(receipt))
-                )
-              }
+              onClick={() => runExport('pdf', (el) => downloadReceiptPdf(el, reference))}
             >
               {exporting === 'pdf' ? <Spinner size="sm" className="me-2" /> : <BsDownload className="me-2" />}
               Download PDF

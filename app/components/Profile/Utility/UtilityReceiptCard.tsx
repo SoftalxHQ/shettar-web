@@ -62,8 +62,15 @@ function SummaryRow({
 const UtilityReceiptCard = forwardRef<HTMLDivElement, UtilityReceiptCardProps>(
   function UtilityReceiptCard({ receipt, hideInlineActions = false }, ref) {
     const internalRef = useRef<HTMLDivElement>(null);
-    const componentRef = ref ?? internalRef;
-    const handlePrint = useReactToPrint({ contentRef: componentRef as React.RefObject<HTMLDivElement> });
+    const setRefs = (node: HTMLDivElement | null) => {
+      internalRef.current = node;
+      if (typeof ref === 'function') {
+        ref(node);
+      } else if (ref) {
+        ref.current = node;
+      }
+    };
+    const handlePrint = useReactToPrint({ contentRef: internalRef });
 
     const isPending = receipt.status === 'pending';
     const isFailed = receipt.status === 'failed';
@@ -133,7 +140,7 @@ const UtilityReceiptCard = forwardRef<HTMLDivElement, UtilityReceiptCardProps>(
 
     return (
       <div className="receipt-wrap">
-        <div className="utility-receipt print-card" ref={componentRef}>
+        <div className="utility-receipt print-card" ref={setRefs}>
           <div className="receipt-card">
             <div className="ticket-header">
               <div className="ticket-header-main">
@@ -244,7 +251,7 @@ const UtilityReceiptCard = forwardRef<HTMLDivElement, UtilityReceiptCardProps>(
               size="sm"
               className="rounded-pill px-3"
               onClick={() => {
-                const el = (componentRef as React.RefObject<HTMLDivElement>).current;
+                const el = internalRef.current;
                 if (el) void downloadReceiptPdf(el, resolveReceiptReference(receipt));
               }}
             >
@@ -360,7 +367,7 @@ const UtilityReceiptCard = forwardRef<HTMLDivElement, UtilityReceiptCardProps>(
             width: 46px;
             height: 46px;
             border-radius: 13px;
-            background: color-mix(in srgb, var(--bs-primary) 12%, transparent);
+            background: rgba(81, 67, 217, 0.12);
             color: var(--bs-primary);
             display: flex;
             align-items: center;

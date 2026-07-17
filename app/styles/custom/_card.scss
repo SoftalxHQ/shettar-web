@@ -73,10 +73,12 @@
   transition: $transition-base;
   background-color: $dark;
   display: block;
+  z-index: 2;
+  pointer-events: none;
 }
 
 .card-overlay-hover:hover:before {
-  opacity: 0.5;
+  opacity: 0.4;
 }
 
 // Card hover shadow

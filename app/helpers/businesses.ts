@@ -90,10 +90,22 @@ export function getApiBaseUrl(): string {
   return baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
 }
 
+/**
+ * Make ActiveStorage / media URLs usable from shettar-web (different origin).
+ * - Prefixes relative `/rails/active_storage/...` paths with the API host
+ * - Rewrites localhost blob hosts to NEXT_PUBLIC_API_URL
+ * Signed S3 URLs from MediaUrl pass through unchanged.
+ */
 export function normalizeApiMediaUrl(url: string | undefined | null): string {
   if (!url) return '';
+
   try {
     const api = new URL(getApiBaseUrl());
+
+    if (url.startsWith('/')) {
+      return `${api.origin}${url}`;
+    }
+
     const parsed = new URL(url);
     if (parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1') {
       parsed.protocol = api.protocol;
@@ -101,10 +113,11 @@ export function normalizeApiMediaUrl(url: string | undefined | null): string {
       parsed.port = api.port;
       return parsed.toString();
     }
+
+    return url;
   } catch {
     return url;
   }
-  return url;
 }
 
 export function normalizeApiMediaUrls(urls: string[] | undefined | null): string[] {

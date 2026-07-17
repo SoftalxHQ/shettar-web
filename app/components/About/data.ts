@@ -1,5 +1,5 @@
 import { type IconType } from 'react-icons';
-import { FaCar, FaGlobeAmericas, FaHotel, FaPlane } from 'react-icons/fa';
+import { BsBuildingCheck, BsWallet2, BsShieldLock, BsLightningCharge, BsStars, BsHeadset } from 'react-icons/bs';
 
 export type OurStoryType = {
   title: string;
@@ -8,58 +8,63 @@ export type OurStoryType = {
   variant: string;
 };
 
-export type TeamType = {
-  name: string;
-  image: string;
-  position: string;
+export type WhyShettarType = {
+  title: string;
+  description: string;
+  icon: IconType;
+  variant: string;
 };
 
 export const ourStories: OurStoryType[] = [
   {
-    title: 'Hotel Booking',
-    description: 'A pleasure exertion if believed provided to. All led out world this music while asked.',
-    icon: FaHotel,
-    variant: 'bg-orange text-orange',
-  },
-  {
-    title: 'Flight Booking',
-    description: 'Warrant private blushes removed an in equally totally Objection do Mr prevailed.',
-    icon: FaPlane,
-    variant: 'bg-success text-success',
-  },
-  {
-    title: 'Tour Booking',
-    description: 'Dashwood does provide stronger is. But discretion frequently sir she instruments.',
-    icon: FaGlobeAmericas,
+    title: 'Verified Hotels & Stays',
+    description: 'Browse hotels, apartments and short-stays across Nigeria — every listing is reviewed and verified before it goes live.',
+    icon: BsBuildingCheck,
     variant: 'bg-primary text-primary',
   },
   {
-    title: 'Cab Booking',
-    description: 'Imprudence attachment him his for sympathize. Large above be to means.',
-    icon: FaCar,
+    title: 'The Shettar Wallet',
+    description: 'Fund your wallet by card or your own dedicated bank account, then book in seconds without re-entering payment details.',
+    icon: BsWallet2,
+    variant: 'bg-success text-success',
+  },
+  {
+    title: 'Secure Payments',
+    description: 'Payments are processed through Paystack with bank-grade security. Pay online, or settle with cash or POS at the property.',
+    icon: BsShieldLock,
+    variant: 'bg-orange text-orange',
+  },
+  {
+    title: 'Instant Confirmation',
+    description: 'Get real-time availability and immediate booking confirmation, with reminders and updates sent straight to your device.',
+    icon: BsLightningCharge,
     variant: 'bg-info text-info',
   },
 ];
 
-export const ourTeams: TeamType[] = [
+export const whyShettar: WhyShettarType[] = [
   {
-    name: 'Larry Lawson',
-    position: 'Editor in Chief',
-    image: '/images/avatar/01.jpg',
+    title: 'Built for Nigeria',
+    description: 'Prices in Naira, local payment methods, and a support team that understands how you travel and stay.',
+    icon: BsStars,
+    variant: 'bg-primary text-primary',
   },
   {
-    name: 'Louis Ferguson',
-    position: 'Director Graphics',
-    image: '/images/avatar/02.jpg',
+    title: 'Trusted by Hotels',
+    description: 'Hundreds of hotels manage rooms, bookings and payouts on Shettar — so you book directly from the people who host you.',
+    icon: BsBuildingCheck,
+    variant: 'bg-success text-success',
   },
   {
-    name: 'Louis Crawford',
-    position: 'Editor, Coverage',
-    image: '/images/avatar/08.jpg',
+    title: 'Your Money, Protected',
+    description: 'Wallet balances, refunds on eligible cancellations, and transparent pricing with no hidden charges.',
+    icon: BsWallet2,
+    variant: 'bg-orange text-orange',
   },
   {
-    name: 'Frances Guerrero',
-    position: 'CEO, Coverage',
-    image: '/images/avatar/09.jpg',
+    title: 'Real Help, Fast',
+    description: 'Live chat support and verified guest reviews help you book with confidence and get answers when you need them.',
+    icon: BsHeadset,
+    variant: 'bg-info text-info',
   },
 ];

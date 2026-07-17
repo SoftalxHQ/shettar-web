@@ -49,6 +49,7 @@ import Link from 'next/link';
 import { type IconType } from 'react-icons';
 import { useNotifications } from '@/app/context/NotificationContext';
 import { getNotificationVisual, routeFromNotificationData } from '@/app/helpers/notification-display';
+import { normalizeApiMediaUrl } from '@/app/helpers/businesses';
 
 function timeAgo(dateString: string) {
   const date = new Date(dateString);
@@ -169,7 +170,7 @@ export default function Header() {
 
   const fullName = account ? `${account.first_name} ${account.last_name}` : 'User';
   const email = account?.email || '';
-  const avatar = account?.avatar_url || '/images/avatar/01.jpg';
+  const avatar = normalizeApiMediaUrl(account?.avatar_url) || '/images/avatar/01.jpg';
 
   return (
     <div ref={headerRef}>
@@ -354,9 +355,9 @@ export default function Header() {
                       role="button"
                     >
                       {account?.avatar_url ? (
-                        <Image className="avatar-img rounded-3 border border-primary shadow-sm" src={avatar} alt="avatar" width={24} height={24} />
+                        <Image className="avatar-img rounded-circle border border-primary shadow-sm" src={avatar} alt="avatar" width={24} height={24} style={{ objectFit: 'cover' }} />
                       ) : (
-                        <div className="avatar-img rounded-3 border border-primary bg-primary-soft d-flex align-items-center justify-content-center shadow-sm" style={{ width: 24, height: 24 }}>
+                        <div className="avatar-img rounded-circle border border-primary bg-primary-soft d-flex align-items-center justify-content-center shadow-sm" style={{ width: 24, height: 24 }}>
                           <span className="text-primary fw-bold" style={{ fontSize: '10px' }}>{account?.first_name?.charAt(0) ?? '?'}</span>
                         </div>
                       )}
@@ -371,9 +372,9 @@ export default function Header() {
                         <div className="d-flex align-items-center">
                           <div className="avatar me-3 flex-centered">
                             {account?.avatar_url ? (
-                              <Image className="avatar-img rounded-2 border border-2 border-primary shadow" src={avatar} alt="avatar" width={40} height={40} />
+                              <Image className="avatar-img rounded-circle border border-2 border-primary shadow" src={avatar} alt="avatar" width={40} height={40} style={{ objectFit: 'cover' }} />
                             ) : (
-                              <div className="avatar-img rounded-2 border border-2 border-primary bg-primary-soft d-flex align-items-center justify-content-center shadow" style={{ width: 40, height: 40 }}>
+                              <div className="avatar-img rounded-circle border border-2 border-primary bg-primary-soft d-flex align-items-center justify-content-center shadow" style={{ width: 40, height: 40 }}>
                                 <span className="text-primary fw-bold">{account?.first_name?.charAt(0) ?? '?'}</span>
                               </div>
                             )}

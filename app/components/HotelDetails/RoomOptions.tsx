@@ -4,6 +4,7 @@ import { Card, CardBody, CardHeader, Col } from 'react-bootstrap';
 import SelectFormInput from '../form/SelectFormInput';
 import RoomCard from './RoomCard';
 import { hotelRooms } from '@/app/data/hotel-details';
+import { normalizeApiMediaUrls } from '@/app/helpers/businesses';
 
 const RoomOptions = ({ availableRoomTypes, hotel }: { availableRoomTypes: any[], hotel: any }) => {
   if (!availableRoomTypes || availableRoomTypes.length === 0) {
@@ -43,13 +44,14 @@ const RoomOptions = ({ availableRoomTypes, hotel }: { availableRoomTypes: any[],
             const cur_p = parseFloat(room_type.price || 0);
             const old_p = parseFloat(room_type.old_price || 0);
             const sale = (old_p > cur_p && old_p > 0) ? `${Math.round(((old_p - cur_p) / old_p) * 100)}% Off` : undefined;
+            const roomImages = normalizeApiMediaUrls(room_type.images_url);
 
             return (
               <RoomCard
                 key={idx}
                 features={finalFeatures}
                 allAmenities={activeAmenities}
-                images={room_type.images_url || ['/images/category/hotel/4by3/04.jpg']}
+                images={roomImages.length ? roomImages : ['/images/category/hotel/4by3/04.jpg']}
                 id={room_type.id}
                 slug={room_type.slug}
                 hotelSlug={hotel?.slug}

@@ -4,6 +4,7 @@ import SelectFormInput from '../form/SelectFormInput';
 import { Card, CardBody, CardHeader, Col, Container, Row } from 'react-bootstrap';
 import { roomDetails } from '@/app/data/room-details';
 import RoomCard from './RoomCard';
+import { normalizeApiMediaUrls } from '@/app/helpers/businesses';
 
 const RoomSelection = ({ room, hotel }: { room: any, hotel: any }) => {
   return (
@@ -22,7 +23,7 @@ const RoomSelection = ({ room, hotel }: { room: any, hotel: any }) => {
                     slug={room.slug}
                     name={room.name}
                     price={room.price}
-                    images={room.images_url || []}
+                    images={normalizeApiMediaUrls(room.images_url)}
                     sqfeet={room.sqfeet || 250}
                     amenities={room.amenities}
                     available_rooms={room.available_rooms}
@@ -40,7 +41,7 @@ const RoomSelection = ({ room, hotel }: { room: any, hotel: any }) => {
                             slug={otherRoom.slug}
                             name={otherRoom.name}
                             price={otherRoom.price}
-                            images={otherRoom.images_url || []}
+                            images={normalizeApiMediaUrls(otherRoom.images_url)}
                             sqfeet={otherRoom.sqfeet || 250}
                             amenities={otherRoom.amenities}
                             available_rooms={otherRoom.available_rooms}

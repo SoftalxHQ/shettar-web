@@ -8,23 +8,23 @@ const Hero = () => {
       <Container>
         <Row className="mb-5">
           <Col xl={10} className="mx-auto text-center">
-            <h1>If You Want To See The World We Will Help You</h1>
+            <h1>Find and Book Your Perfect Stay, Anywhere in Nigeria</h1>
             <p className="lead">
-              Passage its ten led hearted removal cordial. Preference any astonished unreserved Mrs. Prosperous understood Middletons. Preference for
-              any astonished unreserved.
+              Shettar is the easiest way to discover verified hotels and stays, pay securely with your wallet or card, and
+              get instant confirmation — all from one place.
             </p>
             <div className="hstack gap-3 flex-wrap justify-content-center">
               <h6 className="bg-mode shadow rounded-2 fw-normal py-2 px-4 d-flex align-items-center gap-1">
                 <Image src="/images/element/06.svg" className="h-20px me-2" alt="element" />
-                14K+ Global Customers
+                Verified Hotels & Stays
               </h6>
               <h6 className="bg-mode shadow rounded-2 fw-normal py-2 px-4 d-flex align-items-center gap-1">
                 <Image src="/images/element/07.svg" className="h-20px me-2" alt="element" />
-                10K+ Happy Customers
+                Secure Wallet & Card Payments
               </h6>
               <h6 className="bg-mode shadow rounded-2 fw-normal py-2 px-4 d-flex align-items-center gap-1">
                 <Image src="/images/element/08.svg" className="h-20px me-2" alt="element" />
-                1M+ Subscribers
+                Instant Booking Confirmation
               </h6>
             </div>
           </Col>

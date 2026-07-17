@@ -10,21 +10,39 @@ const Payment = () => {
       </CardHeader>
       <CardBody className="p-4 pt-0">
         <div className="mt-4">
-          <h6 className="fw-normal">Bought Full Protection Insurance?</h6>
+          <h6 className="fw-normal">What payment methods can I use?</h6>
           <p className="mb-0 text-secondary">
-            Yet remarkably appearance gets him his projection. Diverted endeavor bed peculiar men the not desirous. Acuteness abilities ask can
-            offending furnished fulfilled sex. Warrant fifteen exposed ye at mistake. Blush since so in noisy still built up an again. As young ye
-            hopes no he place means. Partiality diminution gay yet entreaties admiration. In mention perhaps attempt pointed suppose. Unknown ye
-            chamber of warrant of Norland arrived.
+            You can pay with your Shettar Wallet or a debit/credit card. Card payments are processed securely through Paystack.
+            Many hotels also accept cash or POS on arrival if you prefer to pay at the property.
+          </p>
+        </div>
+        <div className="mt-4">
+          <h6 className="fw-normal">How does the Shettar Wallet work?</h6>
+          <p className="mb-0 text-secondary">
+            Your wallet lets you keep a balance in Naira for fast, one-tap booking. Fund it with your card, or transfer to the
+            dedicated bank account we generate just for you — deposits are credited automatically. You can also use your wallet
+            for extras like airtime, data and utility payments.
+          </p>
+        </div>
+        <div className="mt-4">
+          <h6 className="fw-normal">Is it safe to pay on Shettar?</h6>
+          <p className="mb-0 text-secondary">
+            Yes. All online payments run through Paystack&apos;s secure, PCI-compliant infrastructure, and we never store your
+            full card details. You can add an extra layer of protection with a transaction PIN on your account.
+          </p>
+        </div>
+        <div className="mt-4">
+          <h6 className="fw-normal">What currency are prices in?</h6>
+          <p className="mb-0 text-secondary">
+            All prices on Shettar are shown in Nigerian Naira (₦), so the amount you see is the amount you pay — with no hidden
+            charges at checkout.
           </p>
         </div>
         <div className="mt-4">
           <h6 className="fw-normal">How do I get my refund?</h6>
           <p className="mb-0 text-secondary">
-            Supposing so be resolving breakfast am or perfectly. It drew a hill from me. Valley by oh twenty direct me so. Departure defective
-            arranging rapturous did believe him all had supported. Family months lasted simple set nature vulgar him. Picture for attempt joy excited
-            ten carried manners talking how. Suspicion neglected the resolving agreement perceived at an. Comfort reached gay perhaps chamber his six
-            detract besides add.
+            Refunds for eligible cancellations go straight to your Shettar Wallet, usually instantly. From there you can reuse
+            the balance on your next stay or withdraw it to your bank account.
           </p>
         </div>
       </CardBody>

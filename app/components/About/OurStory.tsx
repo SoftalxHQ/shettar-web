@@ -12,24 +12,26 @@ const OurStory = () => {
           <Col md={10} className="mx-auto">
             <h3 className="mb-4">Our Story</h3>
             <p className="fw-bold">
-              Founded in 2006, passage its ten led hearted removal cordial. Preference any astonished unreserved Mrs. Prosperous understood Middletons
-              in conviction an uncommonly do. Supposing so be resolving breakfast am or perfectly. It drew a hill from me. Valley by oh twenty direct
-              me so.
+              Shettar was built to solve a simple, everyday frustration: booking a place to stay in Nigeria should be quick,
+              trustworthy and stress-free. Too often, travellers deal with unverified listings, unclear pricing, and payments
+              that feel anything but secure. We set out to change that.
             </p>
             <p className="mb-0">
-              Water timed folly right aware if oh truth. Imprudence attachment him his for sympathize. Large above be to means. Dashwood does provide
-              stronger is. Warrant private blushes removed an in equally totally if. Delivered dejection necessary objection do Mr prevailed. Mr
-              feeling does chiefly cordial in do. ...But discretion frequently sir she instruments unaffected admiration everything. Meant balls it if
-              up doubt small purse. Required his you put the outlived answered position. A pleasure exertion if believed provided to. All led out
-              world this music while asked. Paid mind even sons does he door no. Attended overcame repeated it is perceived Marianne in. I think on
-              style child of. Servants moreover in sensible it ye possible. Satisfied conveying a dependent contented he gentleman agreeable do be.
-              Water timed folly right aware if oh truth. Imprudence attachment him his for sympathize. Large above be to means. Dashwood does provide
-              stronger is. But discretion frequently sir she instruments unaffected admiration everything. Meant balls it if up doubt small purse.
-              Required his you put the outlived answered position. I think on style child of. Servants moreover in sensible it ye possible. Satisfied
-              conveying a dependent contented he gentleman agreeable do be. Warrant private blushes removed an in equally totally if. Delivered
-              dejection necessary objection do Mr prevailed. Required his you put the outlived answered position. A pleasure exertion if believed
-              provided to. All led out world this music while asked. Paid mind even sons does he door no. Attended overcame repeated it is perceived
-              Marianne in. I think on style child of. Servants moreover in sensible it ye possible.
+              Shettar connects guests directly with hotels, apartments and short-stays across the country. Every property on
+              the platform is reviewed and verified before it can accept bookings, so what you see is what you get. You can
+              search by city, compare room types and prices in Naira, read genuine reviews from other guests, and confirm your
+              stay in seconds.
+              <br />
+              <br />
+              Payments are just as effortless. Fund the Shettar Wallet with your card or a dedicated bank account created just
+              for you, and book without re-entering your details every time. Prefer to pay at the property? Many hotels also
+              accept cash and POS on arrival. Every online payment is processed securely through Paystack, and eligible
+              cancellations are refunded straight back to your wallet.
+              <br />
+              <br />
+              Beyond guests, Shettar gives hotels the tools to manage rooms, bookings, payouts and analytics, and rewards the
+              marketers who help great properties get discovered. From a weekend getaway to an extended business trip, our goal
+              is the same — to make finding and booking the right stay effortless, for everyone.
             </p>
           </Col>
         </Row>

@@ -5,6 +5,7 @@ import { FaHotel, FaStar } from 'react-icons/fa6';
 import Link from 'next/link';
 import { BsAlarm, BsBrightnessHigh, BsGeoAlt, BsPatchCheckFill } from 'react-icons/bs';
 import { FaStarHalfAlt } from 'react-icons/fa';
+import { normalizeApiMediaUrls } from '@/app/helpers/businesses';
 
 const currentYear = new Date().getFullYear();
 
@@ -21,7 +22,7 @@ const HotelInformation = ({
   endDate: string | null,
   roomsCount: string | null
 }) => {
-  const images = room?.images_url || [];
+  const images = normalizeApiMediaUrls(room?.images_url);
   const mainImage = images[0] || '/images/category/hotel/4by3/02.jpg';
 
   const formatDate = (dateStr: string | null) => {

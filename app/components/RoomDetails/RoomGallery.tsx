@@ -11,6 +11,7 @@ import PriceSummary from './PriceSummary';
 import RoomCard from './RoomCard';
 
 import 'tiny-slider/dist/tiny-slider.css';
+import { normalizeApiMediaUrls } from '@/app/helpers/businesses';
 
 const roomSlides = [
   '/images/gallery/16.jpg',
@@ -22,7 +23,8 @@ const roomSlides = [
 const RoomGallery = ({ room, hotel }: { room: any; hotel: any }) => {
   if (!room) return null;
 
-  const images = room?.images_url && room.images_url.length > 0 ? room.images_url : [
+  const normalized = normalizeApiMediaUrls(room?.images_url);
+  const images = normalized.length > 0 ? normalized : [
     '/images/gallery/16.jpg',
     '/images/gallery/13.jpg',
     '/images/gallery/14.jpg',
@@ -141,7 +143,7 @@ const RoomGallery = ({ room, hotel }: { room: any; hotel: any }) => {
                 slug={room.slug}
                 name={room.name}
                 price={room.price}
-                images={room.images_url || []}
+                images={normalized}
                 sqfeet={room.sqfeet || 250}
                 amenities={room.amenities}
                 available_rooms={room.available_rooms}
@@ -159,7 +161,7 @@ const RoomGallery = ({ room, hotel }: { room: any; hotel: any }) => {
                         slug={otherRoom.slug}
                         name={otherRoom.name}
                         price={otherRoom.price}
-                        images={otherRoom.images_url || []}
+                        images={normalizeApiMediaUrls(otherRoom.images_url)}
                         sqfeet={otherRoom.sqfeet || 250}
                         amenities={otherRoom.amenities}
                         available_rooms={otherRoom.available_rooms}

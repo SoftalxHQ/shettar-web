@@ -13,6 +13,7 @@ import GlightBox from '../GlightBox';
 import { Skeleton, SkeletonImage, FavoriteButton } from '../';
 import { useEffect, useState } from 'react';
 import { toast } from 'react-hot-toast';
+import { normalizeApiMediaUrls } from '@/app/helpers/businesses';
 
 const HotelGallery = ({ hotel }: { hotel: any }) => {
   const { isOpen, toggle } = useToggle();
@@ -28,7 +29,7 @@ const HotelGallery = ({ hotel }: { hotel: any }) => {
 
   if (!hotel) return null;
 
-  const images = hotel.images_url || [];
+  const images = normalizeApiMediaUrls(hotel.images_url);
   const mainImage = images[0] || '/images/gallery/14.jpg';
   const subImages = images.slice(1);
 
