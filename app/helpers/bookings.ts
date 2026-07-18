@@ -21,11 +21,28 @@ export type GuestReservation = {
   payment_method_label?: string;
   booked_at?: string;
   created_at?: string;
+  guests?: number;
+  children?: number;
+  client_name?: string;
+  client_email?: string;
+  client_phone?: string;
+  booked_for_someone?: boolean;
+  first_name?: string | null;
+  last_name?: string | null;
+  phone_number?: string | null;
+  other_first_name?: string | null;
+  other_last_name?: string | null;
+  other_phone_number?: string | null;
+  other_email_address?: string | null;
+  emer_first_name?: string | null;
+  emer_last_name?: string | null;
+  emer_phone_number?: string | null;
   business?: {
     id?: number;
     business_unique_id?: string;
     name: string;
     address: string;
+    phone_number?: string | null;
     slug?: string | null;
     check_in: string;
     check_out: string;
@@ -73,13 +90,69 @@ export function businessPublicId(business?: GuestReservation['business']) {
 
 export function roomServicePath(
   bookingId: string,
-  opts: { businessUniqueId: string; reservationId: number; roomNumber?: string; historyOnly?: boolean }
+  opts: {
+    businessUniqueId?: string;
+    reservationId?: number | string;
+    roomNumber?: string;
+    historyOnly?: boolean;
+    tab?: 'order' | 'history';
+    orderId?: number | string;
+  } = {}
 ) {
-  const qs = new URLSearchParams({
-    businessId: opts.businessUniqueId,
-    reservationId: String(opts.reservationId),
-  });
+  const qs = new URLSearchParams();
+  if (opts.businessUniqueId) qs.set('businessId', opts.businessUniqueId);
+  if (opts.reservationId != null && opts.reservationId !== '') {
+    qs.set('reservationId', String(opts.reservationId));
+  }
   if (opts.roomNumber) qs.set('roomNumber', opts.roomNumber);
   if (opts.historyOnly) qs.set('historyOnly', '1');
-  return `/user/bookings/${encodeURIComponent(bookingId)}/room-service?${qs.toString()}`;
+  if (opts.tab) qs.set('tab', opts.tab);
+  if (opts.orderId != null && opts.orderId !== '') qs.set('orderId', String(opts.orderId));
+  const query = qs.toString();
+  return `/user/bookings/${encodeURIComponent(bookingId)}/room-service${query ? `?${query}` : ''}`;
+}
+
+export function isBookedForSomeone(r: GuestReservation): boolean {
+  if (r.booked_for_someone) return true;
+  return Boolean(
+    r.other_first_name ||
+      r.other_last_name ||
+      r.other_email_address ||
+      r.other_phone_number
+  );
+}
+
+export function reservationGuestName(r: GuestReservation): string {
+  if (r.client_name && r.client_name !== 'Unknown' && r.client_name !== 'N/A') {
+    return r.client_name;
+  }
+  const other = [r.other_first_name, r.other_last_name].filter(Boolean).join(' ').trim();
+  if (other) return other;
+  const self = [r.first_name, r.last_name].filter(Boolean).join(' ').trim();
+  return self || '';
+}
+
+export function reservationGuestEmail(r: GuestReservation): string {
+  if (r.client_email && r.client_email !== 'N/A') return r.client_email;
+  return r.other_email_address || '';
+}
+
+export function reservationGuestPhone(r: GuestReservation): string {
+  if (r.client_phone && r.client_phone !== 'N/A') return r.client_phone;
+  return r.other_phone_number || r.phone_number || '';
+}
+
+export function reservationEmergencyName(r: GuestReservation): string {
+  return [r.emer_first_name, r.emer_last_name].filter(Boolean).join(' ').trim();
+}
+
+export function reservationStatusLabel(r: GuestReservation): string {
+  if (r.cancelled) return 'Cancelled';
+  const status = (r.status || '').toLowerCase();
+  if (status === 'past') return 'Past';
+  if (status === 'active') return 'Active';
+  if (status === 'upcoming') return 'Upcoming';
+  if (r.checked_out_at) return 'Checked out';
+  if (r.checked_in_at) return 'Checked in';
+  return status ? status.charAt(0).toUpperCase() + status.slice(1) : 'Confirmed';
 }

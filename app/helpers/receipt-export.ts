@@ -1,9 +1,9 @@
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 
-function receiptFileName(reference?: string): string {
+function receiptFileName(reference?: string, prefix = 'Shettar_Receipt'): string {
   const slug = reference?.replace(/[^\w-]/g, '') || 'receipt';
-  return `Shettar_Receipt_${slug}`;
+  return `${prefix}_${slug}`;
 }
 
 function pdfFileName(reference?: string): string {
@@ -195,20 +195,21 @@ export async function downloadReceiptPdf(element: HTMLElement, reference?: strin
 
 export async function shareReceiptPng(
   element: HTMLElement,
-  reference?: string
+  reference?: string,
+  options?: { title?: string; text?: string; filePrefix?: string }
 ): Promise<'shared' | 'downloaded'> {
   const canvas = await captureReceiptElement(element);
   const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'));
   if (!blob) throw new Error('Could not create receipt image');
 
-  const fileName = `${receiptFileName(reference)}.png`;
+  const fileName = `${receiptFileName(reference, options?.filePrefix)}.png`;
   const file = new File([blob], fileName, { type: 'image/png' });
 
   if (typeof navigator !== 'undefined' && navigator.share && navigator.canShare?.({ files: [file] })) {
     await navigator.share({
       files: [file],
-      title: 'Shettar Receipt',
-      text: 'Shettar transaction receipt',
+      title: options?.title || 'Shettar Receipt',
+      text: options?.text || 'Shettar transaction receipt',
     });
     return 'shared';
   }
@@ -221,4 +222,15 @@ export async function shareReceiptPng(
   link.remove();
   URL.revokeObjectURL(link.href);
   return 'downloaded';
+}
+
+export async function shareBookingPassPng(
+  element: HTMLElement,
+  bookingId?: string
+): Promise<'shared' | 'downloaded'> {
+  return shareReceiptPng(element, bookingId, {
+    title: 'Shettar Booking',
+    text: 'Shettar booking confirmation',
+    filePrefix: 'Shettar_Booking',
+  });
 }

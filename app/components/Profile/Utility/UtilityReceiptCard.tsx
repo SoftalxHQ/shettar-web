@@ -32,6 +32,8 @@ export type UtilityReceipt = {
   bookingId?: string;
   orderNumber?: string;
   roomNumber?: string;
+  /** Room service item total before card processing fee. */
+  orderItemsTotal?: string;
   promoCode?: string;
   promoDiscount?: string;
   subtotalBeforeDiscount?: string;
@@ -112,6 +114,7 @@ const UtilityReceiptCard = forwardRef<HTMLDivElement, UtilityReceiptCardProps>(
 
     const formattedGross = formatMoney(receipt.grossAmount);
     const formattedFee = formatMoney(receipt.fee);
+    const formattedOrderItems = formatMoney(receipt.orderItemsTotal);
     const formattedSubtotal = formatMoney(receipt.subtotalBeforeDiscount);
     const formattedPromoDiscount = formatMoney(receipt.promoDiscount);
 
@@ -195,12 +198,13 @@ const UtilityReceiptCard = forwardRef<HTMLDivElement, UtilityReceiptCardProps>(
                 {receipt.bookingId ? <SummaryRow label="Booking Reference" value={receipt.bookingId} /> : null}
                 {receipt.orderNumber ? <SummaryRow label="Order Number" value={receipt.orderNumber} /> : null}
                 {receipt.roomNumber ? <SummaryRow label="Room" value={receipt.roomNumber} /> : null}
+                {formattedOrderItems ? <SummaryRow label="Order items" value={formattedOrderItems} /> : null}
                 {formattedSubtotal ? <SummaryRow label="Subtotal" value={formattedSubtotal} /> : null}
                 {receipt.promoCode && formattedPromoDiscount ? (
                   <SummaryRow label={`Promo (${receipt.promoCode})`} value={`−${formattedPromoDiscount}`} accent />
                 ) : null}
-                {formattedGross ? <SummaryRow label="Amount Paid" value={formattedGross} /> : null}
-                {formattedFee ? <SummaryRow label="Processing Fee" value={formattedFee} /> : null}
+                {formattedFee ? <SummaryRow label="Processing fee" value={formattedFee} /> : null}
+                {!isOrder && formattedGross ? <SummaryRow label="Amount Paid" value={formattedGross} /> : null}
                 {receipt.plan ? <SummaryRow label={isTv ? 'Bouquet' : 'Plan'} value={receipt.plan} /> : null}
                 {isElectricity && meterOrSmartcard ? (
                   <SummaryRow label="Meter Number" value={meterOrSmartcard} />

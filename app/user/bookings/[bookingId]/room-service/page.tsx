@@ -21,9 +21,11 @@ import {
   fetchGuestReservation,
   roomServicePath,
   reservationRoomNumber,
+  isBookedForSomeone,
 } from '@/app/helpers/bookings';
 import { orderStatusVariant, subscribeRestaurantReservation } from '@/app/helpers/restaurant-cable';
 import { calculatePaystackCardFee } from '@/app/helpers/paystack-fees';
+import { initializeCardPayment } from '@/app/helpers/card-payment';
 import { BsArrowClockwise } from 'react-icons/bs';
 import MenuItemImage from '@/app/components/MenuItemImage';
 
@@ -40,6 +42,9 @@ export default function RoomServicePage() {
   const reservationId = Number(searchParams.get('reservationId'));
   const roomNumber = searchParams.get('roomNumber') || '';
   const historyOnly = searchParams.get('historyOnly') === '1' || searchParams.get('historyOnly') === 'true';
+  const tabParam = searchParams.get('tab');
+  const openHistoryTab = historyOnly || tabParam === 'history' || tabParam === 'orders';
+  const focusOrderId = searchParams.get('orderId') || '';
 
   const [canOrder, setCanOrder] = useState(!historyOnly);
   const [canViewOrders, setCanViewOrders] = useState(true);
@@ -51,8 +56,9 @@ export default function RoomServicePage() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [submitPhase, setSubmitPhase] = useState<SubmitPhase>('idle');
-  const [activeTab, setActiveTab] = useState(historyOnly ? 'history' : 'order');
-  const [paymentMethod, setPaymentMethod] = useState<'wallet' | 'card' | 'offline'>('offline');
+  const [activeTab, setActiveTab] = useState(openHistoryTab ? 'history' : 'order');
+  const [paymentMethod, setPaymentMethod] = useState<'wallet' | 'card' | 'offline'>('wallet');
+  const [bookedForSomeone, setBookedForSomeone] = useState(false);
   const [menuSearch, setMenuSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [menuView, setMenuView] = useState<'grid' | 'list'>('grid');
@@ -139,6 +145,11 @@ export default function RoomServicePage() {
         const viewAllowed = orderAllowed || !!r.has_room_service_orders;
         setCanOrder(orderAllowed);
         setCanViewOrders(viewAllowed);
+        const forSomeone = isBookedForSomeone(r);
+        setBookedForSomeone(forSomeone);
+        if (forSomeone) {
+          setPaymentMethod((prev) => (prev === 'offline' ? 'wallet' : prev));
+        }
 
         if (!orderAllowed && !viewAllowed) {
           toast.error(
@@ -152,24 +163,33 @@ export default function RoomServicePage() {
           return;
         }
 
-        if (!orderAllowed) {
+        if (!orderAllowed || openHistoryTab) {
           setActiveTab('history');
         }
 
         const expectedKey = businessPublicId(r.business);
-        if (expectedKey && businessKey && businessKey !== expectedKey && String(r.business?.id) !== businessKey) {
+        const expectedRoom = reservationRoomNumber(r) || roomNumber;
+        const needsHydrate =
+          !businessKey ||
+          !reservationId ||
+          (expectedKey && businessKey !== expectedKey && String(r.business?.id) !== businessKey) ||
+          (reservationId && reservationId !== r.id);
+
+        if (needsHydrate && expectedKey) {
           router.replace(
             roomServicePath(bookingId, {
               businessUniqueId: expectedKey,
               reservationId: r.id,
-              roomNumber: reservationRoomNumber(r) || roomNumber,
-              historyOnly: !orderAllowed,
+              roomNumber: expectedRoom,
+              historyOnly: !orderAllowed || openHistoryTab,
+              tab: openHistoryTab ? 'history' : undefined,
+              orderId: focusOrderId || undefined,
             })
           );
         }
       })
       .catch(() => {});
-  }, [bookingId, businessKey, roomNumber, router]);
+  }, [bookingId, businessKey, roomNumber, router, openHistoryTab, focusOrderId, reservationId]);
 
   const menuItems = useMemo(
     () =>
@@ -239,12 +259,18 @@ export default function RoomServicePage() {
           ? 'Placing order…'
           : 'Place order';
 
-  const placeOrder = async (paystackReference?: string) => {
+  const placeOrder = async (
+    paystackReference?: string,
+    itemsOverride?: CartLine[],
+    methodOverride?: 'wallet' | 'card' | 'offline'
+  ) => {
+    const lines = itemsOverride || cart;
+    const method = methodOverride || paymentMethod;
     const order = await createGuestOrder(businessKey, reservationId, {
       notes: notes.trim() || undefined,
-      payment_method: paymentMethod,
+      payment_method: method,
       paystack_reference: paystackReference,
-      items: cart.map((l) => ({ menu_item_id: l.menu_item_id, quantity: l.quantity })),
+      items: lines.map((l) => ({ menu_item_id: l.menu_item_id, quantity: l.quantity })),
     });
     toast.success('Order placed');
     setCart([]);
@@ -262,6 +288,10 @@ export default function RoomServicePage() {
       toast.error('Add at least one item');
       return;
     }
+    if (bookedForSomeone && paymentMethod === 'offline') {
+      toast.error('Orders for someone else must be paid by wallet or card');
+      return;
+    }
     if (paymentMethod === 'wallet') {
       const balance = Number(account?.wallet_balance || 0);
       if (balance < cartTotal) {
@@ -269,6 +299,9 @@ export default function RoomServicePage() {
         return;
       }
     }
+
+    const cartSnapshot = cart.map((l) => ({ ...l }));
+
     try {
       if (paymentMethod === 'card') {
         const key = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY;
@@ -277,17 +310,34 @@ export default function RoomServicePage() {
           toast.error('Card payments are not available');
           return;
         }
-        const breakdown = calculatePaystackCardFee(cartTotal);
         const ref = `RS${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
         setSubmitPhase('paystack');
+        const init = await initializeCardPayment({
+          email: account?.email || 'guest@shettar.com',
+          targetAmount: cartTotal,
+          reference: ref,
+          metadata: {
+            type: 'restaurant_order',
+            target_amount: cartTotal,
+            reservation_id: reservationId,
+            booking_id: bookingId,
+          },
+        });
+
         const paystack = new PaystackPop();
         paystack.newTransaction({
           key,
           email: account?.email || 'guest@shettar.com',
-          amount: Math.round(breakdown.charge_amount * 100),
-          ref,
+          amount: Math.round(init.grossAmount * 100),
+          reference: init.reference,
+          ref: init.reference,
+          metadata: {
+            type: 'restaurant_order',
+            target_amount: cartTotal,
+            paystack_fee: init.paystackFee,
+          },
           onSuccess: async (transaction: { reference?: string }) => {
-            const reference = transaction?.reference;
+            const reference = transaction?.reference || init.reference;
             if (!reference) {
               toast.error('Payment reference missing');
               setSubmitPhase('idle');
@@ -296,7 +346,7 @@ export default function RoomServicePage() {
             setSubmitPhase('verifying');
             try {
               setSubmitPhase('placing');
-              await placeOrder(reference);
+              await placeOrder(reference, cartSnapshot, 'card');
             } catch (e: unknown) {
               toast.error(e instanceof Error ? e.message : 'Failed to place order');
             } finally {
@@ -311,10 +361,10 @@ export default function RoomServicePage() {
         return;
       }
       setSubmitPhase('placing');
-      await placeOrder();
+      await placeOrder(undefined, cartSnapshot);
+      setSubmitPhase('idle');
     } catch (e: unknown) {
       toast.error(e instanceof Error ? e.message : 'Failed to place order');
-    } finally {
       setSubmitPhase('idle');
     }
   };
@@ -579,15 +629,22 @@ export default function RoomServicePage() {
                               checked={paymentMethod === 'card'}
                               onChange={() => setPaymentMethod('card')}
                             />
-                            <Form.Check
-                              type="radio"
-                              name="pay"
-                              id="pay-offline"
-                              label="Pay at room / charge to folio"
-                              checked={paymentMethod === 'offline'}
-                              onChange={() => setPaymentMethod('offline')}
-                            />
+                            {!bookedForSomeone && (
+                              <Form.Check
+                                type="radio"
+                                name="pay"
+                                id="pay-offline"
+                                label="Pay at room / charge to folio"
+                                checked={paymentMethod === 'offline'}
+                                onChange={() => setPaymentMethod('offline')}
+                              />
+                            )}
                           </div>
+                          {bookedForSomeone ? (
+                            <p className="text-secondary small mt-2 mb-0">
+                              This stay is booked for someone else — pay with wallet or card only.
+                            </p>
+                          ) : null}
                         </Form.Group>
                         <div className="mt-3 mb-3 small">
                           <div className="d-flex justify-content-between">
@@ -642,45 +699,57 @@ export default function RoomServicePage() {
               </Card>
             ) : (
               <div className="vstack gap-3">
-                {orders.map((o) => (
-                  <Card key={o.id} className="shadow-sm">
-                    <Card.Body>
-                      <div className="d-flex justify-content-between align-items-start gap-2">
-                        <div>
-                          <h6 className="mb-1 font-monospace">
-                            {(o.order_number || `Order #${o.id}`).replace(/\s+/g, '')}
-                          </h6>
-                          <p className="small text-secondary mb-0">
-                            {new Date(o.created_at).toLocaleString()}
-                          </p>
-                        </div>
-                        <span className={`badge bg-${orderStatusVariant(o.status)} text-capitalize`}>
-                          {o.status}
-                        </span>
-                      </div>
-                      <hr className="my-2" />
-                      <div className="vstack gap-1 mb-2">
-                        {o.items?.map((item) => (
-                          <div key={item.id} className="small d-flex justify-content-between">
-                            <span>
-                              {item.quantity}× {item.name}
-                            </span>
-                            <span>₦{Number(item.line_total).toLocaleString()}</span>
+                {orders.map((o) => {
+                  const isFocused = focusOrderId && String(o.id) === focusOrderId;
+                  return (
+                    <Card
+                      key={o.id}
+                      className={`shadow-sm room-service-receipt${isFocused ? ' border-primary' : ''}`}
+                      style={isFocused ? { borderWidth: 2 } : undefined}
+                    >
+                      <Card.Body>
+                        <div className="d-flex justify-content-between align-items-start gap-2">
+                          <div>
+                            <p className="text-uppercase text-secondary small mb-1 fw-semibold ls-1">
+                              Room service
+                            </p>
+                            <h6 className="mb-1 font-monospace">
+                              {(o.order_number || `Order #${o.id}`).replace(/\s+/g, '')}
+                            </h6>
+                            <p className="small text-secondary mb-0">
+                              {new Date(o.created_at).toLocaleString()}
+                              {roomNumber ? ` · Room ${roomNumber}` : ''}
+                            </p>
                           </div>
-                        ))}
-                      </div>
-                      <div className="d-flex justify-content-between fw-semibold">
-                        <span>Total</span>
-                        <span>₦{Number(o.subtotal).toLocaleString()}</span>
-                      </div>
-                      {o.payment_status && (
-                        <p className="small text-secondary mb-0 mt-1 text-capitalize">
-                          Payment: {o.payment_status.replace(/_/g, ' ')}
-                        </p>
-                      )}
-                    </Card.Body>
-                  </Card>
-                ))}
+                          <span className={`badge bg-${orderStatusVariant(o.status)} text-capitalize`}>
+                            {o.status}
+                          </span>
+                        </div>
+                        <hr className="my-2 border-dashed" />
+                        <div className="vstack gap-1 mb-2">
+                          {(o.items || []).map((item) => (
+                            <div key={item.id} className="small d-flex justify-content-between">
+                              <span>
+                                {item.quantity}× {item.name}
+                              </span>
+                              <span>₦{Number(item.line_total).toLocaleString()}</span>
+                            </div>
+                          ))}
+                        </div>
+                        <hr className="my-2 border-dashed" />
+                        <div className="d-flex justify-content-between fw-semibold">
+                          <span>Total</span>
+                          <span>₦{Number(o.subtotal).toLocaleString()}</span>
+                        </div>
+                        {o.payment_status && (
+                          <p className="small text-secondary mb-0 mt-1 text-capitalize">
+                            Payment: {o.payment_status.replace(/_/g, ' ')}
+                          </p>
+                        )}
+                      </Card.Body>
+                    </Card>
+                  );
+                })}
               </div>
             )}
           </Tab.Pane>

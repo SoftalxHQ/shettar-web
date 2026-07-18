@@ -102,6 +102,11 @@ export default function BookingConfirmedPage() {
           setBooking(mainBooking);
           setReservations(data.reservations);
           setRoomType(mainBooking.room?.room_type);
+        } else if (data.reservation) {
+          const mainBooking = data.reservation;
+          setBooking(mainBooking);
+          setReservations([mainBooking]);
+          setRoomType(mainBooking.room?.room_type);
         } else {
           throw new Error('No reservations found for this booking ID');
         }
@@ -173,6 +178,13 @@ export default function BookingConfirmedPage() {
   const totalAmount = reservations.reduce((sum, res) => sum + (Number(res.total_amount) || 0), 0);
   const roomNumbers = reservations.map(res => res.room?.room_number).filter(Boolean).join(', ');
   const bookingCodes = reservations.map(res => res.booking_id).filter(Boolean).join(', ');
+  const roomsFromQuery = Number(searchParams.get('rooms') || 0);
+  const roomsBooked = Math.max(reservations.length, roomsFromQuery || 1);
+  const bookingsHref =
+    roomsBooked > 1
+      ? '/user/bookings'
+      : `/user/bookings/${encodeURIComponent(String(displayBookingId))}`;
+  const bookingsLabel = roomsBooked > 1 ? 'View My Bookings' : 'View Booking';
 
   return (
     <>
@@ -291,6 +303,35 @@ export default function BookingConfirmedPage() {
                       <span className="text-body-secondary fw-medium small">Guests</span>
                       <span className="text-body fw-semibold small">{booking.guests || 0} Adults{booking.children > 0 ? `, ${booking.children} Children` : ''}</span>
                     </div>
+                    {(booking.client_name || booking.other_first_name || booking.other_last_name) && (
+                      <div className="d-flex justify-content-between align-items-center mb-2">
+                        <span className="text-body-secondary fw-medium small">
+                          {booking.booked_for_someone || booking.other_first_name || booking.other_last_name
+                            ? 'Booked for'
+                            : 'Guest'}
+                        </span>
+                        <span className="text-body fw-semibold small text-end">
+                          {booking.client_name ||
+                            [booking.other_first_name, booking.other_last_name].filter(Boolean).join(' ')}
+                        </span>
+                      </div>
+                    )}
+                    {(booking.client_email || booking.other_email_address) && (
+                      <div className="d-flex justify-content-between align-items-center mb-2">
+                        <span className="text-body-secondary fw-medium small">Guest email</span>
+                        <span className="text-body fw-semibold small text-end">
+                          {booking.client_email || booking.other_email_address}
+                        </span>
+                      </div>
+                    )}
+                    {(booking.client_phone || booking.other_phone_number) && (
+                      <div className="d-flex justify-content-between align-items-center mb-2">
+                        <span className="text-body-secondary fw-medium small">Guest phone</span>
+                        <span className="text-body fw-semibold small text-end">
+                          {booking.client_phone || booking.other_phone_number}
+                        </span>
+                      </div>
+                    )}
                     <div className="d-flex justify-content-between align-items-center mt-3 pt-3 border-top border-secondary border-opacity-25">
                       <h5 className="mb-0 text-body-emphasis fw-bold">Total Amount Paid</h5>
                       <h4 className="mb-0 text-primary fw-bold">₦{totalAmount?.toLocaleString()}</h4>
@@ -367,8 +408,10 @@ export default function BookingConfirmedPage() {
 
                   <div className="mt-5 vstack gap-2">
                     {isAuthenticated && (
-                      <Link href="/user/bookings">
-                        <Button variant="success" className="w-100 py-3 rounded-3 shadow-sm text-white">View My Bookings</Button>
+                      <Link href={bookingsHref}>
+                        <Button variant="success" className="w-100 py-3 rounded-3 shadow-sm text-white">
+                          {bookingsLabel}
+                        </Button>
                       </Link>
                     )}
                     <Link href="/">

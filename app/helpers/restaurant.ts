@@ -88,16 +88,23 @@ export async function createGuestOrder(
       reservation_id: reservationId,
       order: {
         reservation_id: reservationId,
-        notes: payload.notes,
+        notes: payload.notes || null,
         payment_method: payload.payment_method || 'offline',
-        paystack_reference: payload.paystack_reference,
-        items: payload.items,
+        paystack_reference: payload.paystack_reference || null,
+        items: payload.items.map((item) => ({
+          menu_item_id: item.menu_item_id,
+          quantity: item.quantity,
+        })),
       },
     }),
   });
   const data = await res.json();
   if (!res.ok) {
-    throw new Error(data.error || data.errors?.join?.(', ') || 'Failed to place order');
+    throw new Error(
+      data.error ||
+        (Array.isArray(data.errors) ? data.errors.join(', ') : data.errors) ||
+        'Failed to place order'
+    );
   }
   return data.order as GuestRestaurantOrder;
 }

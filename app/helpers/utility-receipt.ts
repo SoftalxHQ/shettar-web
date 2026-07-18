@@ -28,6 +28,7 @@ export type WalletTransactionMetadata = {
   order_number?: string;
   restaurant_order_id?: number;
   room_number?: string;
+  order_subtotal?: number | string;
   refund?: boolean;
   failure_reason?: string;
   original_request_id?: string;
@@ -284,6 +285,21 @@ function mapOrderTransactionToReceipt(txn: WalletTransactionForReceipt): Utility
   const meta = txn.metadata;
   const isPending = txn.status.toLowerCase() === 'pending';
   const paymentMethod = formatPaymentMethodLabel(txn.payment_method || meta?.channel);
+  const charged = Number(transactionAmount(txn));
+  const itemsTotalRaw = meta?.order_subtotal;
+  const itemsTotal =
+    itemsTotalRaw !== undefined && itemsTotalRaw !== null && itemsTotalRaw !== ''
+      ? Number(itemsTotalRaw)
+      : NaN;
+  const feeFromMeta = Number(meta?.paystack_fee);
+  const fee =
+    !Number.isNaN(feeFromMeta) && feeFromMeta > 0
+      ? feeFromMeta
+      : !Number.isNaN(itemsTotal) && charged > itemsTotal
+        ? Math.round((charged - itemsTotal) * 100) / 100
+        : 0;
+  const isCard =
+    (txn.payment_method || meta?.channel || '').toLowerCase() === 'card' || fee > 0;
 
   return {
     receiptKind: 'order',
@@ -299,6 +315,12 @@ function mapOrderTransactionToReceipt(txn: WalletTransactionForReceipt): Utility
     requestId: meta?.order_number || meta?.paystack_reference,
     purchasedAt: txn.created_at,
     paymentMethod,
+    ...(isCard && fee > 0
+      ? {
+          orderItemsTotal: formatMoney(!Number.isNaN(itemsTotal) ? itemsTotal : charged - fee),
+          fee: formatMoney(fee),
+        }
+      : {}),
   };
 }
 

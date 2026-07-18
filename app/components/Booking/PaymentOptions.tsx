@@ -369,7 +369,7 @@ const PaymentOptions = ({
               .then((result: any) => {
                 const confirmedBookingId = result.reservations[0].booking_id;
                 showBookingSuccessToast(confirmedBookingId);
-                router.push(`/hotel/${hotelSlug}/roomtype/${roomSlug}/booking-confirmed?booking_id=${confirmedBookingId}`);
+                router.push(`/hotel/${hotelSlug}/roomtype/${roomSlug}/booking-confirmed?booking_id=${confirmedBookingId}&rooms=${actualRoomsCount}`);
               })
               .catch((err: any) => {
                 setError(err.message || 'Payment successful but booking failed. Please contact support.');
@@ -390,7 +390,7 @@ const PaymentOptions = ({
         const result = await createReservation(data, undefined, transactionPin);
         const confirmedBookingId = result.reservations[0].booking_id;
         showBookingSuccessToast(confirmedBookingId);
-        router.push(`/hotel/${hotelSlug}/roomtype/${roomSlug}/booking-confirmed?booking_id=${confirmedBookingId}`);
+        router.push(`/hotel/${hotelSlug}/roomtype/${roomSlug}/booking-confirmed?booking_id=${confirmedBookingId}&rooms=${actualRoomsCount}`);
       }
     } catch (err: any) {
       console.error('Booking error:', err);

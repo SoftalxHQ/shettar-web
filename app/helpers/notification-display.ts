@@ -75,29 +75,107 @@ export function getNotificationVisual(input: {
   return { icon: BsBellFill, color: 'text-info', bg: 'bg-info' };
 }
 
+function bookingIdFromData(data?: Record<string, unknown> | null): string | null {
+  const bookingIdRaw = data?.booking_id;
+  if (typeof bookingIdRaw === 'string' && bookingIdRaw.trim()) return bookingIdRaw.trim();
+  if (typeof bookingIdRaw === 'number') return String(bookingIdRaw);
+  return null;
+}
+
+function roomServiceOrdersRouteFromData(data: Record<string, unknown>): string | null {
+  const bookingId = bookingIdFromData(data);
+  if (!bookingId) return null;
+
+  const businessKey =
+    (typeof data.business_unique_id === 'string' && data.business_unique_id) ||
+    (typeof data.business_slug === 'string' && data.business_slug) ||
+    (typeof data.business_id === 'string' && data.business_id) ||
+    (typeof data.business_id === 'number' ? String(data.business_id) : '');
+
+  const reservationId = data.reservation_id;
+  const roomNumber = typeof data.room_number === 'string' ? data.room_number : '';
+  const orderId = data.restaurant_order_id ?? data.order_id;
+
+  const qs = new URLSearchParams({ tab: 'history' });
+  if (businessKey) qs.set('businessId', businessKey);
+  if (typeof reservationId === 'number' || (typeof reservationId === 'string' && reservationId)) {
+    qs.set('reservationId', String(reservationId));
+  }
+  if (roomNumber) qs.set('roomNumber', roomNumber);
+  if (typeof orderId === 'number' || (typeof orderId === 'string' && orderId)) {
+    qs.set('orderId', String(orderId));
+  }
+
+  return `/user/bookings/${encodeURIComponent(bookingId)}/room-service?${qs.toString()}`;
+}
+
+function remapRoomServiceRoute(route: string): string {
+  const match = route.match(/^\/room-service\/([^/?#]+)(\?.*)?$/);
+  if (!match?.[1]) return route;
+  return `/user/bookings/${encodeURIComponent(decodeURIComponent(match[1]))}/room-service${match[2] || ''}`;
+}
+
 export function routeFromNotificationData(data?: Record<string, unknown> | null): string | null {
-  const source = typeof data?.source === 'string' ? data.source : '';
+  if (!data) return null;
+
+  const source = typeof data.source === 'string' ? data.source : '';
+  const event = typeof data.event === 'string' ? data.event : '';
 
   if (source === 'review_reply' || source === 'review_comment_reply') {
-    const businessId = data?.business_slug || data?.business_unique_id || data?.business_id;
+    const businessId = data.business_slug || data.business_unique_id || data.business_id;
     if (typeof businessId === 'string' && businessId) return `/hotel/${businessId}`;
     if (typeof businessId === 'number') return `/hotel/${businessId}`;
   }
 
-  const transactionId = data?.transaction_id;
+  // Room service: confirmed/paid → receipt; kitchen status updates → My orders.
+  if (source === 'restaurant_order') {
+    const isReceiptEvent = event === 'order_created' || event === 'order_paid' || !event;
+    const transactionId = data.transaction_id;
+    if (
+      isReceiptEvent &&
+      (typeof transactionId === 'number' || (typeof transactionId === 'string' && transactionId))
+    ) {
+      return `/user/transactions?receipt=${transactionId}`;
+    }
+    const ordersRoute = roomServiceOrdersRouteFromData(data);
+    if (ordersRoute) return ordersRoute;
+  }
+
+  const transactionId = data.transaction_id;
   if (typeof transactionId === 'number' || (typeof transactionId === 'string' && transactionId)) {
     return `/user/transactions?receipt=${transactionId}`;
   }
 
-  if (typeof data?.route === 'string' && data.route) {
-    const receiptMatch = data.route.match(/[?&]receipt=([^&]+)/);
+  const bookingId = bookingIdFromData(data);
+  const route = typeof data.route === 'string' ? data.route : '';
+
+  if (route.startsWith('/room-service/')) {
+    return remapRoomServiceRoute(route);
+  }
+
+  if (bookingId) {
+    return `/user/bookings/${encodeURIComponent(bookingId)}`;
+  }
+
+  const bookingPathMatch = route.match(/^\/bookings\/([^/?#]+)/);
+  if (bookingPathMatch?.[1]) {
+    return `/user/bookings/${decodeURIComponent(bookingPathMatch[1])}`;
+  }
+
+  if (route === '/(tabs)/bookings' || route === '/bookings') {
+    return '/user/bookings';
+  }
+
+  if (route) {
+    const receiptMatch = route.match(/[?&]receipt=([^&]+)/);
     if (receiptMatch?.[1]) {
       return `/user/transactions?receipt=${receiptMatch[1]}`;
     }
-    if (data.route === '/transactions' || data.route.startsWith('/transactions?')) {
-      return data.route.replace(/^\/transactions/, '/user/transactions');
+    if (route === '/transactions' || route.startsWith('/transactions?')) {
+      return route.replace(/^\/transactions/, '/user/transactions');
     }
-    return data.route;
+    if (route.startsWith('/user/')) return route;
+    return route;
   }
 
   return null;

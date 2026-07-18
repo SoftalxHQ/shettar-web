@@ -76,8 +76,9 @@ export default function PaymentCallbackPage() {
         setStatus('success');
         setMessage('Payment successful! Redirecting to confirmation...');
         setTimeout(() => {
+          const rooms = bookingData.number_of_room || result.reservations?.length || 1;
           router.push(
-            `/hotel/${hotelSlug}/roomtype/${roomSlug}/booking-confirmed?booking_id=${result.reservations[0].booking_id}`
+            `/hotel/${hotelSlug}/roomtype/${roomSlug}/booking-confirmed?booking_id=${result.reservations[0].booking_id}&rooms=${rooms}`
           );
         }, 2000);
       } catch (err: any) {
