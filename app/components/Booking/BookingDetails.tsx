@@ -7,7 +7,7 @@ import GuestDetails from './GuestDetails';
 import HotelInformation from './HotelInformation';
 import LoginAdvantages from './LoginAdvantages';
 import OfferAndDiscounts from './OfferAndDiscounts';
-import PaymentOptions from './PaymentOptions';
+import PaymentOptions, { type BookingFormValues } from './PaymentOptions';
 import { useLayoutContext } from '@/app/states';
 import PriceSummary from './PriceSummary';
 import type { AppliedPromo } from '@/app/helpers/promo';
@@ -19,8 +19,8 @@ const BookingDetails = ({
   endDate,
   roomsCount
 }: {
-  room: any,
-  hotel: any,
+  room: { id: number | string; price?: number | string };
+  hotel: { id: number | string };
   startDate: string | null,
   endDate: string | null,
   roomsCount: string | null
@@ -28,7 +28,7 @@ const BookingDetails = ({
   const { account } = useLayoutContext();
   const [appliedPromo, setAppliedPromo] = useState<AppliedPromo | null>(null);
 
-  const { control, handleSubmit, setValue, watch } = useForm({
+  const { control, handleSubmit, setValue, watch } = useForm<BookingFormValues>({
     defaultValues: {
       first_name: '',
       last_name: '',
@@ -56,7 +56,7 @@ const BookingDetails = ({
 
   // Calculate Subtotal for promo validation
   const calculateSubtotal = () => {
-    const price = parseFloat(room?.price || '0');
+    const price = parseFloat(String(room?.price || '0'));
     const actualRoomsCount = parseInt(roomsCount || '1', 10);
     
     const calculateNights = () => {

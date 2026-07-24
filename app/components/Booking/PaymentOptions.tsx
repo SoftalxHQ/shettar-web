@@ -11,16 +11,18 @@ import {
   Card,
   CardBody,
   CardHeader,
-  Col,
-  FormLabel,
   Image,
-  Row,
 } from 'react-bootstrap';
-import { BsCreditCard, BsGlobe2, BsPaypal, BsWalletFill, BsPlusCircle } from 'react-icons/bs';
+import { BsCreditCard, BsWalletFill } from 'react-icons/bs';
 import Link from 'next/link';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
-import { FaPlus } from 'react-icons/fa6';
 import { useState, useEffect } from 'react';
+import type {
+  Control,
+  UseFormHandleSubmit,
+  UseFormSetValue,
+  UseFormWatch,
+} from 'react-hook-form';
 import { useLayoutContext } from '@/app/states';
 import { useApi } from '@/app/hooks/useApi';
 import { toast } from 'react-hot-toast';
@@ -28,19 +30,129 @@ import { getStoredToken } from '@/app/helpers/auth';
 import { getAttributionToken } from '@/app/hooks/useSponsoredListingTracking';
 import { createConsumer } from '@rails/actioncable';
 import { useTransactionPin } from '@/app/hooks/useTransactionPin';
+import type { AppliedPromo } from '@/app/helpers/promo';
 
 const currency = '₦';
 
+export type BookingFormValues = {
+  first_name: string;
+  last_name: string;
+  email_address: string;
+  phone_number: string;
+  emer_first_name: string;
+  emer_last_name: string;
+  emer_phone_number: string;
+  payment_method: 'wallet' | 'card';
+  option: 'self' | 'guest' | string;
+};
+
+type BookingRoom = {
+  id: number | string;
+  price?: number | string;
+};
+
+type BookingHotel = {
+  id: number | string;
+};
+
+type ReservationPayload = {
+  start_date: string | null;
+  end_date: string | null;
+  guests: number;
+  children: number;
+  number_of_room: string;
+  payment_method: BookingFormValues['payment_method'];
+  option: string;
+  paystack_reference?: string;
+  booking_source: string;
+  promo_code?: string;
+  ad_attribution_token?: string;
+  first_name?: string;
+  last_name?: string;
+  phone_number?: string;
+  emer_first_name?: string;
+  emer_last_name?: string;
+  emer_phone_number?: string;
+  other_first_name?: string;
+  other_last_name?: string;
+  other_phone_number?: string;
+  other_email_address?: string;
+};
+
+type ReservationCreateResult = {
+  reservations: Array<{ booking_id: string }>;
+};
+
+type WalletChannelMessage = {
+  event?: string;
+  amount?: number | string;
+  reference?: string;
+};
+
+type PaystackPopupTransaction = {
+  reference: string;
+};
+
+type PaystackSetupHandler = {
+  openIframe: () => void;
+};
+
+type PaystackPopInstance = {
+  newTransaction: (options: {
+    key?: string;
+    email: string;
+    amount: number;
+    ref: string;
+    onSuccess: (transaction: PaystackPopupTransaction) => void;
+    onCancel: () => void;
+  }) => void;
+};
+
+type PaystackPopConstructor = {
+  new (): PaystackPopInstance;
+  setup: (options: {
+    key?: string;
+    email?: string;
+    amount: number;
+    ref: string;
+    metadata?: Record<string, unknown>;
+    onClose: () => void;
+    callback: (response: PaystackPopupTransaction) => void | Promise<void>;
+  }) => PaystackSetupHandler;
+};
+
 declare global {
   interface Window {
-    PaystackPop: any;
+    PaystackPop: PaystackPopConstructor;
   }
 }
+
+function errorMessage(error: unknown, fallback: string): string {
+  if (error instanceof Error && error.message) return error.message;
+  if (typeof error === 'string' && error) return error;
+  if (error && typeof error === 'object' && 'message' in error) {
+    const message = (error as { message?: unknown }).message;
+    if (typeof message === 'string' && message) return message;
+  }
+  return fallback;
+}
+
+type PaymentOptionsProps = {
+  room: BookingRoom;
+  hotel: BookingHotel;
+  control: Control<BookingFormValues>;
+  handleSubmit: UseFormHandleSubmit<BookingFormValues>;
+  watch: UseFormWatch<BookingFormValues>;
+  setValue: UseFormSetValue<BookingFormValues>;
+  startDate: string | null;
+  endDate: string | null;
+  roomsCount: string | null;
+  appliedPromo?: AppliedPromo | null;
+};
 
 const PaymentOptions = ({
   room,
   hotel,
-  control,
   handleSubmit,
   watch,
   setValue,
@@ -48,18 +160,7 @@ const PaymentOptions = ({
   endDate,
   roomsCount,
   appliedPromo
-}: {
-  room: any,
-  hotel: any,
-  control: any,
-  handleSubmit: any,
-  watch: any,
-  setValue: any,
-  startDate: string | null,
-  endDate: string | null,
-  roomsCount: string | null,
-  appliedPromo?: any
-}) => {
+}: PaymentOptionsProps) => {
   const params = useParams();
   const searchParams = useSearchParams();
   const hotelSlug = params.hotelSlug as string;
@@ -95,7 +196,7 @@ const PaymentOptions = ({
     const subscription = consumer.subscriptions.create(
       { channel: 'WalletChannel' },
       {
-        received: (data: any) => {
+        received: (data: WalletChannelMessage) => {
           if (data.event === 'balance_updated') {
             toast.success(`Success! Wallet credited with ${currency}${data.amount}`, { id: data.reference });
             refreshAccount?.();
@@ -126,7 +227,7 @@ const PaymentOptions = ({
     return diffDays > 0 ? diffDays : 1;
   };
 
-  const price = room?.price || 0;
+  const price = Number(room?.price || 0);
   const nights = calculateNights();
   const subtotal = price * nights * parseInt(actualRoomsCount); // Base price before discount
   
@@ -134,12 +235,16 @@ const PaymentOptions = ({
   const discountAmount = appliedPromo?.discount_amount || 0;
   const customerPayTotal = subtotal - discountAmount;
 
-  const createReservation = async (data: any, paystackReference?: string, transactionPin?: string) => {
+  const createReservation = async (
+    data: BookingFormValues,
+    paystackReference?: string,
+    transactionPin?: string
+  ): Promise<ReservationCreateResult> => {
     const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
     const token = localStorage.getItem('token');
 
     // Map form fields to correct database schema
-    const reservationData: any = {
+    const reservationData: ReservationPayload = {
       start_date: startDate,
       end_date: endDate,
       guests: adults,  // Use adults count from URL
@@ -193,7 +298,10 @@ const PaymentOptions = ({
       body: JSON.stringify(payload)
     });
 
-    const result = await response.json();
+    const result = await response.json() as ReservationCreateResult & {
+      error?: Array<{ message?: string }>;
+      errors?: string;
+    };
 
     if (!response.ok) {
       console.error('Backend error response:', result);
@@ -239,21 +347,21 @@ const PaymentOptions = ({
       }
 
       const chargeAmount = data.charge_amount || Number(topUpAmount);
-      const handler = (window as any).PaystackPop.setup({
+      const handler = window.PaystackPop.setup({
         key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY,
         email: account?.email,
         amount: Math.round(chargeAmount * 100),
         ref: data.reference,
         metadata: data.metadata,
         onClose: () => { setIsTopUpProcessing(false); },
-        callback: async (response: any) => {
+        callback: async (response: PaystackPopupTransaction) => {
           await verifyTopUpPayment(response.reference);
         }
       });
       handler.openIframe();
 
-    } catch (error: any) {
-      toast.error(error.message);
+    } catch (error: unknown) {
+      toast.error(errorMessage(error, 'Failed to initialize payment'));
       setIsTopUpProcessing(false);
     }
   };
@@ -284,14 +392,14 @@ const PaymentOptions = ({
       } else {
         throw new Error(data.errors?.[0]?.message || 'Verification failed');
       }
-    } catch (error: any) {
-      toast.error(error.message);
+    } catch (error: unknown) {
+      toast.error(errorMessage(error, 'Verification failed'));
     } finally {
       setIsTopUpProcessing(false);
     }
   };
 
-  const onSubmit = async (data: any) => {
+  const onSubmit = async (data: BookingFormValues) => {
     setIsSubmitting(true);
     setError(null);
 
@@ -364,15 +472,15 @@ const PaymentOptions = ({
           email: email,
           amount: Math.round(grossAmount * 100), // gross amount in kobo
           ref: initResult.reference,
-          onSuccess: (transaction: any) => {
+          onSuccess: (transaction: PaystackPopupTransaction) => {
             createReservation(data, transaction.reference)
-              .then((result: any) => {
+              .then((result: ReservationCreateResult) => {
                 const confirmedBookingId = result.reservations[0].booking_id;
                 showBookingSuccessToast(confirmedBookingId);
                 router.push(`/hotel/${hotelSlug}/roomtype/${roomSlug}/booking-confirmed?booking_id=${confirmedBookingId}&rooms=${actualRoomsCount}`);
               })
-              .catch((err: any) => {
-                setError(err.message || 'Payment successful but booking failed. Please contact support.');
+              .catch((err: unknown) => {
+                setError(errorMessage(err, 'Payment successful but booking failed. Please contact support.'));
                 setIsSubmitting(false);
               });
           },
@@ -392,9 +500,9 @@ const PaymentOptions = ({
         showBookingSuccessToast(confirmedBookingId);
         router.push(`/hotel/${hotelSlug}/roomtype/${roomSlug}/booking-confirmed?booking_id=${confirmedBookingId}&rooms=${actualRoomsCount}`);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Booking error:', err);
-      setError(err.message || 'An error occurred while processing your booking.');
+      setError(errorMessage(err, 'An error occurred while processing your booking.'));
       setIsSubmitting(false);
     }
   };
@@ -416,7 +524,11 @@ const PaymentOptions = ({
         
         <Accordion
           activeKey={paymentMethod === 'wallet' ? '1' : '2'}
-          onSelect={(key: any) => setValue('payment_method', key === '1' ? 'wallet' : 'card')}
+          onSelect={(key) => {
+            // Ignore null/undefined (collapse events) so one tap switches methods instead of needing two.
+            if (key === '1') setValue('payment_method', 'wallet');
+            else if (key === '2') setValue('payment_method', 'card');
+          }}
           className="accordion-icon accordion-bg-light"
           id="paymentAccordion"
           defaultActiveKey={isAuthenticated ? '1' : '2'}
