@@ -324,14 +324,6 @@ export default function BookingConfirmedPage() {
                         </span>
                       </div>
                     )}
-                    {(booking.client_phone || booking.other_phone_number) && (
-                      <div className="d-flex justify-content-between align-items-center mb-2">
-                        <span className="text-body-secondary fw-medium small">Guest phone</span>
-                        <span className="text-body fw-semibold small text-end">
-                          {booking.client_phone || booking.other_phone_number}
-                        </span>
-                      </div>
-                    )}
                     <div className="d-flex justify-content-between align-items-center mt-3 pt-3 border-top border-secondary border-opacity-25">
                       <h5 className="mb-0 text-body-emphasis fw-bold">Total Amount Paid</h5>
                       <h4 className="mb-0 text-primary fw-bold">₦{totalAmount?.toLocaleString()}</h4>

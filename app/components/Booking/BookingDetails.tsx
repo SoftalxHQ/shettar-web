@@ -11,6 +11,7 @@ import PaymentOptions, { type BookingFormValues } from './PaymentOptions';
 import { useLayoutContext } from '@/app/states';
 import PriceSummary from './PriceSummary';
 import type { AppliedPromo } from '@/app/helpers/promo';
+import type { RoomTypeBusinessSummary, RoomTypeDetail } from '@/app/types/hotel';
 
 const BookingDetails = ({
   room,
@@ -19,8 +20,8 @@ const BookingDetails = ({
   endDate,
   roomsCount
 }: {
-  room: { id: number | string; price?: number | string };
-  hotel: { id: number | string };
+  room: Pick<RoomTypeDetail, 'id' | 'price'> & Partial<RoomTypeDetail>;
+  hotel?: RoomTypeBusinessSummary | null;
   startDate: string | null,
   endDate: string | null,
   roomsCount: string | null
@@ -122,13 +123,15 @@ const BookingDetails = ({
                 />
               </Col>
               <Col md={6} xl={12}>
-                <OfferAndDiscounts 
-                  businessId={hotel?.id}
-                  subtotal={subtotal}
-                  appliedPromo={appliedPromo}
-                  onApply={setAppliedPromo}
-                  onRemove={() => setAppliedPromo(null)}
-                />
+                {hotel?.id != null ? (
+                  <OfferAndDiscounts
+                    businessId={hotel.id}
+                    subtotal={subtotal}
+                    appliedPromo={appliedPromo}
+                    onApply={setAppliedPromo}
+                    onRemove={() => setAppliedPromo(null)}
+                  />
+                ) : null}
               </Col>
               <Col md={6} xl={12}>
                 <LoginAdvantages />

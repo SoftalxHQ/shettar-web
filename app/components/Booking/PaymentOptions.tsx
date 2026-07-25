@@ -52,7 +52,7 @@ type BookingRoom = {
 };
 
 type BookingHotel = {
-  id: number | string;
+  id?: number | string;
 };
 
 type ReservationPayload = {
@@ -102,9 +102,11 @@ type PaystackPopInstance = {
     key?: string;
     email: string;
     amount: number;
-    ref: string;
+    ref?: string;
+    reference?: string;
+    metadata?: Record<string, unknown>;
     onSuccess: (transaction: PaystackPopupTransaction) => void;
-    onCancel: () => void;
+    onCancel?: () => void;
   }) => void;
 };
 
@@ -139,7 +141,7 @@ function errorMessage(error: unknown, fallback: string): string {
 
 type PaymentOptionsProps = {
   room: BookingRoom;
-  hotel: BookingHotel;
+  hotel?: BookingHotel | null;
   control: Control<BookingFormValues>;
   handleSubmit: UseFormHandleSubmit<BookingFormValues>;
   watch: UseFormWatch<BookingFormValues>;
@@ -240,6 +242,10 @@ const PaymentOptions = ({
     paystackReference?: string,
     transactionPin?: string
   ): Promise<ReservationCreateResult> => {
+    if (hotel?.id == null || room?.id == null) {
+      throw new Error('Hotel or room information is missing. Please refresh and try again.');
+    }
+
     const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
     const token = localStorage.getItem('token');
 
@@ -404,6 +410,10 @@ const PaymentOptions = ({
     setError(null);
 
     try {
+      if (hotel?.id == null || room?.id == null) {
+        throw new Error('Hotel or room information is missing. Please refresh and try again.');
+      }
+
       const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
       const token = localStorage.getItem('token');
 
