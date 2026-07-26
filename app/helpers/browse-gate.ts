@@ -2,6 +2,8 @@
  * Site-wide browse gate — staging first, enabled when Turnstile site key is set.
  */
 
+import { isStagingEnv } from '@/app/helpers/app-env';
+
 export const BROWSE_CLEARANCE_COOKIE = 'shettar_browse_clearance';
 const STORED_CLEARANCE_KEY = 'shettar_browse_clearance';
 const BROWSE_CLEARANCE_MAX_AGE_SECONDS = 60 * 60;
@@ -10,10 +12,7 @@ let browseVerifyRedirectPending = false;
 
 export function isBrowseGateEnabled(): boolean {
   if (!process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY) return false;
-  return (
-    process.env.NEXT_PUBLIC_APP_ENV === 'staging' ||
-    process.env.NEXT_PUBLIC_BROWSE_GATE_ENABLED === 'true'
-  );
+  return isStagingEnv() || process.env.NEXT_PUBLIC_BROWSE_GATE_ENABLED === 'true';
 }
 
 function readAuthTokenFromStorage(): string | null {

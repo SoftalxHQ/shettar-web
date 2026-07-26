@@ -6,6 +6,7 @@ import Header from '@/app/components/Header';
 import Footer from '@/app/components/Footer';
 import { Container, Row, Col, Spinner } from 'react-bootstrap';
 import { BsApple, BsWindows, BsUbuntu, BsDownload } from 'react-icons/bs';
+import { desktopReleaseChannel } from '@/app/helpers/app-env';
 
 type Installers = {
   windows?: string | null;
@@ -51,8 +52,7 @@ export default function DownloadPage() {
   const [loading, setLoading] = useState(true);
   const [os, setOs] = useState<DetectedOs>('unknown');
 
-  const channel =
-    process.env.NEXT_PUBLIC_APP_ENV === 'staging' ? 'staging' : 'production';
+  const channel = desktopReleaseChannel();
 
   useEffect(() => {
     setOs(detectOs());

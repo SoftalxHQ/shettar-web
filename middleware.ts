@@ -1,5 +1,6 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
+import { isStagingEnv } from '@/app/helpers/app-env';
 import { BROWSE_CLEARANCE_COOKIE } from '@/app/helpers/browse-gate';
 
 const marketerApp = (
@@ -8,10 +9,7 @@ const marketerApp = (
 
 function isBrowseGateEnabled(): boolean {
   if (!process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY) return false;
-  return (
-    process.env.NEXT_PUBLIC_APP_ENV === 'staging' ||
-    process.env.NEXT_PUBLIC_BROWSE_GATE_ENABLED === 'true'
-  );
+  return isStagingEnv() || process.env.NEXT_PUBLIC_BROWSE_GATE_ENABLED === 'true';
 }
 
 function isPublicAsset(pathname: string): boolean {
