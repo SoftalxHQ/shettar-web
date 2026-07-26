@@ -31,6 +31,12 @@ const footerLinks = [
 
 const currentYear = new Date().getFullYear();
 
+const IOS_APP_URL =
+  process.env.NEXT_PUBLIC_IOS_APP_URL || 'https://apps.apple.com/search?term=Shettar';
+const ANDROID_APP_URL =
+  process.env.NEXT_PUBLIC_ANDROID_APP_URL ||
+  'https://play.google.com/store/apps/details?id=com.softalx.shettar';
+
 export default function FooterWithLinks() {
   return (
     <footer className="bg-dark pt-5">
@@ -135,6 +141,38 @@ export default function FooterWithLinks() {
               <Button size="sm" className="px-2 bg-linkedin mb-0 shadow-none border-0" href="#">
                 <FaLinkedinIn size={14} />
               </Button>
+            </div>
+
+            <h5 className="text-white mb-3 mt-4">Get the app</h5>
+            <div className="d-flex flex-wrap align-items-center gap-2">
+              <a
+                href={IOS_APP_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Download on the App Store"
+              >
+                <Image
+                  src="/images/element/app-store.svg"
+                  alt="Download on the App Store"
+                  width={120}
+                  height={36}
+                  style={{ height: 36, width: 'auto' }}
+                />
+              </a>
+              <a
+                href={ANDROID_APP_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Get it on Google Play"
+              >
+                <Image
+                  src="/images/element/google-play.svg"
+                  alt="Get it on Google Play"
+                  width={120}
+                  height={36}
+                  style={{ height: 36, width: 'auto' }}
+                />
+              </a>
             </div>
           </Col>
         </Row>
