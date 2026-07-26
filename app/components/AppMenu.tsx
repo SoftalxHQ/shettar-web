@@ -38,6 +38,9 @@ export default function AppMenu({ showExtraPages, mobileMenuOpen, menuClassName 
                 <Link className="dropdown-item" href="/about">About Us</Link>
               </li>
               <li>
+                <Link className="dropdown-item" href="/download">Download App</Link>
+              </li>
+              <li>
                 <Link className="dropdown-item" href="/faq">FAQ</Link>
               </li>
               <li>

@@ -11,6 +11,7 @@ const footerLinks = [
     title: 'Company',
     items: [
       { name: 'About us', link: '/about' },
+      { name: 'Download App', link: '/download' },
       { name: 'Contact us', link: '/contact' },
       { name: 'FAQ', link: '/faq' },
       { name: 'Live Chat', link: '/support-chat' },
@@ -66,6 +67,9 @@ export default function FooterWithLinks() {
             <Nav className="flex-column text-primary-hover">
               <NavItem>
                 <NavLink className="text-body-secondary ps-0" href="/about">About us</NavLink>
+              </NavItem>
+              <NavItem>
+                <NavLink className="text-body-secondary ps-0" href="/download">Download App</NavLink>
               </NavItem>
               <NavItem>
                 <NavLink className="text-body-secondary ps-0" href="/contact">Contact us</NavLink>
