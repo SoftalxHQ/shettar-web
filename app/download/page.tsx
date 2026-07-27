@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import Header from '@/app/components/Header';
 import Footer from '@/app/components/Footer';
 import { Container, Row, Col, Spinner } from 'react-bootstrap';
@@ -232,14 +233,29 @@ export default function DownloadPage() {
                       </div>
                     )}
 
-                    {release.notes ? (
-                      <div className="text-start mt-5 p-4 bg-light rounded">
-                        <h5 className="mb-2">Release notes</h5>
-                        <pre className="mb-0 small text-secondary" style={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit' }}>
-                          {release.notes}
-                        </pre>
+                    <div className="text-start mt-5 p-4 bg-light rounded">
+                      <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+                        <h5 className="mb-0">Release notes</h5>
+                        <Link href="/changelog" className="small">
+                          View full changelog
+                        </Link>
                       </div>
-                    ) : null}
+                      {release.notes ? (
+                        <pre
+                          className="mb-0 small text-secondary"
+                          style={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit' }}
+                        >
+                          {release.notes.length > 280
+                            ? `${release.notes.slice(0, 280).trimEnd()}…`
+                            : release.notes}
+                        </pre>
+                      ) : (
+                        <p className="mb-0 small text-secondary">
+                          See the{' '}
+                          <Link href="/changelog">changelog</Link> for what’s new.
+                        </p>
+                      )}
+                    </div>
                   </>
                 )}
               </Col>
