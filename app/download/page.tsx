@@ -13,6 +13,7 @@ type Installers = {
   macos_x64?: string | null;
   macos_arm?: string | null;
   linux?: string | null;
+  linux_deb?: string | null;
 };
 
 type LatestRelease = {
@@ -90,13 +91,24 @@ export default function DownloadPage() {
       const url = preferMacInstaller(installers);
       if (url) return { label: 'Download for macOS', url, icon: BsApple };
     }
-    if (os === 'linux' && installers.linux) {
-      return { label: 'Download for Linux', url: installers.linux, icon: BsUbuntu };
+    if (os === 'linux') {
+      const linuxUrl = installers.linux_deb || installers.linux;
+      if (linuxUrl) {
+        const label = installers.linux_deb
+          ? 'Download for Linux (.deb)'
+          : 'Download for Linux (.AppImage)';
+        return { label, url: linuxUrl, icon: BsUbuntu };
+      }
     }
     if (installers.windows) return { label: 'Download for Windows', url: installers.windows, icon: BsWindows };
     const mac = preferMacInstaller(installers);
     if (mac) return { label: 'Download for macOS', url: mac, icon: BsApple };
-    if (installers.linux) return { label: 'Download for Linux', url: installers.linux, icon: BsUbuntu };
+    if (installers.linux_deb) {
+      return { label: 'Download for Linux (.deb)', url: installers.linux_deb, icon: BsUbuntu };
+    }
+    if (installers.linux) {
+      return { label: 'Download for Linux (.AppImage)', url: installers.linux, icon: BsUbuntu };
+    }
     return null;
   }, [release, os]);
 
@@ -107,6 +119,7 @@ export default function DownloadPage() {
     if (installers.windows) links.push({ label: 'Windows (.exe)', url: installers.windows });
     if (installers.macos_arm) links.push({ label: 'macOS Apple Silicon (.dmg)', url: installers.macos_arm });
     if (installers.macos_x64) links.push({ label: 'macOS Intel (.dmg)', url: installers.macos_x64 });
+    if (installers.linux_deb) links.push({ label: 'Linux (.deb)', url: installers.linux_deb });
     if (installers.linux) links.push({ label: 'Linux (.AppImage)', url: installers.linux });
     return links.filter((l) => l.url !== primary?.url);
   }, [release, primary]);
