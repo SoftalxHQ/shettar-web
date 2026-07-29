@@ -27,7 +27,7 @@
     "flatpickr": "^4.6.13",
     "glightbox": "^3.3.1",
     "html2canvas": "^1.4.1",
-    "jspdf": "^3.0.1",
+    "jspdf": "4.2.1",
     "next": "16.2.11",
     "nouislider": "^15.8.1",
     "nouislider-react": "^3.4.2",
@@ -42,7 +42,7 @@
     "react-to-print": "^3.2.0",
     "redux-persist": "^6.0.0",
     "sass": "^1.97.3",
-    "sharp": "^0.34.5",
+    "sharp": "0.35.3",
     "tiny-slider": "^2.9.4",
     "yup": "^1.7.1"
   },
@@ -57,6 +57,25 @@
     "eslint-config-next": "16.2.11",
     "tailwindcss": "^4",
     "typescript": "^5"
+  },
+  "pnpm": {
+    "overrides": {
+      "protobufjs": "7.6.5",
+      "websocket-driver": "0.7.5",
+      "dompurify": "3.4.12",
+      "immutable": "5.1.9",
+      "sharp": "0.35.3",
+      "flatted": "3.4.3",
+      "js-yaml": "4.3.0",
+      "ajv": "6.15.0",
+      "@babel/core": "7.29.7",
+      "minimatch@<4": "3.1.5",
+      "minimatch@>=9": "9.0.9",
+      "picomatch@<3": "2.3.2",
+      "picomatch@>=4": "4.0.5",
+      "brace-expansion": "5.0.8",
+      "postcss": "8.5.24"
+    }
   },
   "packageManager": "pnpm@10.28.1+sha512.7d7dbbca9e99447b7c3bf7a73286afaaf6be99251eb9498baefa7d406892f67b879adb3a1d7e687fc4ccc1a388c7175fbaae567a26ab44d1067b54fcb0d6a316"
 }
