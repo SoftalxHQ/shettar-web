@@ -15,6 +15,8 @@ type Installers = {
   macos_arm?: string | null;
   linux?: string | null;
   linux_deb?: string | null;
+  android_apk?: string | null;
+  ios_store?: string | null;
 };
 
 type LatestRelease = {
@@ -32,6 +34,8 @@ const IOS_APP_URL =
 const ANDROID_APP_URL =
   process.env.NEXT_PUBLIC_ANDROID_APP_URL ||
   'https://play.google.com/store/apps/details?id=com.softalx.shettar';
+const BUSINESS_IOS_STORE_URL =
+  process.env.NEXT_PUBLIC_BUSINESS_IOS_APP_URL || '';
 
 function detectOs(): DetectedOs {
   if (typeof navigator === 'undefined') return 'unknown';
@@ -171,6 +175,47 @@ export default function DownloadPage() {
                       style={{ height: 44, width: 'auto' }}
                     />
                   </a>
+                </div>
+              </Col>
+            </Row>
+
+            <hr className="my-5" />
+
+            <Row className="justify-content-center mb-5">
+              <Col lg={8} className="text-center">
+                <h2 className="h4 mb-2">Shettar Business (mobile)</h2>
+                <p className="text-secondary mb-4">
+                  Run your property on the go — Android APK from our release channel, iOS via the App Store / TestFlight.
+                </p>
+                <div className="d-flex flex-wrap justify-content-center align-items-center gap-3">
+                  {release?.installers?.android_apk ? (
+                    <a
+                      href={release.installers.android_apk}
+                      className="btn btn-primary px-4"
+                    >
+                      Download Android APK
+                      <BsDownload className="ms-2" />
+                    </a>
+                  ) : (
+                    <span className="btn btn-outline-secondary disabled px-4">
+                      Android APK coming soon
+                    </span>
+                  )}
+                  {(release?.installers?.ios_store || BUSINESS_IOS_STORE_URL) ? (
+                    <a
+                      href={release?.installers?.ios_store || BUSINESS_IOS_STORE_URL}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="btn btn-outline-primary px-4"
+                    >
+                      <BsApple className="me-2" />
+                      Get on iOS
+                    </a>
+                  ) : (
+                    <span className="btn btn-outline-secondary disabled px-4">
+                      iOS coming soon
+                    </span>
+                  )}
                 </div>
               </Col>
             </Row>
