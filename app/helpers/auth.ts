@@ -31,6 +31,10 @@ export interface StoredUser {
   email_verified?: boolean;
   address?: string | null;
   zip_code?: string | null;
+  country?: string | null;
+  state?: string | null;
+  lga?: string | null;
+  city?: string | null;
   avatar_url?: string | null;
   deletion_pending?: boolean;
   deletion_scheduled_at?: string | null;
@@ -178,6 +182,10 @@ export async function signIn(payload: SignInPayload): Promise<AuthResult> {
         email_verified: raw.email_verified ?? false,
         address: raw.address ?? null,
         zip_code: raw.zip_code ?? null,
+        country: raw.country ?? null,
+        state: raw.state ?? null,
+        lga: raw.lga ?? null,
+        city: raw.city ?? null,
         avatar_url: raw.avatar_url ?? null,
       };
 
@@ -242,6 +250,10 @@ export async function signUp(payload: SignUpPayload): Promise<AuthResult> {
         email_verified: raw.email_verified ?? false,
         address: raw.address ?? null,
         zip_code: raw.zip_code ?? null,
+        country: raw.country ?? null,
+        state: raw.state ?? null,
+        lga: raw.lga ?? null,
+        city: raw.city ?? null,
         avatar_url: raw.avatar_url ?? null,
       };
 

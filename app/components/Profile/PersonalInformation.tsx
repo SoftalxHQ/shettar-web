@@ -1,7 +1,7 @@
 'use client';
 
 import { SelectFormInput, TextAreaFormInput, TextFormInput } from '@/app/components';
-import { Button, Card, CardBody, CardHeader, Col, Image, Modal } from 'react-bootstrap';
+import { Button, Card, CardBody, CardHeader, Col, Image } from 'react-bootstrap';
 import * as yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { useForm, Controller } from 'react-hook-form';
@@ -11,12 +11,18 @@ import { useLayoutContext } from '@/app/states';
 import { saveAccountProfile } from '@/app/hooks/useAccountProfile';
 import { Flatpicker } from '@/app/components';
 import { normalizeApiMediaUrl } from '@/app/helpers/businesses';
+import { LocationFields, type LocationValue } from '@/app/components/Profile/LocationFields';
 
 type FormValues = {
   first_name: string;
   last_name: string;
   phone_number: string;
   address: string;
+  zip_code: string;
+  country: string;
+  state: string;
+  lga: string;
+  city: string;
   gender: string;
   date_of_birth: string;
   emer_first_name: string;
@@ -29,6 +35,11 @@ const schema = yup.object({
   last_name: yup.string().required('Last name is required'),
   phone_number: yup.string().default(''),
   address: yup.string().default(''),
+  zip_code: yup.string().default(''),
+  country: yup.string().default(''),
+  state: yup.string().default(''),
+  lga: yup.string().default(''),
+  city: yup.string().default(''),
   gender: yup.string().default(''),
   date_of_birth: yup.string().default(''),
   emer_first_name: yup.string().default(''),
@@ -44,6 +55,12 @@ const PersonalInformation = () => {
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [location, setLocation] = useState<LocationValue>({
+    country: '',
+    state: '',
+    lga: '',
+    city: '',
+  });
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const flatpickrOptions = useMemo(() => ({
@@ -58,6 +75,11 @@ const PersonalInformation = () => {
       last_name: '',
       phone_number: '',
       address: '',
+      zip_code: '',
+      country: '',
+      state: '',
+      lga: '',
+      city: '',
       gender: '',
       date_of_birth: '',
       emer_first_name: '',
@@ -66,14 +88,25 @@ const PersonalInformation = () => {
     },
   });
 
-  // Populate form when profile data loads
   useEffect(() => {
     if (profile) {
+      const nextLocation: LocationValue = {
+        country: profile.country || '',
+        state: profile.state || '',
+        lga: profile.lga || '',
+        city: profile.city || '',
+      };
+      setLocation(nextLocation);
       reset({
         first_name: profile.first_name || '',
         last_name: profile.last_name || '',
         phone_number: profile.phone_number || '',
         address: profile.address || '',
+        zip_code: profile.zip_code || '',
+        country: nextLocation.country,
+        state: nextLocation.state,
+        lga: nextLocation.lga,
+        city: nextLocation.city,
         gender: profile.gender || '',
         date_of_birth: profile.date_of_birth || '',
         emer_first_name: profile.emer_first_name || '',
@@ -96,11 +129,20 @@ const PersonalInformation = () => {
     setIsSaving(true);
     const toastId = toast.loading('Saving changes…');
     try {
-      const result = await saveAccountProfile(values, avatarFile);
+      const result = await saveAccountProfile(
+        {
+          ...values,
+          country: location.country,
+          state: location.state,
+          lga: location.lga,
+          city: location.city,
+        },
+        avatarFile,
+      );
       if (result.ok) {
         toast.success(result.message, { id: toastId });
         setAvatarFile(null);
-        refreshAccount(); // refresh global state
+        refreshAccount();
       } else {
         toast.error(result.message, { id: toastId });
       }
@@ -148,7 +190,6 @@ const PersonalInformation = () => {
 
       <CardBody>
         <form onSubmit={handleSubmit(onSubmit)} className="row g-3">
-          {/* Avatar upload */}
           <Col xs={12}>
             <label className="form-label">Profile Photo</label>
             <div className="d-flex align-items-center gap-3">
@@ -278,10 +319,31 @@ const PersonalInformation = () => {
             />
           </Col>
 
+          <Col xs={12} className="mt-2">
+            <h5 className="mb-0">Location</h5>
+            <p className="small text-secondary mb-0">
+              Country, state, LGA, and city for your profile address.
+            </p>
+          </Col>
+
+          <LocationFields
+            value={location}
+            onChange={setLocation}
+            detectCountry={!isLoading && !profile?.country}
+          />
+
+          <TextFormInput
+            name="zip_code"
+            label="Zip / Postal Code"
+            placeholder="e.g. 100001"
+            containerClass="col-md-6"
+            control={control}
+          />
+
           <TextAreaFormInput
             name="address"
-            label="Address"
-            placeholder="Your full address"
+            label="Street Address"
+            placeholder="Street, building, landmark"
             rows={3}
             containerClass="col-12"
             control={control}

@@ -9,6 +9,28 @@ import toast from 'react-hot-toast';
 import { resendPhoneVerification, verifyPhone } from '@/app/helpers/auth';
 import { Button, Modal, Form } from 'react-bootstrap';
 import { normalizeApiMediaUrl } from '@/app/helpers/businesses';
+import { getCountries } from '@softalxhq/location-selector';
+
+const COUNTRY_NAME_BY_CODE = new Map(
+  getCountries().map((c) => [c.code.toUpperCase(), c.name]),
+);
+
+function formatProfileLocation(profile: {
+  country?: string | null;
+  state?: string | null;
+  lga?: string | null;
+  city?: string | null;
+} | null | undefined): string | null {
+  if (!profile) return null;
+  const countryCode = profile.country?.trim();
+  const countryLabel = countryCode
+    ? COUNTRY_NAME_BY_CODE.get(countryCode.toUpperCase()) || countryCode
+    : null;
+  const parts = [profile.city, profile.lga, profile.state, countryLabel]
+    .map((p) => p?.trim())
+    .filter(Boolean) as string[];
+  return parts.length ? parts.join(', ') : null;
+}
 
 const Field = ({ icon: Icon, label, value }: { icon: any; label: string; value?: string | null }) => (
   <Col md={6}>
@@ -177,7 +199,12 @@ const UserDetails = () => {
 
           <Field icon={BsCalendarDate} label="Date of Birth" value={dob} />
           <Field icon={BsGenderAmbiguous} label="Gender" value={profile?.gender} />
-          <Field icon={BsGeoAlt} label="Address" value={profile?.address} />
+          <Field
+            icon={BsGeoAlt}
+            label="Location"
+            value={formatProfileLocation(profile)}
+          />
+          <Field icon={BsGeoAlt} label="Street Address" value={profile?.address} />
           <Field icon={BsPersonBadge} label="Account ID" value={profile?.account_unique_id} />
         </Row>
 

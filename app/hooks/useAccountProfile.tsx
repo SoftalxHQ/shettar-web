@@ -58,6 +58,10 @@ export async function saveAccountProfile(
     phone_number: string;
     address: string;
     zip_code: string;
+    country: string;
+    state: string;
+    lga: string;
+    city: string;
     gender: string;
     date_of_birth: string;
     emer_first_name: string;

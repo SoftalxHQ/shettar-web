@@ -23,6 +23,10 @@ export interface AccountProfile {
   phone_number?: string | null;
   address?: string | null;
   zip_code?: string | null;
+  country?: string | null;
+  state?: string | null;
+  lga?: string | null;
+  city?: string | null;
   gender?: string | null;
   date_of_birth?: string | null;
   wallet_balance?: number | string | null;
