@@ -65,10 +65,10 @@ const RoomCard = ({ id, slug, images, name, price, sqfeet, hotelSlug, isSelected
 
             <div className="d-flex justify-content-between align-items-center mt-auto">
               <div className="d-flex align-items-center">
-                <h4 className="fw-bold mb-0 text-dark">
+                <h4 className="fw-bold mb-0 text-body">
                   {currency}{price.toLocaleString()}
                 </h4>
-                <span className="ms-1 small opacity-50">/night</span>
+                <span className="ms-1 small text-body-secondary">/night</span>
               </div>
               {isSelected ? (
                 <div className="badge bg-success-soft text-success py-2 px-3 border border-success border-opacity-25 rounded-pill">

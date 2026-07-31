@@ -122,7 +122,7 @@ const RoomCard = ({ id, slug, features, images, name, price, sale, schemes, hote
                 <h3 className="fw-bold mb-0">
                   {currency}{formattedPrice.toLocaleString()}
                 </h3>
-                <span className="ms-1 small opacity-50">/night</span>
+                <span className="ms-1 small text-body-secondary">/night</span>
               </div>
               {isAvailable ? (
                 <Link href={roomLink} className="btn btn-primary mb-0 px-4 shadow-sm">
