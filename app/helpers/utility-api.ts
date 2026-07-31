@@ -41,6 +41,92 @@ export type PurchaseResult = {
   units?: string;
 };
 
+export type TvBillersLimits = { min: number; max: number; kind: 'smartcard' | 'phone' };
+export type MeterDigitLimits = { min: number; max: number };
+
+export const TV_BILLERS_DIGIT_LIMITS: Record<string, TvBillersLimits> = {
+  dstv: { min: 10, max: 10, kind: 'smartcard' },
+  gotv: { min: 10, max: 10, kind: 'smartcard' },
+  startimes: { min: 10, max: 11, kind: 'smartcard' },
+  showmax: { min: 11, max: 13, kind: 'phone' },
+};
+
+const DEFAULT_TV_BILLERS_LIMITS: TvBillersLimits = { min: 10, max: 12, kind: 'smartcard' };
+
+export const ELECTRICITY_METER_DIGIT_LIMITS: Record<string, MeterDigitLimits> = {
+  'ikeja-electric': { min: 11, max: 13 },
+  'eko-electric': { min: 11, max: 13 },
+  'abuja-electric': { min: 11, max: 13 },
+  'ibadan-electric': { min: 11, max: 13 },
+  'kaduna-electric': { min: 11, max: 13 },
+  'jos-electric': { min: 11, max: 13 },
+  'kano-electric': { min: 11, max: 13 },
+  'portharcourt-electric': { min: 11, max: 13 },
+  'enugu-electric': { min: 11, max: 13 },
+  'benin-electric': { min: 11, max: 13 },
+  'aba-electric': { min: 11, max: 13 },
+  'yola-electric': { min: 11, max: 13 },
+};
+
+const DEFAULT_METER_LIMITS: MeterDigitLimits = { min: 11, max: 13 };
+
+export function digitsOnly(value: string, max?: number): string {
+  const digits = value.replace(/\D/g, '');
+  return max == null ? digits : digits.slice(0, max);
+}
+
+/** Allow typing/paste of 0… or 234…; cap at 13 so 234+10 fits. */
+export function sanitizeUtilityPhoneInput(value: string): string {
+  const digits = digitsOnly(value);
+  if (digits.startsWith('234')) return digits.slice(0, 13);
+  return digits.slice(0, 11);
+}
+
+export function normalizeUtilityPhone(value: string): string {
+  const digits = digitsOnly(value);
+  if (digits.startsWith('234') && digits.length >= 13) return `0${digits.slice(3, 13)}`;
+  if (digits.startsWith('0')) return digits.slice(0, 11);
+  return digits;
+}
+
+export function isValidUtilityPhone(value: string): boolean {
+  return /^(0\d{10}|234\d{10})$/.test(digitsOnly(value));
+}
+
+export function tvBillersLimits(provider: string): TvBillersLimits {
+  const key = provider.toLowerCase().trim();
+  return TV_BILLERS_DIGIT_LIMITS[key] ?? DEFAULT_TV_BILLERS_LIMITS;
+}
+
+export function electricityMeterLimits(provider: string): MeterDigitLimits {
+  const key = provider.toLowerCase().trim();
+  return ELECTRICITY_METER_DIGIT_LIMITS[key] ?? DEFAULT_METER_LIMITS;
+}
+
+export function sanitizeTvBillersInput(value: string, provider: string): string {
+  const limits = tvBillersLimits(provider);
+  if (limits.kind === 'phone') return sanitizeUtilityPhoneInput(value);
+  return digitsOnly(value, limits.max);
+}
+
+export function isValidTvBillers(value: string, provider: string): boolean {
+  const limits = tvBillersLimits(provider);
+  if (limits.kind === 'phone') return isValidUtilityPhone(value);
+  const len = digitsOnly(value).length;
+  return len >= limits.min && len <= limits.max;
+}
+
+export function sanitizeMeterInput(value: string, provider: string): string {
+  const { max } = electricityMeterLimits(provider);
+  return digitsOnly(value, max);
+}
+
+export function isValidMeterNumber(value: string, provider: string): boolean {
+  const { min, max } = electricityMeterLimits(provider);
+  const len = digitsOnly(value).length;
+  return len >= min && len <= max;
+}
+
 export function parseUtilityApiError(data: unknown, fallback: string): string {
   if (!data || typeof data !== 'object') return fallback;
 

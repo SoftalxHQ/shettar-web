@@ -21,11 +21,20 @@ import {
   buyData,
   buyElectricity,
   buyTv,
+  electricityMeterLimits,
   fetchDataVariations,
   fetchElectricityProviders,
   fetchTvProviders,
   fetchTvVariations,
   fetchUtilityNetworks,
+  isValidMeterNumber,
+  isValidTvBillers,
+  isValidUtilityPhone,
+  normalizeUtilityPhone,
+  sanitizeMeterInput,
+  sanitizeTvBillersInput,
+  sanitizeUtilityPhoneInput,
+  tvBillersLimits,
   verifyUtilityBill,
   type DataVariation,
   type UtilityNetwork,
@@ -62,7 +71,9 @@ const UtilityPurchase = () => {
 
   const [networks, setNetworks] = useState<UtilityNetwork[]>([]);
   const [selectedNetwork, setSelectedNetwork] = useState('');
-  const [phoneNumber, setPhoneNumber] = useState(profile?.phone_number || '');
+  const [phoneNumber, setPhoneNumber] = useState(
+    () => sanitizeUtilityPhoneInput(profile?.phone_number || ''),
+  );
   const [amount, setAmount] = useState('');
   const [dataPlans, setDataPlans] = useState<DataVariation[]>([]);
   const [selectedPlan, setSelectedPlan] = useState<DataVariation | null>(null);
@@ -99,21 +110,29 @@ const UtilityPurchase = () => {
     ? Number(tvVerification?.renewal_amount || tvRenewAmount || 0)
     : Number(selectedTvPlan?.amount || 0);
 
+  const tvLimits = useMemo(() => tvBillersLimits(selectedTvProvider), [selectedTvProvider]);
+  const meterLimits = useMemo(
+    () => electricityMeterLimits(selectedElectricityProvider),
+    [selectedElectricityProvider],
+  );
+
   const canPurchase = useMemo(() => {
-    const hasPhone = phoneNumber.trim().length > 0;
+    const hasValidPhone = isValidUtilityPhone(phoneNumber);
+    const hasValidSmartcard = isValidTvBillers(smartcard, selectedTvProvider);
+    const hasValidMeter = isValidMeterNumber(meterNumber, selectedElectricityProvider);
 
     if (activeTab === 'airtime') {
-      return Boolean(selectedNetwork) && hasPhone && airtimeValue >= 50 && airtimeValue <= balance;
+      return Boolean(selectedNetwork) && hasValidPhone && airtimeValue >= 50 && airtimeValue <= balance;
     }
     if (activeTab === 'data') {
-      return Boolean(selectedNetwork) && hasPhone && Boolean(selectedPlan) && (selectedPlan?.amount ?? 0) <= balance;
+      return Boolean(selectedNetwork) && hasValidPhone && Boolean(selectedPlan) && (selectedPlan?.amount ?? 0) <= balance;
     }
     if (activeTab === 'tv') {
-      if (!selectedTvProvider || !smartcard.trim() || !tvVerification) return false;
+      if (!selectedTvProvider || !hasValidSmartcard || !tvVerification) return false;
       if (tvMode === 'renew') return tvPurchaseAmount > 0 && tvPurchaseAmount <= balance;
       return Boolean(selectedTvPlan) && tvPurchaseAmount > 0 && tvPurchaseAmount <= balance;
     }
-    if (!selectedElectricityProvider || !meterNumber.trim() || !electricityVerification) return false;
+    if (!selectedElectricityProvider || !hasValidMeter || !electricityVerification) return false;
     if (meterType === 'postpaid') {
       const bill = electricityVerification.outstanding_balance ?? 0;
       return bill > 0 && bill <= balance;
@@ -193,10 +212,18 @@ const UtilityPurchase = () => {
   }, [selectedTvProvider, smartcard]);
 
   useEffect(() => {
+    setSmartcard((prev) => sanitizeTvBillersInput(prev, selectedTvProvider));
+  }, [selectedTvProvider]);
+
+  useEffect(() => {
     setElectricityVerification(null);
     setElectricityAmount('');
     setElectricityVerifyError(null);
   }, [selectedElectricityProvider, meterNumber, meterType]);
+
+  useEffect(() => {
+    setMeterNumber((prev) => sanitizeMeterInput(prev, selectedElectricityProvider));
+  }, [selectedElectricityProvider]);
 
   useEffect(() => {
     if (meterType === 'postpaid' && electricityVerification?.outstanding_balance) {
@@ -205,8 +232,18 @@ const UtilityPurchase = () => {
   }, [electricityVerification, meterType]);
 
   const handleVerifyTv = async () => {
+    const label = tvLimits.kind === 'phone' ? 'phone number' : 'smartcard number';
     if (!selectedTvProvider || !smartcard.trim()) {
-      setTvVerifyError('Enter a smartcard number');
+      setTvVerifyError(`Enter a ${label}`);
+      setTvVerification(null);
+      return;
+    }
+    if (!isValidTvBillers(smartcard, selectedTvProvider)) {
+      setTvVerifyError(
+        tvLimits.kind === 'phone'
+          ? 'Enter a valid phone number (0XXXXXXXXXX or 234XXXXXXXXXX)'
+          : `Enter a valid smartcard number (${tvLimits.min}${tvLimits.min === tvLimits.max ? '' : `–${tvLimits.max}`} digits)`,
+      );
       setTvVerification(null);
       return;
     }
@@ -217,7 +254,8 @@ const UtilityPurchase = () => {
       const result = await verifyUtilityBill({
         category: 'tv',
         provider: selectedTvProvider,
-        billers_code: smartcard.trim(),
+        billers_code:
+          tvLimits.kind === 'phone' ? normalizeUtilityPhone(smartcard) : smartcard.trim(),
       });
       setTvVerification(result.verification);
       setTvRenewAmount('');
@@ -239,6 +277,13 @@ const UtilityPurchase = () => {
   const handleVerifyElectricity = async () => {
     if (!selectedElectricityProvider || !meterNumber.trim()) {
       setElectricityVerifyError('Enter a meter number');
+      setElectricityVerification(null);
+      return;
+    }
+    if (!isValidMeterNumber(meterNumber, selectedElectricityProvider)) {
+      setElectricityVerifyError(
+        `Enter a valid meter number (${meterLimits.min}–${meterLimits.max} digits)`,
+      );
       setElectricityVerification(null);
       return;
     }
@@ -268,8 +313,18 @@ const UtilityPurchase = () => {
   };
 
   const handlePurchase = useCallback(async () => {
-    if ((activeTab === 'airtime' || activeTab === 'data') && !phoneNumber.trim()) {
-      toast.error('Please enter a phone number');
+    if (activeTab === 'airtime' || activeTab === 'data') {
+      if (!phoneNumber.trim()) {
+        toast.error('Please enter a phone number');
+        return;
+      }
+      if (!isValidUtilityPhone(phoneNumber)) {
+        toast.error('Enter a valid phone number (0XXXXXXXXXX or 234XXXXXXXXXX)');
+        return;
+      }
+    }
+    if (activeTab === 'electricity' && phoneNumber.trim() && !isValidUtilityPhone(phoneNumber)) {
+      toast.error('Enter a valid phone number (0XXXXXXXXXX or 234XXXXXXXXXX)');
       return;
     }
 
@@ -291,9 +346,10 @@ const UtilityPurchase = () => {
           toast.error(message);
           return;
         }
+        const normalizedPhone = normalizeUtilityPhone(phoneNumber);
         const result = await buyAirtime({
           network: selectedNetwork,
-          phone_number: phoneNumber,
+          phone_number: normalizedPhone,
           amount: value,
           transaction_pin: transactionPin,
         });
@@ -301,7 +357,7 @@ const UtilityPurchase = () => {
         showReceipt({
           type: 'Airtime',
           amount: String(value),
-          recipient: phoneNumber,
+          recipient: normalizedPhone,
           network: selectedNetwork,
           status: (result.status as UtilityReceipt['status']) || 'delivered',
           requestId: result.request_id,
@@ -312,9 +368,10 @@ const UtilityPurchase = () => {
           toast.error('Please select a network and data plan');
           return;
         }
+        const normalizedPhone = normalizeUtilityPhone(phoneNumber);
         const result = await buyData({
           network: selectedNetwork,
-          phone_number: phoneNumber,
+          phone_number: normalizedPhone,
           variation_code: selectedPlan.variation_code,
           amount: selectedPlan.amount,
           transaction_pin: transactionPin,
@@ -323,7 +380,7 @@ const UtilityPurchase = () => {
         showReceipt({
           type: 'Data Bundle',
           amount: String(selectedPlan.amount),
-          recipient: phoneNumber,
+          recipient: normalizedPhone,
           network: selectedNetwork,
           plan: selectedPlan.name,
           status: (result.status as UtilityReceipt['status']) || 'delivered',
@@ -335,9 +392,13 @@ const UtilityPurchase = () => {
           toast.error('Please verify smartcard first');
           return;
         }
+        const tvBillersCode =
+          tvBillersLimits(selectedTvProvider).kind === 'phone'
+            ? normalizeUtilityPhone(smartcard)
+            : smartcard.trim();
         const result = await buyTv({
           provider: selectedTvProvider,
-          billers_code: smartcard.trim(),
+          billers_code: tvBillersCode,
           subscription_type: tvMode,
           variation_code: tvMode === 'change' ? selectedTvPlan?.variation_code : undefined,
           amount: tvPurchaseAmount,
@@ -348,11 +409,11 @@ const UtilityPurchase = () => {
         showReceipt({
           type: 'TV Subscription',
           amount: String(tvPurchaseAmount),
-          recipient: smartcard.trim(),
+          recipient: tvBillersCode,
           network: selectedTvProvider,
           plan: tvMode === 'renew' ? tvVerification.current_bouquet : selectedTvPlan?.name,
           customerName: tvVerification.customer_name,
-          billersCode: smartcard.trim(),
+          billersCode: tvBillersCode,
           status: (result.status as UtilityReceipt['status']) || 'delivered',
           requestId: result.request_id,
           purchasedAt: new Date().toISOString(),
@@ -369,7 +430,9 @@ const UtilityPurchase = () => {
           provider: selectedElectricityProvider,
           billers_code: meterNumber.trim(),
           meter_type: meterType,
-          ...(phoneNumber.trim() ? { phone_number: phoneNumber.trim() } : {}),
+          ...(phoneNumber.trim()
+            ? { phone_number: normalizeUtilityPhone(phoneNumber) }
+            : {}),
           amount: payAmount,
           customer_name: electricityVerification.customer_name,
           transaction_pin: transactionPin,
@@ -523,10 +586,12 @@ const UtilityPurchase = () => {
               <BsPerson className="text-secondary me-2" />
               <input
                 type="tel"
+                inputMode="numeric"
+                maxLength={13}
                 className="form-control border-0 bg-transparent shadow-none"
                 placeholder="e.g. 08012345678"
                 value={phoneNumber}
-                onChange={(e) => setPhoneNumber(e.target.value)}
+                onChange={(e) => setPhoneNumber(sanitizeUtilityPhoneInput(e.target.value))}
               />
             </div>
           </div>
@@ -605,18 +670,29 @@ const UtilityPurchase = () => {
           </div>
 
           <div className="mb-3">
-            <label className="small fw-semibold text-secondary mb-2 d-block">Smartcard Number</label>
+            <label className="small fw-semibold text-secondary mb-2 d-block">
+              {tvLimits.kind === 'phone' ? 'Phone Number' : 'Smartcard Number'}
+            </label>
             <div className="d-flex gap-2">
               <div className="utility-input-box d-flex align-items-center px-3 rounded-4 bg-light flex-grow-1">
                 <input
                   type="text"
+                  inputMode="numeric"
+                  maxLength={tvLimits.max}
                   className="form-control border-0 bg-transparent shadow-none"
-                  placeholder="e.g. 1212121212"
+                  placeholder={tvLimits.kind === 'phone' ? 'e.g. 08011111111' : 'e.g. 1212121212'}
                   value={smartcard}
-                  onChange={(e) => setSmartcard(e.target.value)}
+                  onChange={(e) =>
+                    setSmartcard(sanitizeTvBillersInput(e.target.value, selectedTvProvider))
+                  }
                 />
               </div>
-              <button type="button" className="btn btn-outline-primary rounded-4 px-3" onClick={handleVerifyTv} disabled={verifyingTv}>
+              <button
+                type="button"
+                className="btn btn-outline-primary rounded-4 px-3"
+                onClick={handleVerifyTv}
+                disabled={verifyingTv || !isValidTvBillers(smartcard, selectedTvProvider)}
+              >
                 {verifyingTv ? <Spinner animation="border" size="sm" /> : 'Verify'}
               </button>
             </div>
@@ -766,13 +842,25 @@ const UtilityPurchase = () => {
               <div className="utility-input-box d-flex align-items-center px-3 rounded-4 bg-light flex-grow-1">
                 <input
                   type="text"
+                  inputMode="numeric"
+                  maxLength={meterLimits.max}
                   className="form-control border-0 bg-transparent shadow-none"
                   placeholder="Enter meter number"
                   value={meterNumber}
-                  onChange={(e) => setMeterNumber(e.target.value)}
+                  onChange={(e) =>
+                    setMeterNumber(sanitizeMeterInput(e.target.value, selectedElectricityProvider))
+                  }
                 />
               </div>
-              <button type="button" className="btn btn-outline-primary rounded-4 px-3" onClick={handleVerifyElectricity} disabled={verifyingElectricity}>
+              <button
+                type="button"
+                className="btn btn-outline-primary rounded-4 px-3"
+                onClick={handleVerifyElectricity}
+                disabled={
+                  verifyingElectricity ||
+                  !isValidMeterNumber(meterNumber, selectedElectricityProvider)
+                }
+              >
                 {verifyingElectricity ? <Spinner animation="border" size="sm" /> : 'Verify'}
               </button>
             </div>
@@ -814,10 +902,12 @@ const UtilityPurchase = () => {
               <BsPerson className="text-secondary me-2" />
               <input
                 type="tel"
+                inputMode="numeric"
+                maxLength={13}
                 className="form-control border-0 bg-transparent shadow-none"
                 placeholder={profile?.phone_number ? `Uses ${profile.phone_number} if blank` : 'Uses account phone if blank'}
                 value={phoneNumber}
-                onChange={(e) => setPhoneNumber(e.target.value)}
+                onChange={(e) => setPhoneNumber(sanitizeUtilityPhoneInput(e.target.value))}
               />
             </div>
           </div>
