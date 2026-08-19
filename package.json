@@ -60,6 +60,14 @@
     "typescript": "^5"
   },
   "pnpm": {
+    "onlyBuiltDependencies": [
+      "sharp",
+      "@parcel/watcher",
+      "unrs-resolver",
+      "@firebase/util",
+      "protobufjs",
+      "core-js"
+    ],
     "overrides": {
       "protobufjs": "7.6.5",
       "websocket-driver": "0.7.5",

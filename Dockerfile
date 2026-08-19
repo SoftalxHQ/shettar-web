@@ -1,61 +1,41 @@
 # syntax=docker/dockerfile:1
 
 ARG NODE_VERSION=22
+# Pin to packageManager in package.json — avoid "latest" surprises on remote builds.
+ARG PNPM_VERSION=10.28.1
 
 # ─── Base ───────────────────────────────────────────────────────────────────
 FROM node:${NODE_VERSION}-alpine AS base
 WORKDIR /app
-RUN corepack enable && corepack prepare pnpm@latest --activate
+ARG PNPM_VERSION
+RUN corepack enable && corepack prepare "pnpm@${PNPM_VERSION}" --activate
 
 # ─── Dependencies ───────────────────────────────────────────────────────────
 FROM base AS deps
 COPY package.json pnpm-lock.yaml ./
-RUN pnpm install --frozen-lockfile
+# Allow native package postinstalls (sharp, etc.) — pnpm 10 blocks them by default.
+RUN pnpm config set confirmModulesPurge false \
+    && pnpm install --frozen-lockfile
 
 # ─── Build ──────────────────────────────────────────────────────────────────
 FROM base AS build
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Non-secret public config (Kamal builder.args)
+# Clear production overrides from Kamal builder.args (also present in .env.production).
 ARG NEXT_PUBLIC_API_URL
 ARG NEXT_PUBLIC_APP_ENV
 ARG NEXT_PUBLIC_ANDROID_APP_URL
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL \
     NEXT_PUBLIC_APP_ENV=$NEXT_PUBLIC_APP_ENV \
     NEXT_PUBLIC_ANDROID_APP_URL=$NEXT_PUBLIC_ANDROID_APP_URL \
-    NEXT_TELEMETRY_DISABLED=1
+    NEXT_TELEMETRY_DISABLED=1 \
+    NODE_ENV=production
 
-# Secret public keys (Kamal builder.secrets → BuildKit secret mounts)
-RUN --mount=type=secret,id=NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY \
-    --mount=type=secret,id=NEXT_PUBLIC_GOOGLE_CLIENT_ID \
-    --mount=type=secret,id=NEXT_PUBLIC_IOS_APP_URL \
-    --mount=type=secret,id=NEXT_PUBLIC_FIREBASE_API_KEY \
-    --mount=type=secret,id=NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN \
-    --mount=type=secret,id=NEXT_PUBLIC_FIREBASE_PROJECT_ID \
-    --mount=type=secret,id=NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET \
-    --mount=type=secret,id=NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID \
-    --mount=type=secret,id=NEXT_PUBLIC_FIREBASE_APP_ID \
-    --mount=type=secret,id=NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID \
-    --mount=type=secret,id=NEXT_PUBLIC_FCM_VAPID_KEY \
-    --mount=type=secret,id=NEXT_PUBLIC_TIDIO_KEY \
-    --mount=type=secret,id=NEXT_PUBLIC_TURNSTILE_SITE_KEY \
-    --mount=type=secret,id=NEXT_PUBLIC_BROWSE_GATE_ENABLED \
-    export NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY="$(cat /run/secrets/NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY 2>/dev/null || true)" \
-    && export NEXT_PUBLIC_GOOGLE_CLIENT_ID="$(cat /run/secrets/NEXT_PUBLIC_GOOGLE_CLIENT_ID 2>/dev/null || true)" \
-    && export NEXT_PUBLIC_IOS_APP_URL="$(cat /run/secrets/NEXT_PUBLIC_IOS_APP_URL 2>/dev/null || true)" \
-    && export NEXT_PUBLIC_FIREBASE_API_KEY="$(cat /run/secrets/NEXT_PUBLIC_FIREBASE_API_KEY 2>/dev/null || true)" \
-    && export NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN="$(cat /run/secrets/NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN 2>/dev/null || true)" \
-    && export NEXT_PUBLIC_FIREBASE_PROJECT_ID="$(cat /run/secrets/NEXT_PUBLIC_FIREBASE_PROJECT_ID 2>/dev/null || true)" \
-    && export NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET="$(cat /run/secrets/NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET 2>/dev/null || true)" \
-    && export NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID="$(cat /run/secrets/NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID 2>/dev/null || true)" \
-    && export NEXT_PUBLIC_FIREBASE_APP_ID="$(cat /run/secrets/NEXT_PUBLIC_FIREBASE_APP_ID 2>/dev/null || true)" \
-    && export NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID="$(cat /run/secrets/NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID 2>/dev/null || true)" \
-    && export NEXT_PUBLIC_FCM_VAPID_KEY="$(cat /run/secrets/NEXT_PUBLIC_FCM_VAPID_KEY 2>/dev/null || true)" \
-    && export NEXT_PUBLIC_TIDIO_KEY="$(cat /run/secrets/NEXT_PUBLIC_TIDIO_KEY 2>/dev/null || true)" \
-    && export NEXT_PUBLIC_TURNSTILE_SITE_KEY="$(cat /run/secrets/NEXT_PUBLIC_TURNSTILE_SITE_KEY 2>/dev/null || true)" \
-    && export NEXT_PUBLIC_BROWSE_GATE_ENABLED="$(cat /run/secrets/NEXT_PUBLIC_BROWSE_GATE_ENABLED 2>/dev/null || true)" \
-    && pnpm build
+# Next.js loads gitignored .env.production from the build context (see .dockerignore).
+# Avoid BuildKit secret mounts over remote SSH — they caused "grpc: connection is closing".
+RUN pnpm build \
+    && rm -f .env.production .env.local .env.staging
 
 # ─── Runner ─────────────────────────────────────────────────────────────────
 FROM node:${NODE_VERSION}-alpine AS runner

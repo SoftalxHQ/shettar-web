@@ -12,8 +12,11 @@ coverage
 .vscode
 .idea
 
-# Env & local secrets
-.env*
+# Env — allow .env.production into the image build context (Next loads it at build).
+# Keep other env files out. File stays gitignored.
+.env
+.env.*
+!.env.production
 !.env.example
 .kamal
 config/registry.yml
@@ -26,7 +29,7 @@ Gemfile
 Gemfile.lock
 bin/kamal
 
-# Docs / misc
+# Docs / misc / large local artifacts
 README.md
 *.md
 .DS_Store
@@ -36,3 +39,4 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
+**/*.map

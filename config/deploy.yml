@@ -28,8 +28,8 @@ registry:
   password:
     - KAMAL_REGISTRY_PASSWORD
 
-# Runtime env (secrets come from .kamal/secrets).
-# NEXT_PUBLIC_* are also passed as builder args/secrets so they are baked into the client bundle.
+# Runtime env. NEXT_PUBLIC_* for the client bundle are baked at build from .env.production
+# (copied into the Docker build context). Runtime secrets below are optional fallbacks.
 env:
   clear:
     NODE_ENV: production
@@ -38,21 +38,6 @@ env:
     NEXT_PUBLIC_API_URL: https://api-v1.shettar.com
     NEXT_PUBLIC_APP_ENV: production
     NEXT_PUBLIC_ANDROID_APP_URL: https://play.google.com/store/apps/details?id=com.softalx.shettar
-  secret:
-    - NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY
-    - NEXT_PUBLIC_GOOGLE_CLIENT_ID
-    - NEXT_PUBLIC_IOS_APP_URL
-    - NEXT_PUBLIC_FIREBASE_API_KEY
-    - NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
-    - NEXT_PUBLIC_FIREBASE_PROJECT_ID
-    - NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
-    - NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
-    - NEXT_PUBLIC_FIREBASE_APP_ID
-    - NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
-    - NEXT_PUBLIC_FCM_VAPID_KEY
-    - NEXT_PUBLIC_TIDIO_KEY
-    - NEXT_PUBLIC_TURNSTILE_SITE_KEY
-    - NEXT_PUBLIC_BROWSE_GATE_ENABLED
 
 # Aliases are triggered with "bin/kamal <alias>".
 aliases:
@@ -60,6 +45,7 @@ aliases:
   logs: app logs -f
 
 # Configure the image builder.
+# Remote SSH BuildKit is flaky with many secret mounts — bake env via .env.production instead.
 builder:
   arch: amd64
   remote: ssh://root@168.119.109.209
@@ -67,18 +53,4 @@ builder:
     NEXT_PUBLIC_API_URL: https://api-v1.shettar.com
     NEXT_PUBLIC_APP_ENV: production
     NEXT_PUBLIC_ANDROID_APP_URL: https://play.google.com/store/apps/details?id=com.softalx.shettar
-  secrets:
-    - NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY
-    - NEXT_PUBLIC_GOOGLE_CLIENT_ID
-    - NEXT_PUBLIC_IOS_APP_URL
-    - NEXT_PUBLIC_FIREBASE_API_KEY
-    - NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
-    - NEXT_PUBLIC_FIREBASE_PROJECT_ID
-    - NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
-    - NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
-    - NEXT_PUBLIC_FIREBASE_APP_ID
-    - NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
-    - NEXT_PUBLIC_FCM_VAPID_KEY
-    - NEXT_PUBLIC_TIDIO_KEY
-    - NEXT_PUBLIC_TURNSTILE_SITE_KEY
-    - NEXT_PUBLIC_BROWSE_GATE_ENABLED
+    PNPM_VERSION: "10.28.1"
