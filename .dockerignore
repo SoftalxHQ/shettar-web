@@ -1,0 +1,38 @@
+# Dependencies & build output
+node_modules
+.next
+out
+build
+coverage
+
+# Git / IDE
+.git
+.gitignore
+.cursor
+.vscode
+.idea
+
+# Env & local secrets
+.env*
+!.env.example
+.kamal
+config/registry.yml
+config/web_env.production
+
+# Ruby / Kamal
+.bundle
+vendor/bundle
+Gemfile
+Gemfile.lock
+bin/kamal
+
+# Docs / misc
+README.md
+*.md
+.DS_Store
+*.pem
+.vercel
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*

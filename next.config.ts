@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  output: "standalone",
   images: {
     // Only bypass Next.js image optimization in local dev to prevent local active_storage timeouts. 
     // In production, Next.js will optimize and cache the images perfectly.
@@ -16,6 +17,12 @@ const nextConfig: NextConfig = {
       {
         protocol: 'https',
         hostname: 'abri-dreams.s3.eu-west-2.amazonaws.com',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'shettar.s3.eu-east-1.amazonaws.com',
         port: '',
         pathname: '/**',
       },

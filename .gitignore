@@ -31,7 +31,12 @@ yarn-error.log*
 .pnpm-debug.log*
 
 # env files (can opt-in for committing if needed)
+# Covers .env.production / .env.staging / .env.local — Kamal secrets source
 .env*
+
+# Kamal local secrets (do not commit)
+/config/registry.yml
+/config/web_env.production
 
 # vercel
 .vercel
@@ -39,3 +44,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Ruby / Kamal vendor
+/.bundle
+/vendor/bundle
