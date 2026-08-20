@@ -16,7 +16,7 @@ proxy:
   ssl: true
   hosts:
     - shettar.com
-    - web.shettar.com
+    - www.shettar.com
   # Next.js standalone listens on 3000 (not 80).
   app_port: 3000
   # Default is /up (Rails). Next exposes app/up/route.ts for this.
