@@ -45,7 +45,7 @@ aliases:
 # Values from .kamal/secrets (reads local .env.production) — Kamal clones git and skips gitignored files.
 builder:
   arch: amd64
-  remote: ssh://root@168.119.109.209
+  remote: ssh://root@49.13.95.30
   args:
     PNPM_VERSION: "10.28.1"
     NEXT_PUBLIC_API_URL: https://api-v1.shettar.com
