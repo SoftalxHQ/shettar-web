@@ -1,7 +1,6 @@
 # syntax=docker/dockerfile:1
 
 ARG NODE_VERSION=22
-# Pin to packageManager in package.json — avoid "latest" surprises on remote builds.
 ARG PNPM_VERSION=10.28.1
 
 # ─── Base ───────────────────────────────────────────────────────────────────
@@ -13,7 +12,6 @@ RUN corepack enable && corepack prepare "pnpm@${PNPM_VERSION}" --activate
 # ─── Dependencies ───────────────────────────────────────────────────────────
 FROM base AS deps
 COPY package.json pnpm-lock.yaml ./
-# Allow native package postinstalls (sharp, etc.) — pnpm 10 blocks them by default.
 RUN pnpm config set confirmModulesPurge false \
     && pnpm install --frozen-lockfile
 
@@ -22,20 +20,51 @@ FROM base AS build
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Clear production overrides from Kamal builder.args (also present in .env.production).
+# All NEXT_PUBLIC_* come from Kamal builder.args (sourced from local .env.production via .kamal/secrets).
+# Do not rely on copying .env.production — Kamal builds from a git clone that excludes gitignored files.
 ARG NEXT_PUBLIC_API_URL
 ARG NEXT_PUBLIC_APP_ENV
 ARG NEXT_PUBLIC_ANDROID_APP_URL
+ARG NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY
+ARG NEXT_PUBLIC_GOOGLE_CLIENT_ID
+ARG NEXT_PUBLIC_IOS_APP_URL
+ARG NEXT_PUBLIC_FIREBASE_API_KEY
+ARG NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+ARG NEXT_PUBLIC_FIREBASE_PROJECT_ID
+ARG NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+ARG NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+ARG NEXT_PUBLIC_FIREBASE_APP_ID
+ARG NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
+ARG NEXT_PUBLIC_FCM_VAPID_KEY
+ARG NEXT_PUBLIC_TIDIO_KEY
+ARG NEXT_PUBLIC_TURNSTILE_SITE_KEY
+ARG NEXT_PUBLIC_BROWSE_GATE_ENABLED
+
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL \
     NEXT_PUBLIC_APP_ENV=$NEXT_PUBLIC_APP_ENV \
     NEXT_PUBLIC_ANDROID_APP_URL=$NEXT_PUBLIC_ANDROID_APP_URL \
+    NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY=$NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY \
+    NEXT_PUBLIC_GOOGLE_CLIENT_ID=$NEXT_PUBLIC_GOOGLE_CLIENT_ID \
+    NEXT_PUBLIC_IOS_APP_URL=$NEXT_PUBLIC_IOS_APP_URL \
+    NEXT_PUBLIC_FIREBASE_API_KEY=$NEXT_PUBLIC_FIREBASE_API_KEY \
+    NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=$NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN \
+    NEXT_PUBLIC_FIREBASE_PROJECT_ID=$NEXT_PUBLIC_FIREBASE_PROJECT_ID \
+    NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=$NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET \
+    NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=$NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID \
+    NEXT_PUBLIC_FIREBASE_APP_ID=$NEXT_PUBLIC_FIREBASE_APP_ID \
+    NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=$NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID \
+    NEXT_PUBLIC_FCM_VAPID_KEY=$NEXT_PUBLIC_FCM_VAPID_KEY \
+    NEXT_PUBLIC_TIDIO_KEY=$NEXT_PUBLIC_TIDIO_KEY \
+    NEXT_PUBLIC_TURNSTILE_SITE_KEY=$NEXT_PUBLIC_TURNSTILE_SITE_KEY \
+    NEXT_PUBLIC_BROWSE_GATE_ENABLED=$NEXT_PUBLIC_BROWSE_GATE_ENABLED \
     NEXT_TELEMETRY_DISABLED=1 \
-    NODE_ENV=production
+    NODE_ENV=production \
+    NODE_OPTIONS="--max-old-space-size=3072" \
+    UV_THREADPOOL_SIZE=2 \
+    NEXT_CPU_COUNT=1
 
-# Next.js loads gitignored .env.production from the build context (see .dockerignore).
-# Avoid BuildKit secret mounts over remote SSH — they caused "grpc: connection is closing".
-RUN pnpm build \
-    && rm -f .env.production .env.local .env.staging
+# Webpack uses less peak RAM than Turbopack on small builders; local Mac build preferred.
+RUN pnpm build
 
 # ─── Runner ─────────────────────────────────────────────────────────────────
 FROM node:${NODE_VERSION}-alpine AS runner

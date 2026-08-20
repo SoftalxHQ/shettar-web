@@ -12,11 +12,9 @@ coverage
 .vscode
 .idea
 
-# Env — allow .env.production into the image build context (Next loads it at build).
-# Keep other env files out. File stays gitignored.
+# Env / secrets — not needed in context (Kamal passes NEXT_PUBLIC_* as build-args)
 .env
 .env.*
-!.env.production
 !.env.example
 .kamal
 config/registry.yml

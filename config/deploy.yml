@@ -28,29 +28,39 @@ registry:
   password:
     - KAMAL_REGISTRY_PASSWORD
 
-# Runtime env. NEXT_PUBLIC_* for the client bundle are baked at build from .env.production
-# (copied into the Docker build context). Runtime secrets below are optional fallbacks.
+# Runtime process env (client NEXT_PUBLIC_* are baked at image build time via builder.args).
 env:
   clear:
     NODE_ENV: production
     PORT: "3000"
     HOSTNAME: "0.0.0.0"
-    NEXT_PUBLIC_API_URL: https://api-v1.shettar.com
-    NEXT_PUBLIC_APP_ENV: production
-    NEXT_PUBLIC_ANDROID_APP_URL: https://play.google.com/store/apps/details?id=com.softalx.shettar
 
 # Aliases are triggered with "bin/kamal <alias>".
 aliases:
   shell: app exec --interactive --reuse "sh"
   logs: app logs -f
 
-# Configure the image builder.
-# Remote SSH BuildKit is flaky with many secret mounts — bake env via .env.production instead.
+# Build on your Mac (more RAM). Remote VPS OOM-killed Next Turbopack ("cannot allocate memory").
+# Start Docker Desktop before `kamal setup` / `kamal deploy`.
+# Values from .kamal/secrets (reads local .env.production) — Kamal clones git and skips gitignored files.
 builder:
   arch: amd64
-  remote: ssh://root@168.119.109.209
   args:
+    PNPM_VERSION: "10.28.1"
     NEXT_PUBLIC_API_URL: https://api-v1.shettar.com
     NEXT_PUBLIC_APP_ENV: production
     NEXT_PUBLIC_ANDROID_APP_URL: https://play.google.com/store/apps/details?id=com.softalx.shettar
-    PNPM_VERSION: "10.28.1"
+    NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY: <%= ENV.fetch("NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY", "") %>
+    NEXT_PUBLIC_GOOGLE_CLIENT_ID: <%= ENV.fetch("NEXT_PUBLIC_GOOGLE_CLIENT_ID", "") %>
+    NEXT_PUBLIC_IOS_APP_URL: <%= ENV.fetch("NEXT_PUBLIC_IOS_APP_URL", "") %>
+    NEXT_PUBLIC_FIREBASE_API_KEY: <%= ENV.fetch("NEXT_PUBLIC_FIREBASE_API_KEY", "") %>
+    NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: <%= ENV.fetch("NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN", "") %>
+    NEXT_PUBLIC_FIREBASE_PROJECT_ID: <%= ENV.fetch("NEXT_PUBLIC_FIREBASE_PROJECT_ID", "") %>
+    NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: <%= ENV.fetch("NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET", "") %>
+    NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: <%= ENV.fetch("NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID", "") %>
+    NEXT_PUBLIC_FIREBASE_APP_ID: <%= ENV.fetch("NEXT_PUBLIC_FIREBASE_APP_ID", "") %>
+    NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID: <%= ENV.fetch("NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID", "") %>
+    NEXT_PUBLIC_FCM_VAPID_KEY: <%= ENV.fetch("NEXT_PUBLIC_FCM_VAPID_KEY", "") %>
+    NEXT_PUBLIC_TIDIO_KEY: <%= ENV.fetch("NEXT_PUBLIC_TIDIO_KEY", "") %>
+    NEXT_PUBLIC_TURNSTILE_SITE_KEY: <%= ENV.fetch("NEXT_PUBLIC_TURNSTILE_SITE_KEY", "") %>
+    NEXT_PUBLIC_BROWSE_GATE_ENABLED: <%= ENV.fetch("NEXT_PUBLIC_BROWSE_GATE_ENABLED", "") %>
