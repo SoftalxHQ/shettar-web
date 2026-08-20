@@ -29,7 +29,12 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL(path, marketerApp));
   }
 
-  if (!isBrowseGateEnabled() || isPublicAsset(pathname) || pathname === '/verify') {
+  if (
+    !isBrowseGateEnabled() ||
+    isPublicAsset(pathname) ||
+    pathname === '/verify' ||
+    pathname === '/up'
+  ) {
     return NextResponse.next();
   }
 

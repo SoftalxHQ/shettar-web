@@ -18,6 +18,11 @@ proxy:
     - shettar.com
   # Next.js standalone listens on 3000 (not 80).
   app_port: 3000
+  # Default is /up (Rails). Next exposes app/up/route.ts for this.
+  healthcheck:
+    path: /up
+    interval: 3
+    timeout: 5
 
 deploy_timeout: 120
 drain_timeout: 30
