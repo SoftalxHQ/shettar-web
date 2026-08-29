@@ -52,9 +52,12 @@ const PrivacyPage = () => {
                 </Card>
 
                 <div className="text-center mt-5">
-                  <p className="text-secondary small">
-                    If you have any questions regarding our privacy practices, please contact us at <a href="mailto:privacy@shettar.com" className="text-primary">privacy@shettar.com</a>
-                  </p>
+                    <p className="text-secondary small">
+                      To request deletion of your account and associated data, see{' '}
+                      <a href="/delete-account" className="text-primary">Delete your Shettar account</a>.
+                      For other privacy questions, contact us at{' '}
+                      <a href="mailto:privacy@shettar.com" className="text-primary">privacy@shettar.com</a>.
+                    </p>
                 </div>
               </Col>
             </Row>

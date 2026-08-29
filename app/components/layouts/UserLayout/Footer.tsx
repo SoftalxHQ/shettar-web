@@ -33,6 +33,9 @@ const Footer = () => {
                 <li className="list-inline-item ms-2">
                   <Link href="/terms" className="text-body-secondary small text-primary-hover">Terms</Link>
                 </li>
+                <li className="list-inline-item ms-2">
+                  <Link href="/delete-account" className="text-body-secondary small text-primary-hover">Delete account</Link>
+                </li>
               </ul>
               <ul className="list-inline mb-0">
                 <li className="list-inline-item ms-2">

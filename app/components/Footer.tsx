@@ -26,6 +26,7 @@ const footerLinks = [
       { name: 'Browse Hotels', link: '/hotel/grid' },
       { name: 'Refund Policy', link: '/refund' },
       { name: 'Privacy Policy', link: '/privacy' },
+      { name: 'Delete account', link: '/delete-account' },
     ],
   },
 ];
@@ -110,6 +111,9 @@ export default function FooterWithLinks() {
               </NavItem>
               <NavItem>
                 <NavLink className="text-body-secondary ps-0" href="/privacy">Privacy Policy</NavLink>
+              </NavItem>
+              <NavItem>
+                <NavLink className="text-body-secondary ps-0" href="/delete-account">Delete account</NavLink>
               </NavItem>
             </Nav>
           </Col>
@@ -206,8 +210,13 @@ export default function FooterWithLinks() {
                     </NavLink>
                   </li>
                   <li className="list-inline-item me-0">
-                    <NavLink className="text-body-secondary py-1 pe-0" href="/refund">
+                    <NavLink className="text-body-secondary py-1" href="/refund">
                       Refund policy
+                    </NavLink>
+                  </li>
+                  <li className="list-inline-item me-0">
+                    <NavLink className="text-body-secondary py-1 pe-0" href="/delete-account">
+                      Delete account
                     </NavLink>
                   </li>
                 </ul>
