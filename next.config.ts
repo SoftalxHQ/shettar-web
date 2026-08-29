@@ -22,7 +22,7 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: 'https',
-        hostname: 'shettar.s3.eu-east-1.amazonaws.com',
+        hostname: 'shettar.s3.us-east-1.amazonaws.com',
         port: '',
         pathname: '/**',
       },
