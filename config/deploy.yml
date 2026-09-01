@@ -69,8 +69,8 @@ builder:
     NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID: <%= ENV.fetch("NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID", "") %>
     NEXT_PUBLIC_FCM_VAPID_KEY: <%= ENV.fetch("NEXT_PUBLIC_FCM_VAPID_KEY", "") %>
     NEXT_PUBLIC_TIDIO_KEY: <%= ENV.fetch("NEXT_PUBLIC_TIDIO_KEY", "") %>
-    # Public Turnstile site key (not the secret). Must be a literal builder arg:
-    # remote buildx does not receive empty ENV.fetch values, so ERB-from-secrets
-    # left the widget compiled out and production sign-in posted without a token.
-    NEXT_PUBLIC_TURNSTILE_SITE_KEY: 0x4AAAAAADs3GPQCIgovfACF
     NEXT_PUBLIC_BROWSE_GATE_ENABLED: <%= ENV.fetch("NEXT_PUBLIC_BROWSE_GATE_ENABLED", "") %>
+  # Looked up from .kamal/secrets after ERB. ENV.fetch in args runs too early and
+  # bakes an empty key, so sign-in posts with no token and the API returns 422.
+  secrets:
+    - NEXT_PUBLIC_TURNSTILE_SITE_KEY
