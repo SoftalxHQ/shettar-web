@@ -58,7 +58,7 @@ const DeleteAccountPage = () => {
                     </p>
                     <p className="text-secondary mb-0">
                       If you cannot sign in, contact us at{' '}
-                      <a href="mailto:hello@shettar.com">hello@shettar.com</a> or use{' '}
+                      <a href="mailto:hey@shettar.com">hey@shettar.com</a> or use{' '}
                       <Link href="/contact">Contact</Link> / <Link href="/support-chat">Live chat</Link> and
                       ask us to process a deletion request. We will verify that the request comes from the
                       account holder.
@@ -124,7 +124,7 @@ const DeleteAccountPage = () => {
                     Sign in to delete your account
                   </Link>
                   <p className="text-secondary small mt-3 mb-0">
-                    Questions? <a href="mailto:hello@shettar.com">hello@shettar.com</a>
+                    Questions? <a href="mailto:hey@shettar.com">hey@shettar.com</a>
                   </p>
                 </div>
               </Col>

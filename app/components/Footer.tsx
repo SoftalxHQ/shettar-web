@@ -59,13 +59,13 @@ export default function FooterWithLinks() {
               Shettar is your ultimate companion for finding the perfect stay. From luxury resorts to cozy local hotels, we make booking your next room effortless and rewarding.
             </p>
             <div className="vstack gap-2 mt-4">
-              <Link href="#" className="text-body-secondary text-primary-hover d-flex align-items-center mb-0">
+              <Link href="tel:+2348107040050" className="text-body-secondary text-primary-hover d-flex align-items-center mb-0">
                 <BsTelephone className="me-2" />
-                +1234 568 963
+                0810 704 0050
               </Link>
-              <Link href="#" className="text-body-secondary text-primary-hover d-flex align-items-center mb-0">
+              <Link href="mailto:hey@shettar.com" className="text-body-secondary text-primary-hover d-flex align-items-center mb-0">
                 <BsEnvelope className="me-2" />
-                hello@shettar.com
+                hey@shettar.com
               </Link>
             </div>
           </Col>

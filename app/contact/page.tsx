@@ -3,7 +3,7 @@
 import Header from '@/app/components/Header';
 import Footer from '@/app/components/Footer';
 import { Container, Row, Col, Card, CardHeader, CardBody, Button, Image } from 'react-bootstrap';
-import { BsChatDots, BsEnvelope, BsGlobe2, BsHeadset, BsInboxesFill, BsPhone, BsTelephone } from 'react-icons/bs';
+import { BsChatDots, BsEnvelope, BsGlobe2, BsHeadset, BsInboxesFill, BsPhone } from 'react-icons/bs';
 import { FaFacebookF, FaInstagram, FaLinkedin, FaTwitter } from 'react-icons/fa';
 import Link from 'next/link';
 import { useForm } from 'react-hook-form';
@@ -48,11 +48,8 @@ const ContactPage = () => {
                   <h5>Call us</h5>
                   <p className="text-secondary small">Imprudence attachment him his for sympathize. Large above be to means.</p>
                   <div className="d-grid gap-2">
-                    <Button size="sm" variant="primary" className="mb-1">
-                      <BsPhone className="me-2" /> +123 456 789
-                    </Button>
-                    <Button variant="outline-light" size="sm" className="text-dark border">
-                      <BsTelephone className="me-2" /> +(222) 4567 586
+                    <Button size="sm" variant="primary" className="mb-1" href="tel:+2348107040050">
+                      <BsPhone className="me-2" /> 0810 704 0050
                     </Button>
                   </div>
                 </Card>
@@ -64,8 +61,8 @@ const ContactPage = () => {
                   </div>
                   <h5>Email us</h5>
                   <p className="text-secondary small">Large above be to means. Him his for sympathize.</p>
-                  <Link href="mailto:example@gmail.com" className="btn btn-link text-decoration-underline p-0 mb-0">
-                    <BsEnvelope className="me-2" /> example@gmail.com
+                  <Link href="mailto:hey@shettar.com" className="btn btn-link text-decoration-underline p-0 mb-0">
+                    <BsEnvelope className="me-2" /> hey@shettar.com
                   </Link>
                 </Card>
               </Col>
