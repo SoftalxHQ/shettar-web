@@ -84,6 +84,7 @@ function HomeAvailabilityFilterPanel({
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
   const locationBlurTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const suggestionsOpen = showSuggestions && formValue.location.trim().length > 0;
 
   const apiUrl = useMemo(() => {
     const rawUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000';
@@ -181,7 +182,7 @@ function HomeAvailabilityFilterPanel({
               <FormLabel className="form-label">Location</FormLabel>
               <input
                 type="text"
-                className="form-control"
+                className={`form-control selection-result w-100${suggestionsOpen ? ' location-open' : ''}`}
                 name="shettar_location_query"
                 placeholder="City/Town, State"
                 value={formValue.location}
@@ -194,20 +195,17 @@ function HomeAvailabilityFilterPanel({
                   locationBlurTimer.current = setTimeout(() => setShowSuggestions(false), 150);
                 }}
               />
-              {showSuggestions && formValue.location.trim() && (
-                <div
-                  className="list-group position-absolute w-100 shadow border rounded-bottom bg-body"
-                  style={{ zIndex: 1050, top: '100%' }}
-                >
+              {suggestionsOpen && (
+                <div className="dropdown-menu guest-selector-dropdown show w-100">
                   {loadingSuggestions && (
-                    <div className="list-group-item small text-secondary bg-body">Searching...</div>
+                    <div className="dropdown-item small text-secondary">Searching...</div>
                   )}
                   {!loadingSuggestions &&
                     locationSuggestions.map((loc) => (
                       <button
                         key={loc.display}
                         type="button"
-                        className="list-group-item list-group-item-action text-start bg-body"
+                        className="dropdown-item"
                         onMouseDown={(event) => event.preventDefault()}
                         onClick={() => {
                           setFormValue({ ...formValue, location: loc.display });
@@ -218,7 +216,7 @@ function HomeAvailabilityFilterPanel({
                       </button>
                     ))}
                   {!loadingSuggestions && locationSuggestions.length === 0 && (
-                    <div className="list-group-item small text-secondary bg-body">No verified locations found</div>
+                    <div className="dropdown-item small text-secondary">No verified locations found</div>
                   )}
                 </div>
               )}

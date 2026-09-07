@@ -38,7 +38,7 @@ function buildFormValue(
   );
 
   return {
-    location: hotel ? `${hotel.city}, ${hotel.state}` : 'City/Town, State',
+    location: [hotel?.city, hotel?.state].filter(Boolean).join(', '),
     stayFor,
     guests: {
       adults: Math.max(1, adults_str ? parseInt(adults_str, 10) : 2),
@@ -104,11 +104,16 @@ function AvailabilityFilterPanel({ initial, onSearch, isLoading }: FilterPanelPr
   const formFields = (
     <form className="row g-4" onSubmit={handleSubmit}>
       <Col md={6} lg={4}>
-        <div className="form-size-lg form-fs-md">
+        <div className="form-fs-md w-100">
           <label className="form-label">Location</label>
-          <div className="form-control-lg form-control selection-result d-flex align-items-center">
-            {formValue.location}
-          </div>
+          <input
+            type="text"
+            className="form-control-lg form-control selection-result"
+            value={formValue.location}
+            placeholder="City/Town, State"
+            readOnly
+            tabIndex={-1}
+          />
         </div>
       </Col>
       <Col md={6} lg={3}>
