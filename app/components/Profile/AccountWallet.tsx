@@ -7,6 +7,7 @@ import { currency } from '@/app/states';
 import Link from 'next/link';
 import { toast } from 'react-hot-toast';
 import { useLayoutContext } from '@/app/states';
+import { parseUtilityApiError } from '@/app/helpers/utility-api';
 import { getStoredToken } from '@/app/helpers/auth';
 import { useApi } from '@/app/hooks/useApi';
 
@@ -22,23 +23,31 @@ const AccountWallet = () => {
   const [isFetchingFee, setIsFetchingFee] = useState(false);
   const [dvaDetails, setDvaDetails] = useState<{ account_number: string; bank_name: string; account_name: string } | null>(null);
   const [isDvaLoading, setIsDvaLoading] = useState(false);
+  const [dvaError, setDvaError] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { apiFetch } = useApi();
 
   const fetchDvaDetails = async () => {
     setIsDvaLoading(true);
+    setDvaError(null);
     try {
       const token = getStoredToken();
       const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
       const response = await apiFetch(`${API_URL}/api/v1/wallet/dva_details`, {
         headers: { 'Authorization': token ? `Bearer ${token}` : '' }
       });
-      const data = await response.json();
+      const data = await response.json().catch(() => null);
       if (response.ok) {
         setDvaDetails(data);
+        return;
       }
-    } catch (error) {
-      console.error('Error fetching DVA details:', error);
+      const message = parseUtilityApiError(data, 'Could not generate a virtual account.');
+      setDvaError(message);
+      toast.error(message, { duration: 6000 });
+    } catch {
+      const message = 'Could not generate a virtual account. Please try again.';
+      setDvaError(message);
+      toast.error(message);
     } finally {
       setIsDvaLoading(false);
     }
@@ -320,10 +329,18 @@ const AccountWallet = () => {
                 </>
               ) : (
                 <div className="text-center py-4">
-                  <p className="small text-muted mb-3">No bank account assigned yet.</p>
-                  <Button variant="outline-dark" size="sm" onClick={fetchDvaDetails} disabled={isDvaLoading}>
-                    {isDvaLoading ? 'Generating...' : 'Generate Bank Account'}
-                  </Button>
+                  <p className={`small mb-3 ${dvaError ? 'text-danger' : 'text-muted'}`}>
+                    {dvaError || 'No bank account assigned yet.'}
+                  </p>
+                  {dvaError?.toLowerCase().includes('phone') ? (
+                    <Link href="/user/profile" className="btn btn-sm btn-outline-dark mb-0">
+                      Add phone number
+                    </Link>
+                  ) : (
+                    <Button variant="outline-dark" size="sm" onClick={fetchDvaDetails} disabled={isDvaLoading}>
+                      {isDvaLoading ? 'Generating...' : 'Generate Bank Account'}
+                    </Button>
+                  )}
                 </div>
               )}
             </CardBody>
@@ -423,6 +440,19 @@ const AccountWallet = () => {
                   <span className="fw-bold">You will be charged</span>
                   <span className="fw-bold text-primary">{currency}{feeBreakdown.charge_amount.toLocaleString('en-NG', { minimumFractionDigits: 2 })}</span>
                 </div>
+              </div>
+            )}
+
+            {paymentMethod === 'dva' && !dvaDetails && dvaError && (
+              <div className="p-3 rounded border border-danger-subtle bg-danger bg-opacity-10 mt-3">
+                <p className="small text-danger mb-2">{dvaError}</p>
+                {dvaError.toLowerCase().includes('phone') ? (
+                  <Link href="/user/profile" className="small">Add a phone number to your profile</Link>
+                ) : (
+                  <Button variant="outline-danger" size="sm" onClick={fetchDvaDetails} disabled={isDvaLoading}>
+                    Try again
+                  </Button>
+                )}
               </div>
             )}
 
