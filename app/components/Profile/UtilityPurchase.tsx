@@ -4,12 +4,14 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert, Spinner } from 'react-bootstrap';
 import {
   BsCheckCircleFill,
+  BsClockFill,
   BsLightningChargeFill,
   BsPerson,
   BsTelephone,
   BsTv,
   BsWallet2,
   BsWifi,
+  BsXCircleFill,
 } from 'react-icons/bs';
 import confetti from 'canvas-confetti';
 import { useLayoutContext, currency } from '@/app/states';
@@ -27,20 +29,25 @@ import {
   fetchTvProviders,
   fetchTvVariations,
   fetchUtilityNetworks,
+  isInFlightPurchaseStatus,
   isValidMeterNumber,
   isValidTvBillers,
   isValidUtilityPhone,
   normalizeUtilityPhone,
+  PROCESSING_PURCHASE_MESSAGE,
+  recoverUtilityPurchase,
   sanitizeMeterInput,
   sanitizeTvBillersInput,
   sanitizeUtilityPhoneInput,
   tvBillersLimits,
+  UtilityPurchaseError,
   verifyUtilityBill,
   type DataVariation,
   type UtilityNetwork,
   type UtilityProvider,
   type VerifyResult,
 } from '@/app/helpers/utility-api';
+import { mapTransactionToReceipt } from '@/app/helpers/utility-receipt';
 
 type TabType = 'airtime' | 'data' | 'tv' | 'electricity';
 type TvMode = 'renew' | 'change';
@@ -455,10 +462,31 @@ const UtilityPurchase = () => {
         });
       }
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : 'Purchase failed. Your wallet has been refunded.';
-      setPurchaseError(message);
-      toast.error(message, { duration: 6000 });
+      const purchaseError = error instanceof UtilityPurchaseError ? error : null;
+      const message = error instanceof Error ? error.message : PROCESSING_PURCHASE_MESSAGE;
+
+      if (purchaseError?.confirmedFailure) {
+        setPurchaseError(message);
+        toast.error(message, { duration: 6000 });
+        await refreshAccount?.();
+        return;
+      }
+
       await refreshAccount?.();
+      const recovered = await recoverUtilityPurchase({
+        requestId: purchaseError?.requestId,
+        transactionId: purchaseError?.transactionId,
+        productType: activeTab,
+      });
+      const receipt = recovered ? mapTransactionToReceipt(recovered) : null;
+
+      if (receipt && (isInFlightPurchaseStatus(recovered?.status) || receipt.status === 'failed' || receipt.status === 'refunded')) {
+        showReceipt(receipt);
+        return;
+      }
+
+      setPurchaseError(PROCESSING_PURCHASE_MESSAGE);
+      toast.error(PROCESSING_PURCHASE_MESSAGE, { duration: 6000 });
     } finally {
       setLoading(false);
     }
@@ -502,21 +530,32 @@ const UtilityPurchase = () => {
   }[activeTab];
 
   if (receipt) {
+    const isFailed = receipt.status === 'failed' || receipt.status === 'refunded';
+    const isPending = receipt.status === 'pending';
+    const HeroIcon = isFailed ? BsXCircleFill : isPending ? BsClockFill : BsCheckCircleFill;
+    const heroClass = isFailed ? 'text-danger mb-3' : isPending ? 'text-warning mb-3' : 'text-success mb-3';
+    const heroTitle = receipt.status === 'refunded'
+      ? 'Purchase Refunded'
+      : receipt.status === 'failed'
+        ? 'Purchase Failed'
+        : isPending
+          ? 'Purchase Processing'
+          : 'Purchase Successful!';
+    const heroSub = isFailed
+      ? receipt.failureReason ||
+        (receipt.status === 'refunded'
+          ? 'The amount has been returned to your wallet.'
+          : 'This purchase could not be completed. Check Transactions for details.')
+      : isPending
+        ? 'Your purchase is being processed. We will notify you when it completes.'
+        : `Your ${receipt.type.toLowerCase()} purchase is complete.`;
+
     return (
       <div className="utility-purchase">
         <div className="text-center mb-4">
-          <BsCheckCircleFill
-            size={72}
-            className={receipt.status === 'pending' ? 'text-warning mb-3' : 'text-success mb-3'}
-          />
-          <h4 className="fw-bold mb-2">
-            {receipt.status === 'pending' ? 'Purchase Processing' : 'Purchase Successful!'}
-          </h4>
-          <p className="text-secondary small mb-0">
-            {receipt.status === 'pending'
-              ? 'Your purchase is being processed. We will notify you when it completes.'
-              : `Your ${receipt.type.toLowerCase()} purchase is complete.`}
-          </p>
+          <HeroIcon size={72} className={heroClass} />
+          <h4 className="fw-bold mb-2">{heroTitle}</h4>
+          <p className="text-secondary small mb-0">{heroSub}</p>
         </div>
 
         <UtilityReceiptCard receipt={receipt} />

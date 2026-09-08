@@ -1,4 +1,5 @@
 import { getStoredToken } from '@/app/helpers/auth';
+import type { WalletTransactionForReceipt } from '@/app/helpers/utility-receipt';
 
 const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
 
@@ -37,9 +38,43 @@ export type PurchaseResult = {
   message: string;
   status: 'delivered' | 'pending';
   request_id?: string;
+  transaction_id?: number | string;
   token?: string;
   units?: string;
 };
+
+export const PROCESSING_PURCHASE_MESSAGE =
+  'Purchase may still be processing. Check Transactions.';
+
+export type UtilityProductType = 'airtime' | 'data' | 'tv' | 'electricity';
+
+export type WalletTransactionLookup = WalletTransactionForReceipt & {
+  id: number;
+};
+
+export class UtilityPurchaseError extends Error {
+  httpStatus: number | null;
+  transactionId?: number | string;
+  requestId?: string;
+  confirmedFailure: boolean;
+
+  constructor(
+    message: string,
+    options: {
+      httpStatus?: number | null;
+      transactionId?: number | string;
+      requestId?: string;
+      confirmedFailure?: boolean;
+    } = {}
+  ) {
+    super(message);
+    this.name = 'UtilityPurchaseError';
+    this.httpStatus = options.httpStatus ?? null;
+    this.transactionId = options.transactionId;
+    this.requestId = options.requestId;
+    this.confirmedFailure = options.confirmedFailure === true;
+  }
+}
 
 export type TvBillersLimits = { min: number; max: number; kind: 'smartcard' | 'phone' };
 export type MeterDigitLimits = { min: number; max: number };
@@ -243,22 +278,127 @@ async function parseJsonResponse(response: Response): Promise<unknown> {
   }
 }
 
+function purchaseIdsFromPayload(data: unknown): {
+  transactionId?: number | string;
+  requestId?: string;
+} {
+  if (!data || typeof data !== 'object') return {};
+  const payload = data as { transaction_id?: number | string; request_id?: string };
+  return {
+    transactionId: payload.transaction_id,
+    requestId: typeof payload.request_id === 'string' && payload.request_id.trim() ? payload.request_id : undefined,
+  };
+}
+
+async function postPurchase(url: string, body: unknown, unprocessableFallback: string): Promise<PurchaseResult> {
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      method: 'POST',
+      headers: await authHeaders(),
+      body: JSON.stringify(body),
+    });
+  } catch {
+    throw new UtilityPurchaseError(PROCESSING_PURCHASE_MESSAGE, { confirmedFailure: false });
+  }
+
+  const data = await parseJsonResponse(response);
+  if (response.ok) return data as PurchaseResult;
+
+  const ids = purchaseIdsFromPayload(data);
+  if (response.status === 422) {
+    throw new UtilityPurchaseError(parseUtilityApiError(data, unprocessableFallback), {
+      httpStatus: 422,
+      confirmedFailure: true,
+      ...ids,
+    });
+  }
+
+  throw new UtilityPurchaseError(PROCESSING_PURCHASE_MESSAGE, {
+    httpStatus: response.status,
+    confirmedFailure: false,
+    ...ids,
+  });
+}
+
+function isRecentUtilityDebit(
+  transaction: WalletTransactionLookup,
+  productType?: UtilityProductType
+): boolean {
+  const createdAt = Date.parse(transaction.created_at);
+  if (!Number.isFinite(createdAt) || Date.now() - createdAt > 5 * 60 * 1000) return false;
+  const type = transaction.metadata?.product_type;
+  if (productType) return type === productType;
+  return type === 'airtime' || type === 'data' || type === 'tv' || type === 'electricity';
+}
+
+export function isInFlightPurchaseStatus(status?: string): boolean {
+  const normalized = (status || '').toLowerCase();
+  return normalized === 'pending' || normalized === 'completed';
+}
+
+export async function lookupUtilityPurchase(options: {
+  requestId?: string;
+  transactionId?: number | string;
+  productType?: UtilityProductType;
+}): Promise<WalletTransactionLookup | null> {
+  const headers = await authHeaders();
+
+  if (options.transactionId != null && String(options.transactionId).trim()) {
+    const response = await fetch(
+      `${API_URL}/api/v1/wallet_transactions/${encodeURIComponent(String(options.transactionId))}`,
+      { headers }
+    );
+    if (response.ok) {
+      const data = (await parseJsonResponse(response)) as { transaction?: WalletTransactionLookup } | null;
+      if (data?.transaction) return data.transaction;
+    }
+  }
+
+  if (options.requestId?.trim()) {
+    const response = await fetch(
+      `${API_URL}/api/v1/wallet_transactions?request_id=${encodeURIComponent(options.requestId.trim())}&limit=5`,
+      { headers }
+    );
+    if (response.ok) {
+      const data = (await parseJsonResponse(response)) as { transactions?: WalletTransactionLookup[] } | null;
+      const match = data?.transactions?.[0];
+      if (match) return match;
+    }
+  }
+
+  const response = await fetch(`${API_URL}/api/v1/wallet_transactions?flow=debit&limit=10`, { headers });
+  if (!response.ok) return null;
+  const data = (await parseJsonResponse(response)) as { transactions?: WalletTransactionLookup[] } | null;
+  return data?.transactions?.find((transaction) => isRecentUtilityDebit(transaction, options.productType)) ?? null;
+}
+
+export async function recoverUtilityPurchase(options: {
+  requestId?: string;
+  transactionId?: number | string;
+  productType?: UtilityProductType;
+}): Promise<WalletTransactionLookup | null> {
+  try {
+    const found = await lookupUtilityPurchase(options);
+    if (found) return found;
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+    return await lookupUtilityPurchase(options);
+  } catch {
+    return null;
+  }
+}
+
 export async function buyAirtime(payload: {
   network: string;
   phone_number: string;
   amount: number;
   transaction_pin?: string;
 }): Promise<PurchaseResult> {
-  const response = await fetch(`${API_URL}/api/v1/wallet/buy_airtime`, {
-    method: 'POST',
-    headers: await authHeaders(),
-    body: JSON.stringify({ ...payload, option: 'other' }),
-  });
-  const data = await parseJsonResponse(response);
-  if (!response.ok) {
-    throw new Error(parseUtilityApiError(data, 'Airtime purchase failed. Your wallet has been refunded.'));
-  }
-  return data as PurchaseResult;
+  return postPurchase(
+    `${API_URL}/api/v1/wallet/buy_airtime`,
+    { ...payload, option: 'other' },
+    'Airtime purchase failed.'
+  );
 }
 
 export async function buyData(payload: {
@@ -268,16 +408,7 @@ export async function buyData(payload: {
   amount: number;
   transaction_pin?: string;
 }): Promise<PurchaseResult> {
-  const response = await fetch(`${API_URL}/api/v1/wallet/buy_data`, {
-    method: 'POST',
-    headers: await authHeaders(),
-    body: JSON.stringify(payload),
-  });
-  const data = await parseJsonResponse(response);
-  if (!response.ok) {
-    throw new Error(parseUtilityApiError(data, 'Data purchase failed. Your wallet has been refunded.'));
-  }
-  return data as PurchaseResult;
+  return postPurchase(`${API_URL}/api/v1/wallet/buy_data`, payload, 'Data purchase failed.');
 }
 
 export async function buyTv(payload: {
@@ -290,16 +421,7 @@ export async function buyTv(payload: {
   phone_number?: string;
   transaction_pin?: string;
 }): Promise<PurchaseResult> {
-  const response = await fetch(`${API_URL}/api/v1/wallet/buy_tv`, {
-    method: 'POST',
-    headers: await authHeaders(),
-    body: JSON.stringify(payload),
-  });
-  const data = await parseJsonResponse(response);
-  if (!response.ok) {
-    throw new Error(parseUtilityApiError(data, 'TV subscription failed. Your wallet has been refunded.'));
-  }
-  return data as PurchaseResult;
+  return postPurchase(`${API_URL}/api/v1/wallet/buy_tv`, payload, 'TV subscription failed.');
 }
 
 export async function buyElectricity(payload: {
@@ -311,16 +433,7 @@ export async function buyElectricity(payload: {
   customer_name?: string;
   transaction_pin?: string;
 }): Promise<PurchaseResult> {
-  const response = await fetch(`${API_URL}/api/v1/wallet/buy_electricity`, {
-    method: 'POST',
-    headers: await authHeaders(),
-    body: JSON.stringify(payload),
-  });
-  const data = await parseJsonResponse(response);
-  if (!response.ok) {
-    throw new Error(parseUtilityApiError(data, 'Electricity payment failed. Your wallet has been refunded.'));
-  }
-  return data as PurchaseResult;
+  return postPurchase(`${API_URL}/api/v1/wallet/buy_electricity`, payload, 'Electricity payment failed.');
 }
 
 function defaultNetworks(): UtilityNetwork[] {
