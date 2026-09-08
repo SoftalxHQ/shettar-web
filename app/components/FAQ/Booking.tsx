@@ -13,8 +13,8 @@ const Booking = () => {
           <h6 className="fw-normal">How do I book a hotel on Shettar?</h6>
           <p className="mb-0 text-secondary">
             Search for a city or hotel, choose your check-in and check-out dates, then pick the room type that suits you.
-            Review the price, confirm your details and pay with your Shettar Wallet or card. Your booking is confirmed
-            instantly and you&apos;ll see it under Bookings in your account.
+            Review the price, confirm your details and pay with your Shettar Wallet or card. Payment confirms the stay
+            instantly — you&apos;ll see it under Bookings in your account.
           </p>
         </div>
         <div className="mt-4">

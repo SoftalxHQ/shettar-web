@@ -12,8 +12,16 @@ const Payment = () => {
         <div className="mt-4">
           <h6 className="fw-normal">What payment methods can I use?</h6>
           <p className="mb-0 text-secondary">
-            You can pay with your Shettar Wallet or a debit/credit card. Card payments are processed securely through Paystack.
-            Many hotels also accept cash or POS on arrival if you prefer to pay at the property.
+            You can pay with your Shettar Wallet or a debit/credit card. Card payments are processed securely through
+            Paystack. Payment is taken when you book so the hotel can hold your room. There is no pay-on-arrival option
+            for online bookings.
+          </p>
+        </div>
+        <div className="mt-4">
+          <h6 className="fw-normal">Can I pay when I arrive at the hotel?</h6>
+          <p className="mb-0 text-secondary">
+            No. Shettar bookings are prepaid. That keeps the room reserved for you and protects the hotel if a guest does
+            not show up. If your plans change, cancel in the app — eligible refunds go to your Shettar Wallet.
           </p>
         </div>
         <div className="mt-4">
