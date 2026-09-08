@@ -203,7 +203,7 @@ const UtilityReceiptCard = forwardRef<HTMLDivElement, UtilityReceiptCardProps>(
                 {receipt.promoCode && formattedPromoDiscount ? (
                   <SummaryRow label={`Promo (${receipt.promoCode})`} value={`−${formattedPromoDiscount}`} accent />
                 ) : null}
-                {formattedFee ? <SummaryRow label="Processing fee" value={formattedFee} /> : null}
+                {formattedFee ? <SummaryRow label="Paystack fee" value={`−${formattedFee}`} accent /> : null}
                 {!isOrder && formattedGross ? <SummaryRow label="Amount Paid" value={formattedGross} /> : null}
                 {receipt.plan ? <SummaryRow label={isTv ? 'Bouquet' : 'Plan'} value={receipt.plan} /> : null}
                 {isElectricity && meterOrSmartcard ? (

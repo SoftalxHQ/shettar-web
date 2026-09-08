@@ -256,6 +256,11 @@ const Transactions = () => {
                   const promo = getPromoBreakdown(txn);
                   const showReceipt = isReceiptTransaction(txn);
                   const receipt = showReceipt ? mapTransactionToReceipt(txn) : null;
+                  const paystackFee = Number(txn.metadata?.paystack_fee);
+                  const showPaystackFee =
+                    txn.transaction_type.toLowerCase() === 'income' &&
+                    Number.isFinite(paystackFee) &&
+                    paystackFee > 0;
                   return (
                     <tr key={txn.id}>
                       <td className="px-4">
@@ -296,7 +301,12 @@ const Transactions = () => {
                         })}
                       </td>
                       <td className={`fw-bold text-end ${getAmountStyle(txn.transaction_type)}`}>
-                        {formatAmount(txn)}
+                        <div>{formatAmount(txn)}</div>
+                        {showPaystackFee && (
+                          <div className="small fw-normal text-danger mt-1">
+                            −{currency}{paystackFee.toLocaleString('en-NG')} Fee
+                          </div>
+                        )}
                       </td>
                       <td className="text-center px-4">
                         <Badge

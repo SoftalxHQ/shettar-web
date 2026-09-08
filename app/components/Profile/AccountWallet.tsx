@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Card, CardBody, Col, Row, Button, Modal, Form, InputGroup } from 'react-bootstrap';
+import { Card, CardBody, Col, Row, Button, Modal, Form, InputGroup, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { BsWallet2, BsBank, BsCopy, BsPlusCircle, BsLightningCharge, BsArrowClockwise } from 'react-icons/bs';
 import { currency } from '@/app/states';
 import Link from 'next/link';
@@ -314,6 +314,9 @@ const AccountWallet = () => {
                         <BsCopy size={16} />
                       </Button>
                     </div>
+                    <p className="mb-0 mt-2 text-danger fw-semibold" style={{ fontSize: '0.65rem', lineHeight: 1.3 }}>
+                      1% Paystack fee on transfers (max ₦300)
+                    </p>
                   </div>
 
                   <div className="row g-2">
@@ -323,7 +326,12 @@ const AccountWallet = () => {
                     </Col>
                     <Col xs={6}>
                       <p className="small mb-1 text-secondary">Account Holder</p>
-                      <h6 className="text-truncate mb-0">{dvaDetails.account_name}</h6>
+                      <OverlayTrigger
+                        placement="top"
+                        overlay={<Tooltip id="dva-account-holder">{dvaDetails.account_name}</Tooltip>}
+                      >
+                        <h6 className="text-truncate mb-0" style={{ cursor: 'default' }}>{dvaDetails.account_name}</h6>
+                      </OverlayTrigger>
                     </Col>
                   </div>
                 </>
@@ -361,30 +369,32 @@ const AccountWallet = () => {
                 <button
                   type="button"
                   onClick={() => setPaymentMethod('dva')}
-                  className={`flex-grow-1 p-3 rounded border text-start ${paymentMethod === 'dva' ? 'border-primary bg-primary bg-opacity-10' : 'border-secondary-subtle'}`}
-                  style={{ cursor: 'pointer', background: paymentMethod === 'dva' ? undefined : 'white' }}
+                  className={`flex-grow-1 p-3 rounded border text-start ${paymentMethod === 'dva' ? 'border-primary bg-primary bg-opacity-10' : 'border-secondary-subtle bg-mode'}`}
+                  style={{ cursor: 'pointer' }}
                 >
                   <div className="d-flex align-items-center gap-2">
-                    <BsBank size={18} className={paymentMethod === 'dva' ? 'text-primary' : 'text-muted'} />
+                    <BsBank size={18} className={paymentMethod === 'dva' ? 'text-primary' : 'text-secondary'} />
                     <div>
-                      <div className="small fw-bold">Bank Transfer (DVA)</div>
-                      <div className="text-muted" style={{ fontSize: '0.7rem' }}>1% fee (max ₦300) — Recommended</div>
+                      <div className="small fw-bold text-body">Bank Transfer (DVA)</div>
+                      <div className="text-secondary" style={{ fontSize: '0.7rem' }}>1% fee (max ₦300) — Recommended</div>
                     </div>
-                    {paymentMethod === 'dva' && <span className="ms-auto badge bg-primary" style={{ fontSize: '0.65rem' }}>✓</span>}
-                    <span className="ms-auto badge bg-success" style={{ fontSize: '0.65rem' }}>Recommended</span>
+                    <span className="ms-auto d-flex align-items-center gap-1">
+                      <span className="badge bg-success" style={{ fontSize: '0.65rem' }}>Recommended</span>
+                      {paymentMethod === 'dva' && <span className="badge bg-primary" style={{ fontSize: '0.65rem' }}>✓</span>}
+                    </span>
                   </div>
                 </button>
                 <button
                   type="button"
                   onClick={() => setPaymentMethod('card')}
-                  className={`flex-grow-1 p-3 rounded border text-start ${paymentMethod === 'card' ? 'border-primary bg-primary bg-opacity-10' : 'border-secondary-subtle'}`}
-                  style={{ cursor: 'pointer', background: paymentMethod === 'card' ? undefined : 'white' }}
+                  className={`flex-grow-1 p-3 rounded border text-start ${paymentMethod === 'card' ? 'border-primary bg-primary bg-opacity-10' : 'border-secondary-subtle bg-mode'}`}
+                  style={{ cursor: 'pointer' }}
                 >
                   <div className="d-flex align-items-center gap-2">
-                    <BsPlusCircle size={18} className={paymentMethod === 'card' ? 'text-primary' : 'text-muted'} />
+                    <BsPlusCircle size={18} className={paymentMethod === 'card' ? 'text-primary' : 'text-secondary'} />
                     <div>
-                      <div className="small fw-bold">Card</div>
-                      <div className="text-muted" style={{ fontSize: '0.7rem' }}>1.5% + ₦100 fee</div>
+                      <div className="small fw-bold text-body">Card</div>
+                      <div className="text-secondary" style={{ fontSize: '0.7rem' }}>1.5% + ₦100 fee</div>
                     </div>
                     {paymentMethod === 'card' && <span className="ms-auto badge bg-primary" style={{ fontSize: '0.65rem' }}>✓</span>}
                   </div>
@@ -395,10 +405,11 @@ const AccountWallet = () => {
             <Form.Group className="mb-3">
               <Form.Label className="small fw-bold">Amount to Fund</Form.Label>
               <InputGroup size="lg">
-                <InputGroup.Text className="bg-light">{currency}</InputGroup.Text>
+                <InputGroup.Text className="bg-mode">{currency}</InputGroup.Text>
                 <Form.Control
                   type="number"
                   placeholder="0.00"
+                  className="bg-mode"
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
                   min="100"
@@ -406,7 +417,7 @@ const AccountWallet = () => {
                   disabled={isProcessing}
                 />
               </InputGroup>
-              <Form.Text className="text-muted">Minimum funding amount is {currency}100.00</Form.Text>
+              <Form.Text className="text-secondary">Minimum funding amount is {currency}100.00</Form.Text>
             </Form.Group>
 
             <div className="d-flex gap-2 mt-3 mb-3">
@@ -427,17 +438,17 @@ const AccountWallet = () => {
             {/* Fee breakdown for card */}
             {paymentMethod === 'card' && feeBreakdown && Number(amount) >= 100 && (
               <div className="p-3 rounded border border-warning-subtle bg-warning bg-opacity-10 mt-3">
-                <p className="small fw-bold mb-2 text-warning-emphasis">Transaction Breakdown</p>
+                <p className="small fw-bold mb-2 text-body">Transaction Breakdown</p>
                 <div className="d-flex justify-content-between small mb-1">
-                  <span className="text-muted">Wallet credit</span>
-                  <span className="fw-semibold">{currency}{feeBreakdown.target_amount.toLocaleString('en-NG', { minimumFractionDigits: 2 })}</span>
+                  <span className="text-secondary">Wallet credit</span>
+                  <span className="fw-semibold text-body">{currency}{feeBreakdown.target_amount.toLocaleString('en-NG', { minimumFractionDigits: 2 })}</span>
                 </div>
                 <div className="d-flex justify-content-between small mb-1">
-                  <span className="text-muted">Paystack processing fee</span>
+                  <span className="text-secondary">Paystack processing fee</span>
                   <span className="fw-semibold text-danger">+{currency}{feeBreakdown.paystack_fee.toLocaleString('en-NG', { minimumFractionDigits: 2 })}</span>
                 </div>
                 <div className="d-flex justify-content-between small border-top pt-2 mt-1">
-                  <span className="fw-bold">You will be charged</span>
+                  <span className="fw-bold text-body">You will be charged</span>
                   <span className="fw-bold text-primary">{currency}{feeBreakdown.charge_amount.toLocaleString('en-NG', { minimumFractionDigits: 2 })}</span>
                 </div>
               </div>
@@ -459,12 +470,15 @@ const AccountWallet = () => {
             {/* DVA info */}
             {paymentMethod === 'dva' && dvaDetails && (
               <div className="p-3 rounded border border-success-subtle bg-success bg-opacity-10 mt-3">
-                <p className="small fw-bold mb-2 text-success-emphasis">Transfer to your virtual account</p>
+                <p className="small fw-bold mb-2 text-body">Transfer to your virtual account</p>
                 <div className="d-flex justify-content-between align-items-center">
                   <div>
-                    <p className="small text-muted mb-0">Account Number</p>
-                    <p className="fw-bold mb-0 font-monospace">{dvaDetails.account_number}</p>
-                    <p className="small text-muted mb-0">{dvaDetails.bank_name} — {dvaDetails.account_name}</p>
+                    <p className="small text-secondary mb-0">Account Number</p>
+                    <p className="fw-bold mb-0 font-monospace text-body">{dvaDetails.account_number}</p>
+                    <p className="small text-secondary mb-0">{dvaDetails.bank_name} — {dvaDetails.account_name}</p>
+                    <p className="mb-0 mt-1 text-danger fw-semibold" style={{ fontSize: '0.65rem', lineHeight: 1.3 }}>
+                      1% Paystack fee on transfers (max ₦300)
+                    </p>
                   </div>
                   <Button variant="link" className="p-0 text-success" onClick={() => copyToClipboard(dvaDetails.account_number)}>
                     <BsCopy size={16} />
@@ -473,25 +487,25 @@ const AccountWallet = () => {
                 {feeBreakdown && Number(amount) >= 100 && (
                   <div className="mt-2 pt-2 border-top border-success-subtle">
                     <div className="d-flex justify-content-between small mb-1">
-                      <span className="text-muted">Wallet credit</span>
-                      <span className="fw-semibold">{currency}{feeBreakdown.target_amount.toLocaleString('en-NG', { minimumFractionDigits: 2 })}</span>
+                      <span className="text-secondary">Wallet credit</span>
+                      <span className="fw-semibold text-body">{currency}{feeBreakdown.target_amount.toLocaleString('en-NG', { minimumFractionDigits: 2 })}</span>
                     </div>
                     <div className="d-flex justify-content-between small mb-1">
-                      <span className="text-muted">Paystack DVA fee (1%, max ₦300)</span>
+                      <span className="text-secondary">Paystack DVA fee (1%, max ₦300)</span>
                       <span className="fw-semibold text-danger">+{currency}{feeBreakdown.paystack_fee.toLocaleString('en-NG', { minimumFractionDigits: 2 })}</span>
                     </div>
                     <div className="d-flex justify-content-between small fw-bold">
-                      <span>Transfer exactly</span>
+                      <span className="text-body">Transfer exactly</span>
                       <span className="text-success">{currency}{feeBreakdown.charge_amount.toLocaleString('en-NG', { minimumFractionDigits: 2 })}</span>
                     </div>
                   </div>
                 )}
-                {!feeBreakdown && <p className="small text-muted mt-2 mb-0">Enter an amount above to see the exact transfer amount.</p>}
+                {!feeBreakdown && <p className="small text-secondary mt-2 mb-0">Enter an amount above to see the exact transfer amount.</p>}
               </div>
             )}
           </Modal.Body>
           <Modal.Footer className="border-0 p-4 pt-0">
-            <Button variant="white" onClick={() => { setShowTopUp(false); setAmount(''); setFeeBreakdown(null); }} disabled={isProcessing}>
+            <Button variant="light" onClick={() => { setShowTopUp(false); setAmount(''); setFeeBreakdown(null); }} disabled={isProcessing}>
               Cancel
             </Button>
             {paymentMethod === 'dva' ? (
