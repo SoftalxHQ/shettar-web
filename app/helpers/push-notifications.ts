@@ -3,7 +3,7 @@
 import { initializeApp, getApps } from 'firebase/app';
 import { getMessaging, getToken, isSupported, onMessage, type Messaging } from 'firebase/messaging';
 import { getApiBaseUrl } from '@/app/helpers/businesses';
-import { getStoredToken } from '@/app/helpers/auth';
+import { authorizationHeaders, getStoredToken, hasAuthSession, isUsableJwt } from '@/app/helpers/auth';
 import { getOrCreateGuestId } from '@/app/helpers/guest-id';
 
 const firebaseConfig = {
@@ -158,14 +158,12 @@ async function submitWebPushRegistration(
 ): Promise<{ ok: boolean; message?: string }> {
   const guestId = options.guestId ?? getOrCreateGuestId();
   const authToken = resolveAuthToken(options.authToken);
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-  if (authToken) {
-    headers.Authorization = `Bearer ${authToken}`;
-  }
+  const headers: Record<string, string> = { 'Content-Type': 'application/json', ...authorizationHeaders(authToken) };
 
   try {
     const response = await fetch(`${getApiBaseUrl()}/api/v1/push_devices`, {
       method: 'POST',
+      credentials: 'include',
       headers,
       body: JSON.stringify({ token: fcmToken, platform: 'web', guest_id: guestId }),
     });
@@ -220,18 +218,16 @@ export async function unregisterWebPushDevice(options: {
 
   const guestId = options.guestId ?? getOrCreateGuestId();
   const authToken = resolveAuthToken(options.authToken);
-  const headers: Record<string, string> = {};
-  if (authToken) {
-    headers.Authorization = `Bearer ${authToken}`;
-  }
+  const headers: Record<string, string> = { ...authorizationHeaders(authToken) };
 
   const url = new URL(`${getApiBaseUrl()}/api/v1/push_devices/${encodeURIComponent(token)}`);
-  if (!authToken && guestId) {
+  if (!isUsableJwt(authToken) && !hasAuthSession() && guestId) {
     url.searchParams.set('guest_id', guestId);
   }
 
   await fetch(url.toString(), {
     method: 'DELETE',
+    credentials: 'include',
     headers,
   }).catch(() => {});
 }

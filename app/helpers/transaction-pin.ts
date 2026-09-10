@@ -1,5 +1,5 @@
 import { getApiBaseUrl } from '@/app/helpers/businesses';
-import { getStoredToken } from '@/app/helpers/auth';
+import { authorizationHeaders, getStoredToken } from '@/app/helpers/auth';
 
 export type TransactionPinErrorCode =
   | 'pin_required'
@@ -16,7 +16,7 @@ export type TransactionPinErrorCode =
 
 function authHeaders(token: string) {
   return {
-    Authorization: `Bearer ${token}`,
+    ...authorizationHeaders(token),
     Accept: 'application/json',
     'Content-Type': 'application/json',
   };
@@ -27,7 +27,8 @@ export async function isTransactionPinSet(): Promise<boolean> {
   if (!token) return false;
 
   const response = await fetch(`${getApiBaseUrl()}/account_details`, {
-    headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+    credentials: 'include',
+    headers: { ...authorizationHeaders(token), Accept: 'application/json' },
   });
   if (!response.ok) return false;
 
@@ -45,6 +46,7 @@ export async function setTransactionPin(payload: {
 
   const response = await fetch(`${getApiBaseUrl()}/api/v1/accounts/transaction_pin`, {
     method: 'POST',
+    credentials: 'include',
     headers: authHeaders(token),
     body: JSON.stringify(payload),
   });
@@ -67,6 +69,7 @@ export async function changeTransactionPin(payload: {
 
   const response = await fetch(`${getApiBaseUrl()}/api/v1/accounts/transaction_pin`, {
     method: 'PUT',
+    credentials: 'include',
     headers: authHeaders(token),
     body: JSON.stringify(payload),
   });
@@ -90,6 +93,7 @@ export async function requestTransactionPinReset(): Promise<{
 
   const response = await fetch(`${getApiBaseUrl()}/api/v1/accounts/transaction_pin/reset/request`, {
     method: 'POST',
+    credentials: 'include',
     headers: authHeaders(token),
   });
 
@@ -115,6 +119,7 @@ export async function confirmTransactionPinReset(payload: {
 
   const response = await fetch(`${getApiBaseUrl()}/api/v1/accounts/transaction_pin/reset/confirm`, {
     method: 'POST',
+    credentials: 'include',
     headers: authHeaders(token),
     body: JSON.stringify(payload),
   });

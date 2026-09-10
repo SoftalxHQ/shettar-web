@@ -4,14 +4,14 @@ import { type ReactNode, useEffect, useCallback } from 'react';
 import { useAppDispatch, useAppSelector } from '@/lib/store/hooks';
 import { setTheme, setDir } from '@/lib/store/slices/themeSlice';
 import { updateHotelStats as updateHotelStatsAction } from '@/lib/store/slices/hotelStatsSlice';
-import { clearCredentials, setCredentials } from '@/lib/store/slices/authSlice';
+import { clearCredentials, setCredentials, setUser } from '@/lib/store/slices/authSlice';
 import {
   apiService,
   useSignOutMutation,
   useGetAccountDetailsQuery,
 } from '@/lib/store/services/apiService';
 import { useRouter, usePathname } from 'next/navigation';
-import { getStoredUser, getStoredToken, signOut, wipeAllClientAuthStorage } from '@/app/helpers/auth';
+import { getStoredUser, getStoredToken, getSessionJwt, isUsableJwt, signOut, wipeAllClientAuthStorage } from '@/app/helpers/auth';
 
 export type LayoutState = {
   theme: 'light' | 'dark' | 'auto';
@@ -43,30 +43,40 @@ export function useLayoutContext(): LayoutType {
   const dir = useAppSelector((s) => s.theme.dir);
   const isAuthenticated = useAppSelector((s) => s.auth.isAuthenticated);
   const authUser = useAppSelector((s) => s.auth.user);
+  const authToken = useAppSelector((s) => s.auth.token);
   const isAccountLoading = useAppSelector((s) => s.auth.isAccountLoading);
   const hotelCount = useAppSelector((s) => s.hotelStats.hotelCount);
   const hotelLocation = useAppSelector((s) => s.hotelStats.hotelLocation);
 
   // Use the full profile from RTK Query cache — it has all fields (email_verified,
   // avatar_url, emer_*, etc.) that the slim StoredUser in auth slice lacks.
+  const canAuthorizeAccount =
+    isUsableJwt(authToken) || (typeof window !== 'undefined' && isUsableJwt(getSessionJwt()));
+
   const { data: fullProfile, isLoading: profileLoading } = useGetAccountDetailsQuery(undefined, {
-    // Avoid account_details while on auth pages — stale persisted JWT + 401 + redirect was reloading /auth/sign-in in a loop.
-    skip: !isAuthenticated || onAuthRoute,
+    // Wait for a real JWT. Persist blacklists `token`, so a rehydrated session
+    // is authenticated with token=null until sessionStorage is restored.
+    skip: !isAuthenticated || onAuthRoute || !canAuthorizeAccount,
   });
 
   // Merge: prefer full profile when available, fall back to auth slice user
   const account = fullProfile ?? authUser;
 
-  // Sync legacy session on mount if Redux is empty but localStorage has data
+  // Restore tab JWT after persist rehydrate (token is blacklisted) or on first load.
   useEffect(() => {
+    const user = getStoredUser() ?? authUser;
+    const storedJwt = getSessionJwt();
+    if (user && isUsableJwt(storedJwt) && storedJwt !== authToken) {
+      dispatch(setCredentials({ user, token: storedJwt }));
+      return;
+    }
     if (!isAuthenticated) {
-      const user = getStoredUser();
       const token = getStoredToken();
       if (user && token) {
         dispatch(setCredentials({ user, token }));
       }
     }
-  }, [isAuthenticated, dispatch]);
+  }, [isAuthenticated, authToken, authUser, dispatch]);
 
   // Stable callbacks — dispatch is stable, so these never change reference
   const updateTheme = useCallback(
@@ -87,11 +97,14 @@ export function useLayoutContext(): LayoutType {
 
   const refreshAuth = useCallback(() => {
     const user = getStoredUser();
+    if (!user) return;
     const token = getStoredToken();
-    if (user && token) {
-      dispatch(setCredentials({ user, token }));
+    if (isUsableJwt(authToken) || isUsableJwt(token)) {
+      dispatch(setCredentials({ user, token: (isUsableJwt(authToken) ? authToken : token)! }));
+      return;
     }
-  }, [dispatch]);
+    dispatch(setUser(user));
+  }, [authToken, dispatch]);
 
   const logout = useCallback(async () => {
     await signOut();

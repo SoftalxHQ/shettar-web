@@ -16,7 +16,7 @@ import {
   startRegistration,
 } from '@simplewebauthn/browser';
 import { parseApiError } from '@/app/helpers/review-thread';
-import { saveAuthSession, type AuthResult, type StoredUser } from '@/app/helpers/auth';
+import { authorizationHeaders, saveAuthSession, sessionTokenFromResponse, type AuthResult, type StoredUser } from '@/app/helpers/auth';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000';
 
@@ -53,7 +53,7 @@ type PasskeyResult = {
 function authHeaders(token: string): HeadersInit {
   return {
     'Content-Type': 'application/json',
-    Authorization: `Bearer ${token}`,
+    ...authorizationHeaders(token),
   };
 }
 
@@ -79,6 +79,7 @@ export async function startPasskeySignIn(email?: string): Promise<AuthResult> {
   try {
     const challengeRes = await fetch(`${API_URL}/accounts/passkey_auth/challenge`, {
       method: 'POST',
+      credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(email ? { email } : {}),
     });
@@ -100,6 +101,7 @@ export async function startPasskeySignIn(email?: string): Promise<AuthResult> {
 
     const verifyRes = await fetch(`${API_URL}/accounts/passkey_auth/verify`, {
       method: 'POST',
+      credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ challenge_token, credential }),
     });
@@ -112,12 +114,7 @@ export async function startPasskeySignIn(email?: string): Promise<AuthResult> {
       };
     }
 
-    const authHeader = verifyRes.headers.get('Authorization');
-    const token = authHeader?.replace(/^Bearer\s+/i, '').trim() ?? '';
-    if (!token) {
-      return { ok: false, message: 'Sign-in succeeded but no session token was returned.' };
-    }
-
+    const token = sessionTokenFromResponse(verifyRes, verifyData);
     const user = storedUserFromPayload(verifyData.data ?? {});
     saveAuthSession(user, token);
     return { ok: true, message: 'Signed in with passkey.', user, token };
@@ -134,6 +131,7 @@ export async function registerPasskey(token: string, nickname?: string): Promise
   try {
     const optionsRes = await fetch(`${API_URL}/accounts/passkeys/options`, {
       method: 'POST',
+      credentials: 'include',
       headers: authHeaders(token),
       body: JSON.stringify(nickname ? { nickname } : {}),
     });
@@ -155,6 +153,7 @@ export async function registerPasskey(token: string, nickname?: string): Promise
 
     const createRes = await fetch(`${API_URL}/accounts/passkeys`, {
       method: 'POST',
+      credentials: 'include',
       headers: authHeaders(token),
       body: JSON.stringify({ challenge_token, credential, nickname }),
     });
@@ -182,6 +181,7 @@ export async function registerPasskey(token: string, nickname?: string): Promise
 
 export async function listPasskeys(token: string): Promise<PasskeySummary[]> {
   const res = await fetch(`${API_URL}/accounts/passkeys`, {
+    credentials: 'include',
     headers: authHeaders(token),
   });
   const data = await res.json();
@@ -193,6 +193,7 @@ export async function revokePasskey(token: string, passkeyId: number): Promise<P
   try {
     const res = await fetch(`${API_URL}/accounts/passkeys/${passkeyId}`, {
       method: 'DELETE',
+      credentials: 'include',
       headers: authHeaders(token),
     });
     const data = await res.json();

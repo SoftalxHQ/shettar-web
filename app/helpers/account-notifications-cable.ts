@@ -1,7 +1,4 @@
-import { getStoredToken } from '@/app/helpers/auth';
-import { isCableJwtUsable } from '@/app/helpers/jwt-cable';
-
-const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
+import { getStoredToken, hasAuthSession, isUsableJwt } from '@/app/helpers/auth';
 
 export type AccountNotificationCablePayload = {
   notification_id?: number;
@@ -96,21 +93,27 @@ function teardownSocket() {
   }
 }
 
+function canConnectCable(token?: string | null): boolean {
+  return hasAuthSession() || isUsableJwt(token);
+}
+
 function ensureSocket(tokenOverride?: string | null) {
   const token = tokenOverride ?? getStoredToken();
-  if (!token || !isCableJwtUsable(token)) return;
-  if (rejectedToken === token) return;
+  if (!canConnectCable(token)) return;
+  const sessionKey = isUsableJwt(token) ? token! : (token ?? 'cookie');
+  if (rejectedToken === sessionKey) return;
 
-  if (sharedSocket && socketToken === token) {
+  if (sharedSocket && socketToken === sessionKey) {
     const state = sharedSocket.readyState;
     if (state === WebSocket.OPEN || state === WebSocket.CONNECTING) return;
   }
 
   teardownSocket();
-  socketToken = token;
+  socketToken = sessionKey;
 
-  const wsBase = API_URL.replace(/^http/, 'ws');
-  const ws = new WebSocket(`${wsBase}/cable?token=${encodeURIComponent(token)}`);
+  const api = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
+  const wsUrl = api.replace(/^http/, 'ws') + '/cable';
+  const ws = new WebSocket(wsUrl);
   sharedSocket = ws;
   const identifier = JSON.stringify({ channel: 'AccountNotificationsChannel' });
   let confirmed = false;
@@ -147,7 +150,7 @@ function ensureSocket(tokenOverride?: string | null) {
       rejectedToken = socketToken;
       return;
     }
-    if (subscribers.size > 0 && isCableJwtUsable(getStoredToken() ?? socketToken)) {
+    if (subscribers.size > 0 && canConnectCable(getStoredToken() ?? socketToken)) {
       window.setTimeout(() => {
         if (subscribers.size > 0) ensureSocket();
       }, 3000);

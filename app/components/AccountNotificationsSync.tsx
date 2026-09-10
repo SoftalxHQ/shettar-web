@@ -3,8 +3,7 @@
 import { useEffect } from 'react';
 import { useAppDispatch, useAppSelector } from '@/lib/store/hooks';
 import { addNotification } from '@/lib/store/slices/notificationsSlice';
-import { saveAuthSession, getStoredUser } from '@/app/helpers/auth';
-import { isCableJwtUsable } from '@/app/helpers/jwt-cable';
+import { saveAuthSession, getStoredUser, hasAuthSession, isUsableJwt } from '@/app/helpers/auth';
 import { subscribeAccountNotifications } from '@/app/helpers/account-notifications-cable';
 import { showNotificationToast } from '@/app/helpers/notification-display';
 
@@ -13,12 +12,13 @@ const toastedKeys = new Set<string>();
 export default function AccountNotificationsSync() {
   const dispatch = useAppDispatch();
   const token = useAppSelector((s) => s.auth.token);
+  const isAuthenticated = useAppSelector((s) => s.auth.isAuthenticated);
 
   useEffect(() => {
-    if (!isCableJwtUsable(token)) return;
+    if (!hasAuthSession() && !isUsableJwt(token) && !isAuthenticated) return;
 
     const user = getStoredUser();
-    if (user && token) saveAuthSession(user, token);
+    if (user && isUsableJwt(token)) saveAuthSession(user, token!);
 
     return subscribeAccountNotifications((data) => {
       const notificationId = data.notification_id ?? -Date.now();
@@ -48,8 +48,8 @@ export default function AccountNotificationsSync() {
           id: toastKey,
         });
       }
-    }, token);
-  }, [token, dispatch]);
+    }, isUsableJwt(token) ? token : undefined);
+  }, [token, isAuthenticated, dispatch]);
 
   return null;
 }

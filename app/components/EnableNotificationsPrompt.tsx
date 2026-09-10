@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { BsBell } from 'react-icons/bs';
 import { useAppSelector } from '@/lib/store/hooks';
+import { getStoredToken } from '@/app/helpers/auth';
 import { getOrCreateGuestId } from '@/app/helpers/guest-id';
 import {
   markPushNotificationPromptDismissed,
@@ -42,7 +43,7 @@ export default function EnableNotificationsPrompt({ triggerVisible }: Props) {
     setEnabling(true);
     try {
       const guestId = getOrCreateGuestId();
-      const authToken = isAuthenticated && token ? token : null;
+      const authToken = isAuthenticated ? (token ?? getStoredToken()) : null;
       const result = await requestWebPushPermissionAndRegister({ authToken, guestId });
       setVisible(false);
       if (result.ok) {

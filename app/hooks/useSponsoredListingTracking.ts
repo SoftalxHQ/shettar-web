@@ -1,7 +1,7 @@
 'use client';
 
 import { getApiBaseUrl } from '@/app/helpers/businesses';
-import { getStoredToken } from '@/app/helpers/auth';
+import { authorizationHeaders, getStoredToken } from '@/app/helpers/auth';
 import { getAdTrackingContext, type AdSearchContext } from '@/app/helpers/ad-viewer-context';
 import { getAdDeviceContext } from '@/app/helpers/ad-device-context';
 import { useCallback, useEffect, useRef } from 'react';
@@ -71,9 +71,8 @@ function withSearchContext(event: Record<string, unknown>) {
 async function flushEvents(events: Record<string, unknown>[]) {
   if (!events.length) return null;
 
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   const token = getStoredToken();
-  if (token) headers.Authorization = `Bearer ${token}`;
+  const headers: Record<string, string> = { 'Content-Type': 'application/json', ...authorizationHeaders(token) };
 
   const body = JSON.stringify({
     session_id: getSessionId(),
@@ -83,6 +82,7 @@ async function flushEvents(events: Record<string, unknown>[]) {
 
   const res = await fetch(`${getApiBaseUrl()}/api/v1/ad_events/batch`, {
     method: 'POST',
+    credentials: 'include',
     headers,
     body,
     keepalive: true,

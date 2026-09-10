@@ -50,7 +50,8 @@ function ChangelogContent() {
     async (pageToLoad: number, append: boolean) => {
       const apiBase = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
       const res = await fetch(
-        `${apiBase}/api/v1/desktop_releases?channel=${channel}&limit=${PAGE_SIZE}&page=${pageToLoad}`
+        `${apiBase}/api/v1/desktop_releases?channel=${channel}&limit=${PAGE_SIZE}&page=${pageToLoad}`,
+        { credentials: 'include' }
       );
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));

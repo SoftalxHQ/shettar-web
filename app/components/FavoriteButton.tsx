@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Button, Spinner } from 'react-bootstrap';
 import { FaHeart, FaRegHeart } from 'react-icons/fa';
-import { getStoredToken } from '@/app/helpers/auth';
+import { authorizationHeaders, getStoredToken } from '@/app/helpers/auth';
 import { useApi } from '@/app/hooks/useApi';
 import { toast } from 'react-hot-toast';
 
@@ -38,7 +38,7 @@ const FavoriteButton = ({ businessId, initialIsWishlisted, className }: Favorite
         const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
         const response = await apiFetch(`${API_URL}/api/v1/wishlists/check?business_id=${businessId}`, {
           headers: {
-            'Authorization': `Bearer ${token}`
+            ...authorizationHeaders(token)
           }
         });
         const data = await response.json();
@@ -71,7 +71,7 @@ const FavoriteButton = ({ businessId, initialIsWishlisted, className }: Favorite
         const response = await apiFetch(`${API_URL}/api/v1/wishlists/${businessId}`, {
           method: 'DELETE',
           headers: {
-            'Authorization': `Bearer ${token}`
+            ...authorizationHeaders(token)
           }
         });
         if (response.ok) {
@@ -83,7 +83,7 @@ const FavoriteButton = ({ businessId, initialIsWishlisted, className }: Favorite
         const response = await apiFetch(`${API_URL}/api/v1/wishlists`, {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${token}`,
+            ...authorizationHeaders(token),
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({ business_id: businessId })

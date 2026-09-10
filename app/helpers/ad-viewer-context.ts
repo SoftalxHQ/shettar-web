@@ -1,5 +1,5 @@
 import { getApiBaseUrl } from '@/app/helpers/businesses';
-import { getStoredToken } from '@/app/helpers/auth';
+import { authorizationHeaders, getStoredToken } from '@/app/helpers/auth';
 
 export type AdViewerContextSource = 'search' | 'recent_search' | 'booking_history' | 'device' | 'none';
 
@@ -108,7 +108,8 @@ async function fetchBookingGeo(token: string): Promise<{ city?: string; state?: 
 
   try {
     const res = await fetch(`${getApiBaseUrl()}/api/v1/reservations?filter=past&page=1&limit=10`, {
-      headers: { Authorization: `Bearer ${token}` },
+      credentials: 'include',
+      headers: { ...authorizationHeaders(token) },
     });
     if (!res.ok) return null;
     const data = await res.json();

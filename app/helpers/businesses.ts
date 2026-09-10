@@ -1,6 +1,6 @@
 import { ReadonlyURLSearchParams } from 'next/navigation';
 import { Hotel } from '@/app/types/hotel';
-import { getStoredToken } from '@/app/helpers/auth';
+import { authorizationHeaders } from '@/app/helpers/auth';
 import { withBrowseCredentials } from '@/app/helpers/browse-gate';
 
 export type BusinessListMeta = {
@@ -225,11 +225,10 @@ export async function fetchBusinesses(options: {
     featured: options.featured,
     excludeFeatured: options.excludeFeatured,
   });
-  const token = getStoredToken();
   const response = await fetch(
     `${getApiBaseUrl()}/api/v1/businesses?${qs}`,
     withBrowseCredentials({
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { ...authorizationHeaders() },
     })
   );
   if (!response.ok) {

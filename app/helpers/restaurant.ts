@@ -1,4 +1,4 @@
-import { getStoredToken } from '@/app/helpers/auth';
+import { authorizationHeaders, getStoredToken } from '@/app/helpers/auth';
 
 const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
 
@@ -41,9 +41,8 @@ export function upsertGuestOrder(list: GuestRestaurantOrder[], incoming: GuestRe
 }
 
 function authHeaders() {
-  const token = getStoredToken();
   return {
-    Authorization: token ? `Bearer ${token}` : '',
+    ...authorizationHeaders(getStoredToken()),
     'Content-Type': 'application/json',
   };
 }
@@ -54,6 +53,7 @@ function businessPathKey(businessId: string | number) {
 
 export async function fetchGuestMenu(businessId: string | number) {
   const res = await fetch(`${API_URL}/api/v1/businesses/${businessPathKey(businessId)}/restaurant/menu`, {
+    credentials: 'include',
     headers: authHeaders(),
   });
   const data = await res.json();
@@ -64,7 +64,7 @@ export async function fetchGuestMenu(businessId: string | number) {
 export async function fetchGuestOrders(businessId: string | number, reservationId: number) {
   const res = await fetch(
     `${API_URL}/api/v1/businesses/${businessPathKey(businessId)}/restaurant/orders?reservation_id=${reservationId}`,
-    { headers: authHeaders() }
+    { credentials: 'include', headers: authHeaders() }
   );
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || 'Failed to load orders');
@@ -83,6 +83,7 @@ export async function createGuestOrder(
 ) {
   const res = await fetch(`${API_URL}/api/v1/businesses/${businessPathKey(businessId)}/restaurant/orders`, {
     method: 'POST',
+    credentials: 'include',
     headers: authHeaders(),
     body: JSON.stringify({
       reservation_id: reservationId,

@@ -69,13 +69,63 @@ export interface AuthResult {
 
 // ─── Storage helpers ──────────────────────────────────────────────────────────
 
-export const saveAuthSession = (user: StoredUser, token: string) => {
-  localStorage.setItem('token', token);
-  localStorage.setItem('user', JSON.stringify(user));
+/** Marker stored in Redux only — never send this as a Bearer token. */
+export const COOKIE_SESSION_MARKER = '__shettar_cookie__';
+const SESSION_JWT_KEY = 'shettar_jwt_mem';
 
-  if (typeof window !== 'undefined') {
+export function isUsableJwt(token?: string | null): boolean {
+  return !!token && token !== COOKIE_SESSION_MARKER && token.includes('.');
+}
+
+export function hasAuthSession(): boolean {
+  if (typeof window === 'undefined') return false;
+  try {
+    return Boolean(localStorage.getItem('user') || localStorage.getItem('shettar_session'));
+  } catch {
+    return false;
+  }
+}
+
+export function getSessionJwt(): string | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const stored = sessionStorage.getItem(SESSION_JWT_KEY);
+    return isUsableJwt(stored) ? stored : null;
+  } catch {
+    return null;
+  }
+}
+
+export function authorizationHeaders(token?: string | null): Record<string, string> {
+  const value = token === undefined ? getStoredToken() : token;
+  if (!isUsableJwt(value)) return {};
+  return { Authorization: `Bearer ${value}` };
+}
+
+function jwtFromAuthHeader(res: Response): string {
+  const authHeader = res.headers.get('Authorization');
+  return authHeader?.replace(/^Bearer\s+/i, '').trim() ?? '';
+}
+
+export function sessionTokenFromResponse(res: Response, body?: { token?: string }): string {
+  return jwtFromAuthHeader(res) || body?.token?.trim() || COOKIE_SESSION_MARKER;
+}
+
+export const saveAuthSession = (user: StoredUser, token?: string) => {
+  localStorage.setItem('user', JSON.stringify(user));
+  localStorage.setItem('shettar_session', '1');
+  localStorage.removeItem('token');
+  try {
+    if (isUsableJwt(token)) {
+      sessionStorage.setItem(SESSION_JWT_KEY, token!);
+    }
+  } catch {
+    /* ignore private mode / quota */
+  }
+
+  if (typeof window !== 'undefined' && isUsableJwt(token)) {
     void import('@/app/helpers/push-notifications').then(async ({ syncPushRegistrationAfterAuth }) => {
-      const ok = await syncPushRegistrationAfterAuth(token);
+      const ok = await syncPushRegistrationAfterAuth(token!);
       if (ok) {
         const { clearGuestNotifications } = await import('@/app/helpers/guest-notifications');
         clearGuestNotifications();
@@ -87,6 +137,12 @@ export const saveAuthSession = (user: StoredUser, token: string) => {
 export const clearAuthSession = () => {
   localStorage.removeItem('token');
   localStorage.removeItem('user');
+  localStorage.removeItem('shettar_session');
+  try {
+    sessionStorage.removeItem(SESSION_JWT_KEY);
+  } catch {
+    /* ignore */
+  }
 };
 
 const REDUX_PERSIST_AUTH_KEY = 'persist:auth';
@@ -104,26 +160,23 @@ export function wipeAllClientAuthStorage() {
 
 /**
  * DELETE /accounts/sign_out
- * Revokes the JWT on the server (via Devise-JWT JTI matcher) so the token
- * cannot be reused even before it expires. Always clears local storage,
- * even if the network request fails.
+ * Revokes the session on the server (httpOnly cookie and/or JWT). Always
+ * clears local storage, even if the network request fails.
  */
 export async function signOut(): Promise<void> {
-  const token = getStoredToken();
-  if (token) {
-    try {
-      await fetch(`${API_URL}/accounts/sign_out`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      // We intentionally ignore the response status — even if the server
-      // returns an error we still want to clear the local session.
-    } catch {
-      // Network failure — local session will still be cleared below.
-    }
+  try {
+    await fetch(`${API_URL}/accounts/sign_out`, {
+      method: 'DELETE',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+        ...authorizationHeaders(),
+      },
+    });
+    // We intentionally ignore the response status — even if the server
+    // returns an error we still want to clear the local session.
+  } catch {
+    // Network failure — local session will still be cleared below.
   }
   wipeAllClientAuthStorage();
 }
@@ -137,15 +190,27 @@ export const getStoredUser = (): StoredUser | null => {
   }
 };
 
+/** Tab-scoped JWT (sessionStorage) if present; otherwise a cookie-session marker. Never localStorage. */
 export const getStoredToken = (): string | null => {
-  return localStorage.getItem('token');
+  if (typeof window === 'undefined') return null;
+  try {
+    localStorage.removeItem('token');
+    const sessionJwt = getSessionJwt();
+    if (sessionJwt) return sessionJwt;
+    if (localStorage.getItem('user') || localStorage.getItem('shettar_session')) {
+      return COOKIE_SESSION_MARKER;
+    }
+    return null;
+  } catch {
+    return null;
+  }
 };
 
 // ─── API calls ────────────────────────────────────────────────────────────────
 
 /**
  * POST /accounts/sign_in
- * Authenticates an Account (consumer/guest) and stores the JWT + user in localStorage.
+ * Authenticates an Account (consumer/guest). Cookie session is set by the API; user is stored locally.
  */
 export async function signIn(payload: SignInPayload): Promise<AuthResult> {
   try {
@@ -165,12 +230,7 @@ export async function signIn(payload: SignInPayload): Promise<AuthResult> {
     const data = await res.json();
 
     if (res.ok && data?.status?.code === 200) {
-      const authHeader = res.headers.get('Authorization');
-      const token = authHeader?.replace(/^Bearer\s+/i, '').trim() ?? '';
-      if (!token) {
-        return { ok: false, message: 'Sign-in succeeded but no session token was returned.' };
-      }
-
+      const token = sessionTokenFromResponse(res, data);
       const raw = data.data;
       const user: StoredUser = {
         id: raw.id,
@@ -236,9 +296,7 @@ export async function signUp(payload: SignUpPayload): Promise<AuthResult> {
     const data = await res.json();
 
     if (res.ok && data?.status?.code === 200) {
-      const authHeader = res.headers.get('Authorization');
-      const token = authHeader?.replace('Bearer ', '') ?? '';
-
+      const token = sessionTokenFromResponse(res, data);
       const raw = data.status.data;
       const user: StoredUser = {
         id: raw.id,
@@ -257,7 +315,7 @@ export async function signUp(payload: SignUpPayload): Promise<AuthResult> {
         avatar_url: raw.avatar_url ?? null,
       };
 
-      if (token && user.id) {
+      if (user.id) {
         saveAuthSession(user, token);
       }
       return { ok: true, message: data.status.message ?? 'Account created successfully.', user, token };
@@ -320,6 +378,7 @@ export async function resetPassword(
   try {
     const res = await fetch(`${API_URL}/accounts/update_password`, {
       method: 'PUT',
+      credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         account: {
@@ -353,6 +412,7 @@ export async function verifyEmail(email: string, code: string): Promise<AuthResu
   try {
     const res = await fetch(`${API_URL}/accounts/verify_email`, {
       method: 'POST',
+      credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ account: { email, code } }),
     });
@@ -380,6 +440,7 @@ export async function resendVerification(email: string): Promise<AuthResult> {
   try {
     const res = await fetch(`${API_URL}/accounts/resend_verification`, {
       method: 'POST',
+      credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ account: { email } }),
     });
@@ -408,9 +469,10 @@ export async function verifyPhone(code: string): Promise<AuthResult> {
   try {
     const res = await fetch(`${API_URL}/accounts/verify_phone`, {
       method: 'POST',
+      credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
-        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        ...authorizationHeaders(token),
       },
       body: JSON.stringify({ account: { code } }),
     });
@@ -439,9 +501,10 @@ export async function resendPhoneVerification(): Promise<AuthResult> {
   try {
     const res = await fetch(`${API_URL}/accounts/resend_phone_verification`, {
       method: 'POST',
+      credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
-        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        ...authorizationHeaders(token),
       },
     });
 

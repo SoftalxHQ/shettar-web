@@ -13,7 +13,7 @@ import { FaStarHalfAlt } from 'react-icons/fa';
 import * as yup from 'yup';
 import Link from 'next/link';
 import { useLayoutContext } from '@/app/states';
-import { getStoredToken } from '@/app/helpers/auth';
+import { authorizationHeaders, getStoredToken } from '@/app/helpers/auth';
 import toast from 'react-hot-toast';
 import Image from 'next/image';
 import { normalizeApiMediaUrl } from '@/app/helpers/businesses';
@@ -123,13 +123,10 @@ const CustomerReview = ({ reviews, averageRating, ratingDistribution, businessId
   const businessReviewVoteUrl = (reviewId: number) =>
     `${API_URL}/api/v1/businesses/${businessId}/reviews/${reviewId}/vote`;
 
-  const authHeaders = () => {
-    const token = getStoredToken();
-    return {
-      'Content-Type': 'application/json',
-      Authorization: token ? `Bearer ${token}` : '',
-    };
-  };
+  const authHeaders = () => ({
+    'Content-Type': 'application/json',
+    ...authorizationHeaders(getStoredToken()),
+  });
 
   const mergeComment = (reviewId: number, comment: ReviewComment, mode: 'add' | 'update' | 'remove') => {
     setLocalReviews((prev) =>
@@ -146,6 +143,7 @@ const CustomerReview = ({ reviews, averageRating, ratingDistribution, businessId
   const handleReply = async (reviewId: number, body: string, parentId?: number | null) => {
     const res = await fetch(businessCommentUrl(reviewId), {
       method: 'POST',
+      credentials: 'include',
       headers: authHeaders(),
       body: JSON.stringify({ body, ...(parentId ? { parent_id: parentId } : {}) }),
     });
@@ -158,6 +156,7 @@ const CustomerReview = ({ reviews, averageRating, ratingDistribution, businessId
   const handleUpdateComment = async (reviewId: number, commentId: number, body: string) => {
     const res = await fetch(businessCommentUrl(reviewId, commentId), {
       method: 'PATCH',
+      credentials: 'include',
       headers: authHeaders(),
       body: JSON.stringify({ body }),
     });
@@ -170,6 +169,7 @@ const CustomerReview = ({ reviews, averageRating, ratingDistribution, businessId
   const handleDeleteComment = async (reviewId: number, commentId: number) => {
     const res = await fetch(businessCommentUrl(reviewId, commentId), {
       method: 'DELETE',
+      credentials: 'include',
       headers: authHeaders(),
     });
     const data = await res.json().catch(() => ({}));
@@ -181,6 +181,7 @@ const CustomerReview = ({ reviews, averageRating, ratingDistribution, businessId
   const handleVoteComment = async (reviewId: number, commentId: number, value: 1 | -1) => {
     const res = await fetch(`${businessCommentUrl(reviewId, commentId)}/vote`, {
       method: 'POST',
+      credentials: 'include',
       headers: authHeaders(),
       body: JSON.stringify({ value }),
     });
@@ -194,6 +195,7 @@ const CustomerReview = ({ reviews, averageRating, ratingDistribution, businessId
     try {
       const res = await fetch(businessReviewVoteUrl(reviewId), {
         method: 'POST',
+        credentials: 'include',
         headers: authHeaders(),
         body: JSON.stringify({ value }),
       });
@@ -250,6 +252,7 @@ const CustomerReview = ({ reviews, averageRating, ratingDistribution, businessId
     try {
       const res = await fetch(`${API_URL}/api/v1/reviews`, {
         method: 'POST',
+        credentials: 'include',
         headers: authHeaders(),
         body: JSON.stringify({
           review: {

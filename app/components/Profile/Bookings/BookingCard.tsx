@@ -5,7 +5,7 @@ import { Button, Card, CardBody, CardHeader, Col, Row, Badge, Modal, Form, Spinn
 import { currency } from '@/app/states';
 import { BsBuilding, BsCalendar2Check, BsGeoAlt, BsInfoCircle, BsXCircle } from 'react-icons/bs';
 import { toast } from 'react-hot-toast';
-import { getStoredToken } from '@/app/helpers/auth';
+import { authorizationHeaders, getStoredToken } from '@/app/helpers/auth';
 import { useApi } from '@/app/hooks/useApi';
 
 import Link from 'next/link';
@@ -93,7 +93,7 @@ const BookingCard = ({ booking, onSuccess }: BookingCardProps) => {
     try {
       const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
       // Public endpoint — no auth required, won't trigger logout on 401
-      const res = await fetch(`${API_URL}/api/v1/cancellation_policy`);
+      const res = await fetch(`${API_URL}/api/v1/cancellation_policy`, { credentials: 'include' });
       if (res.ok) {
         const data = await res.json();
         setConfig({
@@ -153,7 +153,7 @@ const BookingCard = ({ booking, onSuccess }: BookingCardProps) => {
       const response = await apiFetch(`${API_URL}/api/v1/reservations/${id}/cancel`, {
         method: 'POST',
         headers: {
-          'Authorization': token ? `Bearer ${token}` : '',
+          ...authorizationHeaders(token),
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({ cancellation_reason: finalReason })

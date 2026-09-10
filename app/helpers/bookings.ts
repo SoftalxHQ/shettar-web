@@ -1,4 +1,4 @@
-import { getStoredToken } from '@/app/helpers/auth';
+import { authorizationHeaders, getStoredToken } from '@/app/helpers/auth';
 
 const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
 
@@ -42,6 +42,8 @@ export type GuestReservation = {
     business_unique_id?: string;
     name: string;
     address: string;
+    city?: string;
+    state?: string;
     phone_number?: string | null;
     slug?: string | null;
     check_in: string;
@@ -57,8 +59,9 @@ export type GuestReservation = {
 export async function fetchGuestReservation(bookingId: string): Promise<GuestReservation> {
   const token = getStoredToken();
   const res = await fetch(`${API_URL}/api/v1/reservations/${encodeURIComponent(bookingId)}`, {
+    credentials: 'include',
     headers: {
-      Authorization: token ? `Bearer ${token}` : '',
+      ...authorizationHeaders(token),
       'Content-Type': 'application/json',
     },
   });
@@ -66,7 +69,14 @@ export async function fetchGuestReservation(bookingId: string): Promise<GuestRes
   if (!res.ok) {
     throw new Error(data.error?.[0]?.message || data.error || 'Failed to load booking');
   }
-  return data.reservation as GuestReservation;
+  const raw = data.reservation ?? data.reservations?.[0];
+  if (!raw) {
+    throw new Error('Failed to load booking');
+  }
+  if (!raw.business && raw.room?.room_type?.business) {
+    return { ...raw, business: raw.room.room_type.business } as GuestReservation;
+  }
+  return raw as GuestReservation;
 }
 
 export function reservationRoomNumber(r: GuestReservation) {
@@ -122,14 +132,40 @@ export function isBookedForSomeone(r: GuestReservation): boolean {
   );
 }
 
+function splitFullName(full?: string | null): { first: string; last: string } {
+  const parts = (full || '').trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return { first: '', last: '' };
+  if (parts.length === 1) return { first: parts[0], last: '' };
+  return { first: parts[0], last: parts.slice(1).join(' ') };
+}
+
+export function reservationGuestFirstName(r: GuestReservation): string {
+  if (isBookedForSomeone(r) && r.other_first_name?.trim()) return r.other_first_name.trim();
+  if (r.first_name?.trim()) return r.first_name.trim();
+  if (r.other_first_name?.trim()) return r.other_first_name.trim();
+  const fromClient = r.client_name && r.client_name !== 'Unknown' && r.client_name !== 'N/A'
+    ? splitFullName(r.client_name).first
+    : '';
+  return fromClient;
+}
+
+export function reservationGuestLastName(r: GuestReservation): string {
+  if (isBookedForSomeone(r) && r.other_last_name?.trim()) return r.other_last_name.trim();
+  if (r.last_name?.trim()) return r.last_name.trim();
+  if (r.other_last_name?.trim()) return r.other_last_name.trim();
+  const fromClient = r.client_name && r.client_name !== 'Unknown' && r.client_name !== 'N/A'
+    ? splitFullName(r.client_name).last
+    : '';
+  return fromClient;
+}
+
 export function reservationGuestName(r: GuestReservation): string {
+  const named = [reservationGuestFirstName(r), reservationGuestLastName(r)].filter(Boolean).join(' ').trim();
+  if (named) return named;
   if (r.client_name && r.client_name !== 'Unknown' && r.client_name !== 'N/A') {
     return r.client_name;
   }
-  const other = [r.other_first_name, r.other_last_name].filter(Boolean).join(' ').trim();
-  if (other) return other;
-  const self = [r.first_name, r.last_name].filter(Boolean).join(' ').trim();
-  return self || '';
+  return '';
 }
 
 export function reservationGuestEmail(r: GuestReservation): string {

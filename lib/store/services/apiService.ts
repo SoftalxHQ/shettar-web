@@ -3,7 +3,7 @@ import type { BaseQueryFn, FetchBaseQueryMeta } from "@reduxjs/toolkit/query";
 import type { RootState } from "../store";
 import { clearCredentials, setCredentials, setUser } from "../slices/authSlice";
 import type { StoredUser } from "@/app/helpers/auth";
-import { wipeAllClientAuthStorage } from "@/app/helpers/auth";
+import { COOKIE_SESSION_MARKER, getStoredToken, hasAuthSession, isUsableJwt, wipeAllClientAuthStorage } from "@/app/helpers/auth";
 import { getBrowseApiHeaders, isBrowseGateEnabled, isBrowseClearanceRequiredResponse, redirectToBrowseVerify } from "@/app/helpers/browse-gate";
 import type { NotificationItem } from "@/lib/store/slices/notificationsSlice";
 
@@ -47,8 +47,9 @@ const baseQuery = fetchBaseQuery({
   baseUrl: process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:3000",
   credentials: "include",
   prepareHeaders: (headers, { getState }) => {
-    const token = (getState() as RootState).auth.token;
-    if (token) {
+    const reduxToken = (getState() as RootState).auth.token;
+    const token = isUsableJwt(reduxToken) ? reduxToken : getStoredToken();
+    if (isUsableJwt(token)) {
       headers.set("Authorization", `Bearer ${token}`);
     }
     const browseHeaders = getBrowseApiHeaders();
@@ -72,15 +73,14 @@ const baseQueryWithReauth: BaseQueryFn = async (args, api, extraOptions) => {
     return result;
   }
   if (result.error?.status === 401) {
-    const hadToken = !!(api.getState() as RootState).auth.token;
-    // Clear legacy + persisted Redux auth before dispatch so no effect can re-inject stale credentials.
+    if (typeof window !== "undefined" && window.location.pathname.startsWith("/auth")) {
+      return result;
+    }
+    const auth = (api.getState() as RootState).auth;
+    const hadSession = !!(auth.isAuthenticated || auth.user) || hasAuthSession();
     wipeAllClientAuthStorage();
     api.dispatch(clearCredentials());
-    if (
-      hadToken &&
-      typeof window !== "undefined" &&
-      !window.location.pathname.startsWith("/auth")
-    ) {
+    if (hadSession && typeof window !== "undefined") {
       window.location.href = "/auth/sign-in";
     }
   }
@@ -96,6 +96,7 @@ export interface AuthResponse {
     data: StoredUser;
   };
   data: StoredUser;
+  token?: string;
 }
 
 export interface SignInArgs {
@@ -174,9 +175,12 @@ export const apiService = createApi({
         try {
           const { data, meta } = await queryFulfilled;
           const authHeader = authorizationHeaderFromMeta(meta);
-          const token = authHeader?.replace(/^Bearer\s+/i, "").trim() ?? "";
+          const token =
+            authHeader?.replace(/^Bearer\s+/i, "").trim() ||
+            data.token ||
+            COOKIE_SESSION_MARKER;
           const user = data.data;
-          if (token && user) {
+          if (user) {
             dispatch(setCredentials({ token, user }));
           }
         } catch {
@@ -195,9 +199,12 @@ export const apiService = createApi({
         try {
           const { data, meta } = await queryFulfilled;
           const authHeader = authorizationHeaderFromMeta(meta);
-          const token = authHeader?.replace(/^Bearer\s+/i, "").trim() ?? "";
+          const token =
+            authHeader?.replace(/^Bearer\s+/i, "").trim() ||
+            data.token ||
+            COOKIE_SESSION_MARKER;
           const user = data.data ?? data.status?.data;
-          if (token && user) {
+          if (user) {
             dispatch(setCredentials({ token, user }));
           }
         } catch {

@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Card, CardBody, CardHeader, Row, Col, Image, Button, Form, Modal } from 'react-bootstrap';
 import { BsStarFill, BsStarHalf, BsStar, BsTrash, BsPencilSquare } from 'react-icons/bs';
-import { getStoredToken } from '@/app/helpers/auth';
+import { authorizationHeaders, getStoredToken } from '@/app/helpers/auth';
 import { hotelPathFromBusiness } from '@/app/helpers/hotel-path';
 import {
   reviewComments,
@@ -70,7 +70,7 @@ const Reviews = () => {
       const token = getStoredToken();
       const response = await apiFetch(`${API_URL}/api/v1/reviews`, {
         headers: {
-          'Authorization': token ? `Bearer ${token}` : '',
+          ...authorizationHeaders(token),
           'Content-Type': 'application/json'
         }
       });
@@ -114,7 +114,7 @@ const Reviews = () => {
       const response = await apiFetch(`${API_URL}/api/v1/reviews/${reviewToDeleteId}`, {
         method: 'DELETE',
         headers: {
-          'Authorization': token ? `Bearer ${token}` : '',
+          ...authorizationHeaders(token),
           'Content-Type': 'application/json'
         }
       });
@@ -153,7 +153,7 @@ const Reviews = () => {
       const response = await apiFetch(`${API_URL}/api/v1/reviews/${id}`, {
         method: 'PUT',
         headers: {
-          'Authorization': token ? `Bearer ${token}` : '',
+          ...authorizationHeaders(token),
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({ review: editForm })
@@ -184,7 +184,7 @@ const Reviews = () => {
     const token = getStoredToken();
     const response = await apiFetch(`${API_URL}/api/v1/reviews/${reviewId}/comments`, {
       method: 'POST',
-      headers: { Authorization: token ? `Bearer ${token}` : '', 'Content-Type': 'application/json' },
+      headers: { ...authorizationHeaders(token), 'Content-Type': 'application/json' },
       body: JSON.stringify({ body, ...(parentId ? { parent_id: parentId } : {}) }),
     });
     const data = await response.json();
@@ -197,7 +197,7 @@ const Reviews = () => {
     const token = getStoredToken();
     const response = await apiFetch(`${API_URL}/api/v1/reviews/${reviewId}/comments/${commentId}`, {
       method: 'PATCH',
-      headers: { Authorization: token ? `Bearer ${token}` : '', 'Content-Type': 'application/json' },
+      headers: { ...authorizationHeaders(token), 'Content-Type': 'application/json' },
       body: JSON.stringify({ body }),
     });
     const data = await response.json();
@@ -212,7 +212,7 @@ const Reviews = () => {
     const token = getStoredToken();
     const response = await apiFetch(`${API_URL}/api/v1/reviews/${reviewId}/comments/${commentId}`, {
       method: 'DELETE',
-      headers: { Authorization: token ? `Bearer ${token}` : '', 'Content-Type': 'application/json' },
+      headers: { ...authorizationHeaders(token), 'Content-Type': 'application/json' },
     });
     const data = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(parseApiError(data, 'Failed to delete reply'));
@@ -226,7 +226,7 @@ const Reviews = () => {
     const token = getStoredToken();
     const response = await apiFetch(`${API_URL}/api/v1/reviews/${reviewId}/comments/${commentId}/vote`, {
       method: 'POST',
-      headers: { Authorization: token ? `Bearer ${token}` : '', 'Content-Type': 'application/json' },
+      headers: { ...authorizationHeaders(token), 'Content-Type': 'application/json' },
       body: JSON.stringify({ value }),
     });
     const data = await response.json();

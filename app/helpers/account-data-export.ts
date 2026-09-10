@@ -1,3 +1,5 @@
+import { authorizationHeaders } from '@/app/helpers/auth';
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000';
 
 export interface DataExportResult {
@@ -8,8 +10,9 @@ export interface DataExportResult {
 export async function downloadAccountDataExport(token: string): Promise<DataExportResult> {
   try {
     const response = await fetch(`${API_URL}/api/v1/accounts/data_export`, {
+      credentials: 'include',
       headers: {
-        Authorization: `Bearer ${token}`,
+        ...authorizationHeaders(token),
       },
     });
 

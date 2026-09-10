@@ -5,7 +5,7 @@ import { SelectFormInput, WishCard, WishlistSkeleton } from '@/app/components';
 import { Button, Card, CardBody, CardHeader, Col } from 'react-bootstrap';
 import { FaTrash } from 'react-icons/fa';
 import UserLayout from '@/app/components/layouts/UserLayout';
-import { getStoredToken } from '@/app/helpers/auth';
+import { authorizationHeaders, getStoredToken } from '@/app/helpers/auth';
 import { useApi } from '@/app/hooks/useApi';
 import { toast } from 'react-hot-toast';
 
@@ -20,7 +20,7 @@ const WishlistPage = () => {
       const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
       const response = await apiFetch(`${API_URL}/api/v1/wishlists`, {
         headers: {
-          'Authorization': token ? `Bearer ${token}` : '',
+          ...authorizationHeaders(token),
           'Content-Type': 'application/json'
         }
       });
@@ -45,7 +45,7 @@ const WishlistPage = () => {
       const response = await apiFetch(`${API_URL}/api/v1/wishlists/${businessId}`, {
         method: 'DELETE',
         headers: {
-          'Authorization': token ? `Bearer ${token}` : '',
+          ...authorizationHeaders(token),
           'Content-Type': 'application/json'
         }
       });
@@ -71,7 +71,7 @@ const WishlistPage = () => {
       const response = await apiFetch(`${API_URL}/api/v1/wishlists/clear`, {
         method: 'DELETE',
         headers: {
-          'Authorization': token ? `Bearer ${token}` : '',
+          ...authorizationHeaders(token),
           'Content-Type': 'application/json'
         }
       });

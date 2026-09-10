@@ -102,7 +102,7 @@ function bakeExportClone(source: HTMLElement): HTMLElement {
       dest.style.backgroundColor = '#ffffff';
       dest.style.boxShadow = 'none';
     }
-    if (dest.classList.contains('ticket-header')) {
+    if (dest.classList.contains('ticket-header') || dest.classList.contains('booking-pass-header')) {
       dest.style.backgroundColor = computed.backgroundColor || '#5143d9';
       dest.style.color = '#ffffff';
     }

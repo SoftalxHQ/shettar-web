@@ -6,7 +6,7 @@ import { Card, CardBody, CardHeader, Table, Badge, Button } from 'react-bootstra
 import { BsDownload } from 'react-icons/bs';
 import { currency } from '@/app/states';
 import Skeleton from '../Skeleton';
-import { getStoredToken, getStoredUser } from '@/app/helpers/auth';
+import { authorizationHeaders, getStoredToken, getStoredUser } from '@/app/helpers/auth';
 import { useApi } from '@/app/hooks/useApi';
 import Pagination from '../Pagination';
 import toast from 'react-hot-toast';
@@ -79,8 +79,9 @@ const Transactions = () => {
       const token = getStoredToken();
       const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
       const response = await fetch(`${API_URL}/api/v1/export_wallet_transactions`, {
+        credentials: 'include',
         headers: {
-          'Authorization': token ? `Bearer ${token}` : ''
+          ...authorizationHeaders(token)
         }
       });
 
@@ -115,7 +116,7 @@ const Transactions = () => {
       const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
       const response = await apiFetch(`${API_URL}/api/v1/wallet_transactions?page=${pageNumber}&limit=10`, {
         headers: {
-          'Authorization': token ? `Bearer ${token}` : '',
+          ...authorizationHeaders(token),
           'Content-Type': 'application/json'
         }
       });
@@ -154,7 +155,7 @@ const Transactions = () => {
         const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
         const response = await apiFetch(`${API_URL}/api/v1/wallet_transactions/${receiptParam}`, {
           headers: {
-            Authorization: token ? `Bearer ${token}` : '',
+            ...authorizationHeaders(token),
             'Content-Type': 'application/json',
           },
         });

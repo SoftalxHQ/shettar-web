@@ -26,7 +26,7 @@ import type {
 import { useLayoutContext } from '@/app/states';
 import { useApi } from '@/app/hooks/useApi';
 import { toast } from 'react-hot-toast';
-import { getStoredToken } from '@/app/helpers/auth';
+import { authorizationHeaders, getStoredToken, hasAuthSession, isUsableJwt } from '@/app/helpers/auth';
 import { getAttributionToken } from '@/app/hooks/useSponsoredListingTracking';
 import { createConsumer } from '@rails/actioncable';
 import { useTransactionPin } from '@/app/hooks/useTransactionPin';
@@ -188,12 +188,12 @@ const PaymentOptions = ({
     if (!isAuthenticated || !account) return;
 
     const token = getStoredToken();
-    if (!token) return;
+    if (!hasAuthSession() && !isUsableJwt(token)) return;
 
-    const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
-    const wsUrl = API_URL.replace(/^http/, 'ws') + '/cable';
+    const api = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
+    const wsUrl = api.replace(/^http/, 'ws') + '/cable';
 
-    const consumer = createConsumer(`${wsUrl}?token=${token}`);
+    const consumer = createConsumer(wsUrl);
 
     const subscription = consumer.subscriptions.create(
       { channel: 'WalletChannel' },
@@ -247,7 +247,7 @@ const PaymentOptions = ({
     }
 
     const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
-    const token = localStorage.getItem('token');
+    const token = getStoredToken();
 
     // Map form fields to correct database schema
     const reservationData: ReservationPayload = {
@@ -299,7 +299,7 @@ const PaymentOptions = ({
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        ...authorizationHeaders(token)
       },
       body: JSON.stringify(payload)
     });
@@ -340,7 +340,7 @@ const PaymentOptions = ({
       const response = await apiFetch(`${API_URL}/api/v1/wallet/initialize_topup`, {
         method: 'POST',
         headers: {
-          'Authorization': token ? `Bearer ${token}` : '',
+          ...authorizationHeaders(token),
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({ amount: Number(topUpAmount), payment_method: 'card' })
@@ -380,7 +380,7 @@ const PaymentOptions = ({
       const response = await apiFetch(`${API_URL}/api/v1/wallet/verify_topup`, {
         method: 'POST',
         headers: {
-          'Authorization': token ? `Bearer ${token}` : '',
+          ...authorizationHeaders(token),
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({ reference })
@@ -415,7 +415,7 @@ const PaymentOptions = ({
       }
 
       const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
-      const token = localStorage.getItem('token');
+      const token = getStoredToken();
 
       if (data.payment_method === 'card') {
         // Get user email
@@ -445,7 +445,7 @@ const PaymentOptions = ({
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+            ...authorizationHeaders(token)
           },
           body: JSON.stringify({
             initialization: {

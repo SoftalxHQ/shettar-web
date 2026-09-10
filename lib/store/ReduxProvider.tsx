@@ -23,7 +23,19 @@ import type { RootState, AppDispatch } from './store';
 
 function makeStore() {
   const rootReducer = combineReducers({
-    auth: persistReducer({ key: 'auth', storage }, authReducer),
+    auth: persistReducer(
+      {
+        key: 'auth',
+        storage,
+        version: 2,
+        blacklist: ['token'],
+        migrate: async (state) => {
+          if (!state || typeof state !== 'object') return state;
+          return { ...state, token: null };
+        },
+      },
+      authReducer,
+    ),
     theme: persistReducer({ key: 'theme', storage }, themeReducer),
     notifications: notificationsReducer,
     hotelStats: hotelStatsReducer,

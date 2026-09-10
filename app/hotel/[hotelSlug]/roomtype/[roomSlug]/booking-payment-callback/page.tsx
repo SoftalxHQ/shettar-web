@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { Card, CardBody, Spinner } from 'react-bootstrap';
 import { BsCheckCircleFill, BsXCircleFill } from 'react-icons/bs';
+import { authorizationHeaders, getStoredToken } from '@/app/helpers/auth';
 
 export default function PaymentCallbackPage() {
   const router = useRouter();
@@ -31,16 +32,17 @@ export default function PaymentCallbackPage() {
 
         const bookingData = JSON.parse(bookingDataStr);
         const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
-        const token = localStorage.getItem('token');
+        const token = getStoredToken();
 
         // Create reservation with payment reference
         const response = await fetch(
           `${API_URL}/api/v1/businesses/${bookingData.hotel_id}/room_types/${bookingData.room_type_id}/reservations`,
           {
             method: 'POST',
+            credentials: 'include',
             headers: {
               'Content-Type': 'application/json',
-              ...(token ? { Authorization: `Bearer ${token}` } : {}),
+              ...authorizationHeaders(token),
             },
             body: JSON.stringify({
               reservation: {

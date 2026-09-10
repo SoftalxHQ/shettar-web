@@ -1,4 +1,4 @@
-import { getStoredToken } from '@/app/helpers/auth';
+import { authorizationHeaders, getStoredToken } from '@/app/helpers/auth';
 import type { WalletTransactionForReceipt } from '@/app/helpers/utility-receipt';
 
 const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
@@ -182,17 +182,17 @@ export function parseUtilityApiError(data: unknown, fallback: string): string {
   return fallback;
 }
 
-async function authHeaders(): Promise<Record<string, string>> {
-  const token = getStoredToken();
+function authHeaders(): Record<string, string> {
   return {
     'Content-Type': 'application/json',
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...authorizationHeaders(getStoredToken()),
   };
 }
 
 export async function fetchUtilityNetworks(): Promise<UtilityNetwork[]> {
   const response = await fetch(`${API_URL}/api/v1/utility/networks`, {
-    headers: await authHeaders(),
+    credentials: 'include',
+    headers: authHeaders(),
   });
   if (!response.ok) return defaultNetworks();
   const data = await response.json();
@@ -201,7 +201,8 @@ export async function fetchUtilityNetworks(): Promise<UtilityNetwork[]> {
 
 export async function fetchTvProviders(): Promise<UtilityProvider[]> {
   const response = await fetch(`${API_URL}/api/v1/utility/tv_providers`, {
-    headers: await authHeaders(),
+    credentials: 'include',
+    headers: authHeaders(),
   });
   if (!response.ok) {
     const data = await response.json().catch(() => null);
@@ -213,7 +214,8 @@ export async function fetchTvProviders(): Promise<UtilityProvider[]> {
 
 export async function fetchElectricityProviders(): Promise<UtilityProvider[]> {
   const response = await fetch(`${API_URL}/api/v1/utility/electricity_providers`, {
-    headers: await authHeaders(),
+    credentials: 'include',
+    headers: authHeaders(),
   });
   if (!response.ok) {
     const data = await response.json().catch(() => null);
@@ -235,7 +237,7 @@ export function dedupeVariations(variations: DataVariation[]): DataVariation[] {
 export async function fetchDataVariations(network: string): Promise<DataVariation[]> {
   const response = await fetch(
     `${API_URL}/api/v1/utility/variations?network=${encodeURIComponent(network)}&type=data`,
-    { headers: await authHeaders() }
+    { credentials: 'include', headers: authHeaders() }
   );
   if (!response.ok) return [];
   const data = await response.json();
@@ -245,7 +247,7 @@ export async function fetchDataVariations(network: string): Promise<DataVariatio
 export async function fetchTvVariations(provider: string): Promise<DataVariation[]> {
   const response = await fetch(
     `${API_URL}/api/v1/utility/variations?provider=${encodeURIComponent(provider)}&type=tv`,
-    { headers: await authHeaders() }
+    { credentials: 'include', headers: authHeaders() }
   );
   if (!response.ok) return [];
   const data = await response.json();
@@ -260,7 +262,8 @@ export async function verifyUtilityBill(payload: {
 }): Promise<{ verification: VerifyResult; billers_code: string; provider: string; meter_type?: string }> {
   const response = await fetch(`${API_URL}/api/v1/utility/verify`, {
     method: 'POST',
-    headers: await authHeaders(),
+    credentials: 'include',
+    headers: authHeaders(),
     body: JSON.stringify(payload),
   });
   const data = await parseJsonResponse(response);
@@ -295,7 +298,8 @@ async function postPurchase(url: string, body: unknown, unprocessableFallback: s
   try {
     response = await fetch(url, {
       method: 'POST',
-      headers: await authHeaders(),
+      credentials: 'include',
+      headers: authHeaders(),
       body: JSON.stringify(body),
     });
   } catch {
@@ -342,12 +346,12 @@ export async function lookupUtilityPurchase(options: {
   transactionId?: number | string;
   productType?: UtilityProductType;
 }): Promise<WalletTransactionLookup | null> {
-  const headers = await authHeaders();
+  const headers = authHeaders();
 
   if (options.transactionId != null && String(options.transactionId).trim()) {
     const response = await fetch(
       `${API_URL}/api/v1/wallet_transactions/${encodeURIComponent(String(options.transactionId))}`,
-      { headers }
+      { credentials: 'include', headers }
     );
     if (response.ok) {
       const data = (await parseJsonResponse(response)) as { transaction?: WalletTransactionLookup } | null;
@@ -358,7 +362,7 @@ export async function lookupUtilityPurchase(options: {
   if (options.requestId?.trim()) {
     const response = await fetch(
       `${API_URL}/api/v1/wallet_transactions?request_id=${encodeURIComponent(options.requestId.trim())}&limit=5`,
-      { headers }
+      { credentials: 'include', headers }
     );
     if (response.ok) {
       const data = (await parseJsonResponse(response)) as { transactions?: WalletTransactionLookup[] } | null;
@@ -367,7 +371,7 @@ export async function lookupUtilityPurchase(options: {
     }
   }
 
-  const response = await fetch(`${API_URL}/api/v1/wallet_transactions?flow=debit&limit=10`, { headers });
+  const response = await fetch(`${API_URL}/api/v1/wallet_transactions?flow=debit&limit=10`, { credentials: 'include', headers });
   if (!response.ok) return null;
   const data = (await parseJsonResponse(response)) as { transactions?: WalletTransactionLookup[] } | null;
   return data?.transactions?.find((transaction) => isRecentUtilityDebit(transaction, options.productType)) ?? null;

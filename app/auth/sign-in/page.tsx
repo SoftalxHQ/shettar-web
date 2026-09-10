@@ -10,10 +10,11 @@ import { useRouter } from 'next/navigation';
 import { PasswordFormInput, TextFormInput } from '@/app/components';
 import Image from 'next/image';
 import toast from 'react-hot-toast';
-import { signIn } from '@/app/helpers/auth';
+import { COOKIE_SESSION_MARKER, signIn } from '@/app/helpers/auth';
+import { setCredentials } from '@/lib/store/slices/authSlice';
+import { useAppDispatch } from '@/lib/store/hooks';
 import { browserSupportsWebAuthn, startPasskeySignIn } from '@/app/helpers/passkeys';
 import { useTurnstileAuth } from '@/app/hooks/useTurnstileAuth';
-import { useLayoutContext } from '@/app/states';
 
 type FormValues = {
   email: string;
@@ -22,7 +23,7 @@ type FormValues = {
 
 const SignIn = () => {
   const router = useRouter();
-  const { refreshAuth, refreshAccount } = useLayoutContext();
+  const dispatch = useAppDispatch();
   const [isLoading, setIsLoading] = useState(false);
   const [passkeySupported, setPasskeySupported] = useState(false);
   const [passkeyLoading, setPasskeyLoading] = useState(false);
@@ -66,11 +67,13 @@ const SignIn = () => {
         turnstileToken,
       });
 
-      if (result.ok) {
+      if (result.ok && result.user) {
         consumeTurnstileOnSuccess();
+        dispatch(setCredentials({
+          user: result.user,
+          token: result.token || COOKIE_SESSION_MARKER,
+        }));
         toast.success('Welcome back! 👋', { id: toastId });
-        await refreshAuth();
-        await refreshAccount();
         router.push('/');
       } else {
         toast.error(result.message, { id: toastId });
@@ -93,10 +96,12 @@ const SignIn = () => {
         return;
       }
 
-      if (result.ok) {
+      if (result.ok && result.user) {
+        dispatch(setCredentials({
+          user: result.user,
+          token: result.token || COOKIE_SESSION_MARKER,
+        }));
         toast.success('Welcome back! 👋', { id: toastId });
-        await refreshAuth();
-        await refreshAccount();
         router.push('/');
       } else if (result.message) {
         toast.error(result.message, { id: toastId });

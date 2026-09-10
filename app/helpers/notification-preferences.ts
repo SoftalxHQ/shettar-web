@@ -1,4 +1,5 @@
 import { getApiBaseUrl } from '@/app/helpers/businesses';
+import { authorizationHeaders } from '@/app/helpers/auth';
 
 export type NotificationPreferences = {
   in_app_enabled: boolean;
@@ -16,13 +17,14 @@ const DEFAULT_PREFERENCES: NotificationPreferences = {
 
 function authHeaders(token: string) {
   return {
-    Authorization: `Bearer ${token}`,
+    ...authorizationHeaders(token),
     Accept: 'application/json',
   };
 }
 
 export async function fetchNotificationPreferences(token: string): Promise<NotificationPreferences> {
   const response = await fetch(`${getApiBaseUrl()}/api/v1/accounts/notification_preferences`, {
+    credentials: 'include',
     headers: authHeaders(token),
   });
 
@@ -61,6 +63,7 @@ export async function updateNotificationPreferences(
   try {
     const response = await fetch(`${getApiBaseUrl()}/api/v1/accounts/notification_preferences`, {
       method: 'PATCH',
+      credentials: 'include',
       headers: {
         ...authHeaders(token),
         'Content-Type': 'application/json',

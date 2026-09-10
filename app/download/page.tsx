@@ -67,7 +67,9 @@ export default function DownloadPage() {
 
     (async () => {
       try {
-        const res = await fetch(`${apiBase}/api/v1/desktop_releases/latest?channel=${channel}`);
+        const res = await fetch(`${apiBase}/api/v1/desktop_releases/latest?channel=${channel}`, {
+          credentials: 'include',
+        });
         if (!res.ok) {
           const body = await res.json().catch(() => ({}));
           throw new Error(body.error || 'No desktop release available yet');

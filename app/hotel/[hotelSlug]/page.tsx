@@ -9,7 +9,7 @@ import HotelGallery from '@/app/components/HotelDetails/HotelGallery';
 import AboutHotel from '@/app/components/HotelDetails/AboutHotel';
 import { Hotel } from '@/app/types/hotel';
 import { Skeleton } from '@/app/components';
-import { getStoredToken } from '@/app/helpers/auth';
+import { authorizationHeaders, getStoredToken } from '@/app/helpers/auth';
 import { withBrowseCredentials } from '@/app/helpers/browse-gate';
 
 const formatDateToLocalISO = (date: Date) => {
@@ -60,7 +60,7 @@ export default function HotelDetailPage() {
       const response = await fetch(
         url,
         withBrowseCredentials({
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
+          headers: { ...authorizationHeaders(token) },
         })
       );
 

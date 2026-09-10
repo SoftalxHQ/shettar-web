@@ -11,9 +11,10 @@ import { PasswordFormInput, TextFormInput } from '@/app/components';
 import { BsArrowLeft, BsArrowRight, BsCheckCircleFill } from 'react-icons/bs';
 import Image from 'next/image';
 import toast from 'react-hot-toast';
-import { signUp } from '@/app/helpers/auth';
+import { COOKIE_SESSION_MARKER, signUp } from '@/app/helpers/auth';
+import { setCredentials } from '@/lib/store/slices/authSlice';
+import { useAppDispatch } from '@/lib/store/hooks';
 import { useTurnstileAuth } from '@/app/hooks/useTurnstileAuth';
-import { useLayoutContext } from '@/app/states';
 
 type FormValues = {
   firstName: string;
@@ -25,7 +26,7 @@ type FormValues = {
 
 const SignUp = () => {
   const router = useRouter();
-  const { refreshAuth, refreshAccount } = useLayoutContext();
+  const dispatch = useAppDispatch();
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
@@ -89,11 +90,13 @@ const SignUp = () => {
         turnstileToken,
       });
 
-      if (result.ok) {
+      if (result.ok && result.user) {
         consumeTurnstileOnSuccess();
+        dispatch(setCredentials({
+          user: result.user,
+          token: result.token || COOKIE_SESSION_MARKER,
+        }));
         toast.success('Account created! Welcome to Shettar!', { id: toastId, duration: 4000 });
-        await refreshAuth();
-        await refreshAccount();
         setTimeout(() => router.push('/'), 1500);
       } else {
         const detail = result.errors?.length

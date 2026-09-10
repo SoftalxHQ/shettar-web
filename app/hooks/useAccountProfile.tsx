@@ -15,7 +15,7 @@
 import type { ReactNode } from 'react';
 import { useGetAccountDetailsQuery } from '@/lib/store/services/apiService';
 import { useAppSelector } from '@/lib/store/hooks';
-import { getStoredToken, signOut } from '@/app/helpers/auth';
+import { authorizationHeaders, getSessionJwt, getStoredToken, isUsableJwt, signOut } from '@/app/helpers/auth';
 
 // Re-export AccountProfile so existing imports from this file continue to work
 export type { AccountProfile } from '@/lib/store/services/apiService';
@@ -26,9 +26,12 @@ const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').rep
 
 export function useAccountProfile() {
   const isAuthenticated = useAppSelector((s) => s.auth.isAuthenticated);
+  const authToken = useAppSelector((s) => s.auth.token);
+  const canAuthorize =
+    isUsableJwt(authToken) || (typeof window !== 'undefined' && isUsableJwt(getSessionJwt()));
   const { data: profile, isLoading, error, refetch } = useGetAccountDetailsQuery(
     undefined,
-    { skip: !isAuthenticated },
+    { skip: !isAuthenticated || !canAuthorize },
   );
 
   return {
@@ -84,13 +87,15 @@ export async function saveAccountProfile(
       formData.append('account[avatar]', avatarFile);
       res = await fetch(`${API_URL}/accounts/update`, {
         method: 'PUT',
-        headers: { Authorization: `Bearer ${token}` },
+        credentials: 'include',
+        headers: { ...authorizationHeaders(token) },
         body: formData,
       });
     } else {
       res = await fetch(`${API_URL}/accounts/update`, {
         method: 'PUT',
-        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        credentials: 'include',
+        headers: { ...authorizationHeaders(token), 'Content-Type': 'application/json' },
         body: JSON.stringify({ account: fields }),
       });
     }
@@ -129,8 +134,9 @@ export async function changeAccountPassword(
   try {
     const res = await fetch(`${API_URL}/accounts/change_password`, {
       method: 'PUT',
+      credentials: 'include',
       headers: {
-        Authorization: `Bearer ${token}`,
+        ...authorizationHeaders(token),
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({

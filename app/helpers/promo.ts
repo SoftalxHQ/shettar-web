@@ -1,4 +1,4 @@
-import { getStoredToken } from "@/app/helpers/auth";
+import { authorizationHeaders, getStoredToken } from "@/app/helpers/auth";
 
 const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:3000").replace(
   /\/$/,
@@ -30,9 +30,10 @@ export async function validatePromoCode(params: {
   const token = getStoredToken();
   const res = await fetch(`${API_URL}/api/v1/promo_codes/validate`, {
     method: "POST",
+    credentials: "include",
     headers: {
       "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...authorizationHeaders(token),
     },
     body: JSON.stringify({
       code: params.code.trim().toUpperCase(),

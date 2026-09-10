@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Button, Card, CardBody, CardHeader, Spinner } from 'react-bootstrap';
 import toast from 'react-hot-toast';
 import { useAppSelector } from '@/lib/store/hooks';
+import { getStoredToken } from '@/app/helpers/auth';
 import {
   fetchNotificationPreferences,
   updateNotificationPreferences,
@@ -18,7 +19,8 @@ import {
 } from '@/app/helpers/passkeys';
 
 const SecuritySettings = () => {
-  const token = useAppSelector((s) => s.auth.token);
+  const reduxToken = useAppSelector((s) => s.auth.token);
+  const token = reduxToken ?? (typeof window !== 'undefined' ? getStoredToken() : null);
   const [loginAlertsEnabled, setLoginAlertsEnabled] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);

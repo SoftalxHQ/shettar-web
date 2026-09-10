@@ -8,7 +8,7 @@ import Link from 'next/link';
 import { toast } from 'react-hot-toast';
 import { useLayoutContext } from '@/app/states';
 import { parseUtilityApiError } from '@/app/helpers/utility-api';
-import { getStoredToken } from '@/app/helpers/auth';
+import { authorizationHeaders, getStoredToken, hasAuthSession, isUsableJwt } from '@/app/helpers/auth';
 import { useApi } from '@/app/hooks/useApi';
 
 import { createConsumer } from '@rails/actioncable';
@@ -34,7 +34,7 @@ const AccountWallet = () => {
       const token = getStoredToken();
       const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
       const response = await apiFetch(`${API_URL}/api/v1/wallet/dva_details`, {
-        headers: { 'Authorization': token ? `Bearer ${token}` : '' }
+        headers: { ...authorizationHeaders(token) }
       });
       const data = await response.json().catch(() => null);
       if (response.ok) {
@@ -64,13 +64,12 @@ const AccountWallet = () => {
     if (!profile) return;
 
     const token = getStoredToken();
-    if (!token) return;
+    if (!hasAuthSession() && !isUsableJwt(token)) return;
 
-    const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
-    const wsUrl = API_URL.replace(/^http/, 'ws') + '/cable';
+    const api = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
+    const wsUrl = api.replace(/^http/, 'ws') + '/cable';
 
-    // Pass token in URL params for ActionCable auth
-    const consumer = createConsumer(`${wsUrl}?token=${token}`);
+    const consumer = createConsumer(wsUrl);
 
     const subscription = consumer.subscriptions.create(
       { channel: 'WalletChannel' },
@@ -158,7 +157,7 @@ const AccountWallet = () => {
       const response = await apiFetch(`${API_URL}/api/v1/wallet/initialize_topup`, {
         method: 'POST',
         headers: {
-          'Authorization': token ? `Bearer ${token}` : '',
+          ...authorizationHeaders(token),
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({ amount: Number(amount), payment_method: paymentMethod })
@@ -201,7 +200,7 @@ const AccountWallet = () => {
       const response = await apiFetch(`${API_URL}/api/v1/wallet/verify_topup`, {
         method: 'POST',
         headers: {
-          'Authorization': token ? `Bearer ${token}` : '',
+          ...authorizationHeaders(token),
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({ reference })

@@ -15,15 +15,6 @@ export function isBrowseGateEnabled(): boolean {
   return isStagingEnv() || process.env.NEXT_PUBLIC_BROWSE_GATE_ENABLED === 'true';
 }
 
-function readAuthTokenFromStorage(): string | null {
-  if (typeof window === 'undefined') return null;
-  try {
-    return localStorage.getItem('token');
-  } catch {
-    return null;
-  }
-}
-
 function setBrowseClearanceCookie(token: string): void {
   if (typeof document === 'undefined') return;
   const secure = window.location.protocol === 'https:' ? '; Secure' : '';
@@ -82,10 +73,6 @@ export function getBrowseApiHeaders(): Record<string, string> {
   const clearance = getStoredBrowseClearanceToken();
   if (clearance) {
     headers['X-Browse-Clearance'] = clearance;
-  }
-  const authToken = readAuthTokenFromStorage();
-  if (authToken) {
-    headers.Authorization = `Bearer ${authToken}`;
   }
   return headers;
 }

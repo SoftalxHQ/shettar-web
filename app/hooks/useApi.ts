@@ -14,7 +14,7 @@ export const useApi = () => {
   const { logout } = useLayoutContext();
 
   const apiFetch = useCallback(async (url: string, options: RequestInit = {}) => {
-    const response = await fetch(url, options);
+    const response = await fetch(url, { ...options, credentials: options.credentials ?? 'include' });
 
     if (response.status === 401) {
       // Automatically logout if any authenticated request fails with 401

@@ -15,6 +15,7 @@ import {
   useDeleteNotificationsMutation,
 } from '@/lib/store/services/apiService';
 import { deleteGuestNotification, markGuestRead } from '@/app/helpers/guest-notifications';
+import { getSessionJwt, isUsableJwt } from '@/app/helpers/auth';
 
 export type { NotificationItem };
 
@@ -30,13 +31,17 @@ export interface NotificationContextType {
 export function useNotifications(): NotificationContextType {
   const dispatch = useAppDispatch();
   const isAuthenticated = useAppSelector((s) => s.auth.isAuthenticated);
+  const authToken = useAppSelector((s) => s.auth.token);
   const notifications = useAppSelector((s) => s.notifications.notifications);
   const unreadCount = useAppSelector((s) => s.notifications.unreadCount);
   const loading = useAppSelector((s) => s.notifications.loading);
 
-  // Skip when not authenticated to avoid 401 → logout loop
+  // Skip until a real JWT is available — persist blacklists token, so a
+  // rehydrated session can be authenticated with no Bearer yet.
+  const canAuthorize =
+    isUsableJwt(authToken) || (typeof window !== 'undefined' && isUsableJwt(getSessionJwt()));
   const { data, isLoading, refetch } = useGetNotificationsQuery(undefined, {
-    skip: !isAuthenticated,
+    skip: !isAuthenticated || !canAuthorize,
   });
 
   // Merge API data so live cable rows are not wiped on refetch

@@ -1,7 +1,5 @@
-import { getStoredToken } from '@/app/helpers/auth';
-import { isCableJwtUsable } from '@/app/helpers/jwt-cable';
+import { getStoredToken, hasAuthSession, isUsableJwt } from '@/app/helpers/auth';
 
-const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
 const MAX_RETRIES = 3;
 const RETRY_DELAY_MS = 5000;
 
@@ -35,7 +33,7 @@ export function subscribeRestaurantReservation(
   onEvent: (msg: RestaurantCableEvent) => void
 ) {
   const token = getStoredToken();
-  if (!isCableJwtUsable(token)) return () => {};
+  if (!hasAuthSession() && !isUsableJwt(token)) return () => {};
 
   let ws: WebSocket | null = null;
   let closed = false;
@@ -51,8 +49,9 @@ export function subscribeRestaurantReservation(
 
   function connect() {
     if (closed || rejected) return;
-    const wsBase = API_URL.replace(/^http/, 'ws');
-    const socket = new WebSocket(`${wsBase}/cable?token=${encodeURIComponent(token!)}`);
+    const api = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
+    const wsUrl = api.replace(/^http/, 'ws') + '/cable';
+    const socket = new WebSocket(wsUrl);
     ws = socket;
     let confirmed = false;
     const openedAt = Date.now();
@@ -80,7 +79,7 @@ export function subscribeRestaurantReservation(
         rejected = true;
         return;
       }
-      if (!closed && retryCount < MAX_RETRIES && isCableJwtUsable(token)) {
+      if (!closed && retryCount < MAX_RETRIES && (hasAuthSession() || isUsableJwt(token))) {
         retryCount += 1;
         retryTimer = setTimeout(connect, RETRY_DELAY_MS);
       }
