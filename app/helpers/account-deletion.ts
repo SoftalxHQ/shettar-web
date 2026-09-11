@@ -1,6 +1,5 @@
 import { authorizationHeaders } from '@/app/helpers/auth';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000';
+import { getApiBaseUrl } from '@/app/helpers/api-base-url';
 
 export const ACCOUNT_DELETION_REASONS = [
   { value: 'not_using', label: "I'm not using the app anymore" },
@@ -41,7 +40,7 @@ export async function scheduleAccountDeletion(
   params: { reason: AccountDeletionReason; reasonDetail?: string }
 ): Promise<AccountDeletionResult> {
   try {
-    const res = await fetch(`${API_URL}/api/v1/accounts/deletion/schedule`, {
+    const res = await fetch(`${getApiBaseUrl()}/api/v1/accounts/deletion/schedule`, {
       method: 'POST',
       credentials: 'include',
       headers: {
@@ -79,7 +78,7 @@ export async function scheduleAccountDeletion(
 
 export async function cancelAccountDeletion(token: string): Promise<AccountDeletionResult> {
   try {
-    const res = await fetch(`${API_URL}/api/v1/accounts/deletion/cancel`, {
+    const res = await fetch(`${getApiBaseUrl()}/api/v1/accounts/deletion/cancel`, {
       method: 'POST',
       credentials: 'include',
       headers: {

@@ -3,11 +3,9 @@
 import { useEffect } from 'react';
 import { useAppDispatch, useAppSelector } from '@/lib/store/hooks';
 import { addNotification } from '@/lib/store/slices/notificationsSlice';
-import { saveAuthSession, getStoredUser, hasAuthSession, isUsableJwt } from '@/app/helpers/auth';
+import { getStoredToken, hasAuthSession, isUsableJwt } from '@/app/helpers/auth';
 import { subscribeAccountNotifications } from '@/app/helpers/account-notifications-cable';
-import { showNotificationToast } from '@/app/helpers/notification-display';
-
-const toastedKeys = new Set<string>();
+import { consumeNotificationToastKey, showNotificationToast } from '@/app/helpers/notification-display';
 
 export default function AccountNotificationsSync() {
   const dispatch = useAppDispatch();
@@ -15,10 +13,8 @@ export default function AccountNotificationsSync() {
   const isAuthenticated = useAppSelector((s) => s.auth.isAuthenticated);
 
   useEffect(() => {
-    if (!hasAuthSession() && !isUsableJwt(token) && !isAuthenticated) return;
-
-    const user = getStoredUser();
-    if (user && isUsableJwt(token)) saveAuthSession(user, token!);
+    const sessionToken = isUsableJwt(token) ? token : getStoredToken();
+    if (!hasAuthSession() && !isUsableJwt(sessionToken) && !isAuthenticated) return;
 
     return subscribeAccountNotifications((data) => {
       const notificationId = data.notification_id ?? -Date.now();
@@ -35,12 +31,7 @@ export default function AccountNotificationsSync() {
         })
       );
 
-      if (!data.suppress_toast && !toastedKeys.has(toastKey)) {
-        toastedKeys.add(toastKey);
-        if (toastedKeys.size > 200) {
-          const oldest = toastedKeys.values().next().value;
-          if (oldest) toastedKeys.delete(oldest);
-        }
+      if (!data.suppress_toast && consumeNotificationToastKey(toastKey)) {
         showNotificationToast({
           title: data.title,
           message: data.message,
@@ -48,7 +39,7 @@ export default function AccountNotificationsSync() {
           id: toastKey,
         });
       }
-    }, isUsableJwt(token) ? token : undefined);
+    }, sessionToken);
   }, [token, isAuthenticated, dispatch]);
 
   return null;

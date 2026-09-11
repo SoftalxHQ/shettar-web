@@ -1,4 +1,5 @@
 import { getStoredToken, hasAuthSession, isUsableJwt } from '@/app/helpers/auth';
+import { openCableWebSocket } from '@/app/helpers/cable';
 
 export type AccountNotificationCablePayload = {
   notification_id?: number;
@@ -94,11 +95,11 @@ function teardownSocket() {
 }
 
 function canConnectCable(token?: string | null): boolean {
-  return hasAuthSession() || isUsableJwt(token);
+  return isUsableJwt(token) || hasAuthSession();
 }
 
 function ensureSocket(tokenOverride?: string | null) {
-  const token = tokenOverride ?? getStoredToken();
+  const token = isUsableJwt(tokenOverride) ? tokenOverride : getStoredToken();
   if (!canConnectCable(token)) return;
   const sessionKey = isUsableJwt(token) ? token! : (token ?? 'cookie');
   if (rejectedToken === sessionKey) return;
@@ -111,9 +112,7 @@ function ensureSocket(tokenOverride?: string | null) {
   teardownSocket();
   socketToken = sessionKey;
 
-  const api = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
-  const wsUrl = api.replace(/^http/, 'ws') + '/cable';
-  const ws = new WebSocket(wsUrl);
+  const ws = openCableWebSocket(isUsableJwt(token) ? token : null);
   sharedSocket = ws;
   const identifier = JSON.stringify({ channel: 'AccountNotificationsChannel' });
   let confirmed = false;

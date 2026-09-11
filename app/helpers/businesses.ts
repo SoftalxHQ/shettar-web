@@ -2,6 +2,9 @@ import { ReadonlyURLSearchParams } from 'next/navigation';
 import { Hotel } from '@/app/types/hotel';
 import { authorizationHeaders } from '@/app/helpers/auth';
 import { withBrowseCredentials } from '@/app/helpers/browse-gate';
+import { getApiBaseUrl } from '@/app/helpers/api-base-url';
+
+export { getApiBaseUrl };
 
 export type BusinessListMeta = {
   current_page: number;
@@ -82,12 +85,6 @@ export function ensureFutureStayDatesFromSearchParams(
   }
 
   return { start_date, end_date };
-}
-
-export function getApiBaseUrl(): string {
-  const rawUrl = process.env.NEXT_PUBLIC_API_URL;
-  const baseUrl = rawUrl && rawUrl !== 'undefined' ? rawUrl : 'http://127.0.0.1:3000';
-  return baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
 }
 
 /**

@@ -1,6 +1,5 @@
 import { authorizationHeaders, getStoredToken } from '@/app/helpers/auth';
-
-const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
+import { getApiBaseUrl } from '@/app/helpers/api-base-url';
 
 export type GuestMenuCategory = {
   id: number;
@@ -52,7 +51,7 @@ function businessPathKey(businessId: string | number) {
 }
 
 export async function fetchGuestMenu(businessId: string | number) {
-  const res = await fetch(`${API_URL}/api/v1/businesses/${businessPathKey(businessId)}/restaurant/menu`, {
+  const res = await fetch(`${getApiBaseUrl()}/api/v1/businesses/${businessPathKey(businessId)}/restaurant/menu`, {
     credentials: 'include',
     headers: authHeaders(),
   });
@@ -63,7 +62,7 @@ export async function fetchGuestMenu(businessId: string | number) {
 
 export async function fetchGuestOrders(businessId: string | number, reservationId: number) {
   const res = await fetch(
-    `${API_URL}/api/v1/businesses/${businessPathKey(businessId)}/restaurant/orders?reservation_id=${reservationId}`,
+    `${getApiBaseUrl()}/api/v1/businesses/${businessPathKey(businessId)}/restaurant/orders?reservation_id=${reservationId}`,
     { credentials: 'include', headers: authHeaders() }
   );
   const data = await res.json();
@@ -81,7 +80,7 @@ export async function createGuestOrder(
     items: { menu_item_id: number; quantity: number }[];
   }
 ) {
-  const res = await fetch(`${API_URL}/api/v1/businesses/${businessPathKey(businessId)}/restaurant/orders`, {
+  const res = await fetch(`${getApiBaseUrl()}/api/v1/businesses/${businessPathKey(businessId)}/restaurant/orders`, {
     method: 'POST',
     credentials: 'include',
     headers: authHeaders(),

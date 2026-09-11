@@ -1,5 +1,6 @@
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
+import { resolveApiUrl } from '@/app/helpers/api-base-url';
 
 function receiptFileName(reference?: string, prefix = 'Shettar_Receipt'): string {
   const slug = reference?.replace(/[^\w-]/g, '') || 'receipt';
@@ -132,12 +133,61 @@ function mountOffscreen(node: HTMLElement): () => void {
   return () => host.remove();
 }
 
+function srcForExportFetch(src: string): string {
+  try {
+    const parsed = new URL(src, typeof window !== 'undefined' ? window.location.href : undefined);
+    if (parsed.pathname.includes('/rails/active_storage')) {
+      return resolveApiUrl(`${parsed.pathname}${parsed.search}`);
+    }
+  } catch {
+    /* keep original */
+  }
+  return src;
+}
+
+async function inlineImagesForExport(root: HTMLElement): Promise<string[]> {
+  const objectUrls: string[] = [];
+  const images = Array.from(root.querySelectorAll('img'));
+  await Promise.all(
+    images.map(async (img) => {
+      const src = img.getAttribute('src');
+      if (!src || src.startsWith('data:') || src.startsWith('blob:')) return;
+      const candidates = Array.from(new Set([src, srcForExportFetch(src)]));
+      for (const candidate of candidates) {
+        try {
+          const proxy = `/api/export-image?src=${encodeURIComponent(candidate)}`;
+          const response = await fetch(proxy);
+          if (!response.ok) continue;
+          const blob = await response.blob();
+          if (!blob.type.startsWith('image/') && blob.type !== 'application/octet-stream') continue;
+          const objectUrl = URL.createObjectURL(blob);
+          objectUrls.push(objectUrl);
+          img.removeAttribute('crossorigin');
+          img.src = objectUrl;
+          await img.decode().catch(
+            () =>
+              new Promise<void>((resolve) => {
+                img.onload = () => resolve();
+                img.onerror = () => resolve();
+              })
+          );
+          return;
+        } catch {
+          /* try next candidate */
+        }
+      }
+    })
+  );
+  return objectUrls;
+}
+
 export async function captureReceiptElement(element: HTMLElement): Promise<HTMLCanvasElement> {
   const clone = bakeExportClone(element);
   const cleanup = mountOffscreen(clone);
+  let objectUrls: string[] = [];
 
   try {
-    // Allow layout to settle after mount
+    objectUrls = await inlineImagesForExport(clone);
     await new Promise((resolve) => requestAnimationFrame(() => resolve(undefined)));
 
     return await html2canvas(clone, {
@@ -154,6 +204,7 @@ export async function captureReceiptElement(element: HTMLElement): Promise<HTMLC
     });
   } finally {
     cleanup();
+    objectUrls.forEach((url) => URL.revokeObjectURL(url));
   }
 }
 

@@ -3,7 +3,8 @@ import type { BaseQueryFn, FetchBaseQueryMeta } from "@reduxjs/toolkit/query";
 import type { RootState } from "../store";
 import { clearCredentials, setCredentials, setUser } from "../slices/authSlice";
 import type { StoredUser } from "@/app/helpers/auth";
-import { COOKIE_SESSION_MARKER, getStoredToken, hasAuthSession, isUsableJwt, wipeAllClientAuthStorage } from "@/app/helpers/auth";
+import { COOKIE_SESSION_MARKER, getStoredToken, hasAuthSession, isUsableJwt, wipeAllClientAuthStorage, syncTabJwt } from "@/app/helpers/auth";
+import { getApiBaseUrl } from "@/app/helpers/api-base-url";
 import { getBrowseApiHeaders, isBrowseGateEnabled, isBrowseClearanceRequiredResponse, redirectToBrowseVerify } from "@/app/helpers/browse-gate";
 import type { NotificationItem } from "@/lib/store/slices/notificationsSlice";
 
@@ -43,13 +44,27 @@ export interface AccountProfile {
   deletion_reason?: string | null;
 }
 
-const baseQuery = fetchBaseQuery({
-  baseUrl: process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:3000",
+function withApiBaseUrl(args: string | { url: string; [key: string]: unknown }) {
+  const base = getApiBaseUrl();
+  if (typeof args === "string") {
+    if (/^https?:\/\//i.test(args)) return args;
+    return `${base}${args.startsWith("/") ? args : `/${args}`}`;
+  }
+  if (/^https?:\/\//i.test(args.url)) return args;
+  return {
+    ...args,
+    url: `${base}${args.url.startsWith("/") ? args.url : `/${args.url}`}`,
+  };
+}
+
+const rawBaseQuery = fetchBaseQuery({
+  baseUrl: "",
   credentials: "include",
   prepareHeaders: (headers, { getState }) => {
     const reduxToken = (getState() as RootState).auth.token;
     const token = isUsableJwt(reduxToken) ? reduxToken : getStoredToken();
     if (isUsableJwt(token)) {
+      syncTabJwt(token);
       headers.set("Authorization", `Bearer ${token}`);
     }
     const browseHeaders = getBrowseApiHeaders();
@@ -61,7 +76,7 @@ const baseQuery = fetchBaseQuery({
 });
 
 const baseQueryWithReauth: BaseQueryFn = async (args, api, extraOptions) => {
-  const result = await baseQuery(args, api, extraOptions);
+  const result = await rawBaseQuery(withApiBaseUrl(args as string | { url: string }), api, extraOptions);
   if (
     isBrowseGateEnabled() &&
     result.error?.status === 403 &&
@@ -175,10 +190,11 @@ export const apiService = createApi({
         try {
           const { data, meta } = await queryFulfilled;
           const authHeader = authorizationHeaderFromMeta(meta);
-          const token =
+          const rawToken =
             authHeader?.replace(/^Bearer\s+/i, "").trim() ||
             data.token ||
             COOKIE_SESSION_MARKER;
+          const token = isUsableJwt(rawToken) ? rawToken : COOKIE_SESSION_MARKER;
           const user = data.data;
           if (user) {
             dispatch(setCredentials({ token, user }));
@@ -199,10 +215,11 @@ export const apiService = createApi({
         try {
           const { data, meta } = await queryFulfilled;
           const authHeader = authorizationHeaderFromMeta(meta);
-          const token =
+          const rawToken =
             authHeader?.replace(/^Bearer\s+/i, "").trim() ||
             data.token ||
             COOKIE_SESSION_MARKER;
+          const token = isUsableJwt(rawToken) ? rawToken : COOKIE_SESSION_MARKER;
           const user = data.data ?? data.status?.data;
           if (user) {
             dispatch(setCredentials({ token, user }));
@@ -337,11 +354,24 @@ export const apiService = createApi({
 
     // ── Notifications ─────────────────────────────────────────────────────────
 
-    getNotifications: builder.query<NotificationItem[], void>({
-      query: () => "/api/v1/notifications",
-      // API returns { notifications: [...] } — unwrap it
-      transformResponse: (response: { notifications: NotificationItem[] }) =>
-        response.notifications ?? [],
+    getNotifications: builder.query<
+      { notifications: NotificationItem[]; pagination?: { page?: number; last?: number; count?: number } },
+      { page?: number; limit?: number } | void
+    >({
+      query: (args) => {
+        const params = new URLSearchParams();
+        if (args?.page != null) params.set("page", String(args.page));
+        if (args?.limit != null) params.set("limit", String(args.limit));
+        const qs = params.toString();
+        return qs ? `/api/v1/notifications?${qs}` : "/api/v1/notifications";
+      },
+      transformResponse: (response: {
+        notifications?: NotificationItem[];
+        pagination?: { page?: number; last?: number; count?: number };
+      }) => ({
+        notifications: response.notifications ?? [],
+        pagination: response.pagination,
+      }),
       providesTags: ["Notifications"],
     }),
 
@@ -605,6 +635,7 @@ export const {
   useDeleteAccountMutation,
   // Notifications
   useGetNotificationsQuery,
+  useLazyGetNotificationsQuery,
   useGetUnreadCountQuery,
   useMarkAsReadMutation,
   useDeleteNotificationsMutation,

@@ -6,14 +6,12 @@ import { addNotification, setNotifications } from '@/lib/store/slices/notificati
 import { getOrCreateGuestId } from '@/app/helpers/guest-id';
 import { getStoredToken } from '@/app/helpers/auth';
 import { appendGuestNotification, loadGuestNotifications } from '@/app/helpers/guest-notifications';
-import { showNotificationToast } from '@/app/helpers/notification-display';
+import { consumeNotificationToastKey, showNotificationToast } from '@/app/helpers/notification-display';
 import {
   isWebPushConfigured,
   listenForForegroundPush,
   registerWebPushDevice,
 } from '@/app/helpers/push-notifications';
-
-const toastedKeys = new Set<string>();
 
 function handleForegroundNotification(
   dispatch: ReturnType<typeof useAppDispatch>,
@@ -42,12 +40,7 @@ function handleForegroundNotification(
   }
 
   const text = payload.body || payload.title;
-  if (text && !toastedKeys.has(toastKey)) {
-    toastedKeys.add(toastKey);
-    if (toastedKeys.size > 200) {
-      const oldest = toastedKeys.values().next().value;
-      if (oldest) toastedKeys.delete(oldest);
-    }
+  if (text && consumeNotificationToastKey(toastKey)) {
     showNotificationToast({
       title: payload.title,
       message: payload.body,

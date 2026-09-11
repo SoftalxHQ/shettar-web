@@ -1,7 +1,6 @@
 import { authorizationHeaders, getStoredToken } from '@/app/helpers/auth';
 import { calculatePaystackCardFee } from '@/app/helpers/paystack-fees';
-
-const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
+import { getApiBaseUrl } from '@/app/helpers/api-base-url';
 
 export type CardPaymentInitResult = {
   reference: string;
@@ -20,7 +19,7 @@ export async function initializeCardPayment(params: {
   const token = getStoredToken();
   const headers: Record<string, string> = { 'Content-Type': 'application/json', ...authorizationHeaders(token) };
 
-  const response = await fetch(`${API_URL}/api/v1/payment_initializations`, {
+  const response = await fetch(`${getApiBaseUrl()}/api/v1/payment_initializations`, {
     method: 'POST',
     credentials: 'include',
     headers,

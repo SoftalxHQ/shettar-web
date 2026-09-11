@@ -1,11 +1,14 @@
 'use client';
 
-import { Card, CardBody, CardHeader, Col, Row } from 'react-bootstrap';
+import { useState } from 'react';
+import { Card, CardBody, CardHeader } from 'react-bootstrap';
 import UserLayout from '@/app/components/layouts/UserLayout';
 import UtilityPurchase from '@/app/components/Profile/UtilityPurchase';
 import { BsLightningCharge } from 'react-icons/bs';
 
 const UtilityPage = () => {
+  const [purchaseComplete, setPurchaseComplete] = useState(false);
+
   return (
     <UserLayout>
       <Card className="border bg-transparent mb-4">
@@ -21,38 +24,40 @@ const UtilityPage = () => {
           </div>
         </CardHeader>
         <CardBody className="p-3 p-md-4">
-          <UtilityPurchase />
+          <UtilityPurchase onStatusChange={setPurchaseComplete} />
         </CardBody>
       </Card>
 
-      <Card className="border bg-light shadow-sm">
-        <CardBody className="p-4">
-          <h5 className="mb-3">How it works</h5>
-          <div className="vstack gap-3">
-            <div className="d-flex align-items-start">
-              <div className="bg-primary text-white rounded-circle flex-centered me-3" style={{ width: '24px', height: '24px', flexShrink: 0 }}>1</div>
-              <div>
-                <h6 className="mb-1">Select Service</h6>
-                <p className="small text-secondary mb-0">Choose Airtime, Data, TV, or Electricity from the tabs above.</p>
+      {!purchaseComplete && (
+        <Card className="border bg-light shadow-sm">
+          <CardBody className="p-4">
+            <h5 className="mb-3">How it works</h5>
+            <div className="vstack gap-3">
+              <div className="d-flex align-items-start">
+                <div className="bg-primary text-white rounded-circle flex-centered me-3" style={{ width: '24px', height: '24px', flexShrink: 0 }}>1</div>
+                <div>
+                  <h6 className="mb-1">Select Service</h6>
+                  <p className="small text-secondary mb-0">Choose Airtime, Data, TV, or Electricity from the tabs above.</p>
+                </div>
+              </div>
+              <div className="d-flex align-items-start">
+                <div className="bg-primary text-white rounded-circle flex-centered me-3" style={{ width: '24px', height: '24px', flexShrink: 0 }}>2</div>
+                <div>
+                  <h6 className="mb-1">Fill Details</h6>
+                  <p className="small text-secondary mb-0">Select your provider, verify smartcard or meter when required, and confirm the amount or plan.</p>
+                </div>
+              </div>
+              <div className="d-flex align-items-start">
+                <div className="bg-primary text-white rounded-circle flex-centered me-3" style={{ width: '24px', height: '24px', flexShrink: 0 }}>3</div>
+                <div>
+                  <h6 className="mb-1">Instant Activation</h6>
+                  <p className="small text-secondary mb-0">Once you click buy, the amount is deducted from your wallet and the service is activated instantly.</p>
+                </div>
               </div>
             </div>
-            <div className="d-flex align-items-start">
-              <div className="bg-primary text-white rounded-circle flex-centered me-3" style={{ width: '24px', height: '24px', flexShrink: 0 }}>2</div>
-              <div>
-                <h6 className="mb-1">Fill Details</h6>
-                <p className="small text-secondary mb-0">Select your provider, verify smartcard or meter when required, and confirm the amount or plan.</p>
-              </div>
-            </div>
-            <div className="d-flex align-items-start">
-              <div className="bg-primary text-white rounded-circle flex-centered me-3" style={{ width: '24px', height: '24px', flexShrink: 0 }}>3</div>
-              <div>
-                <h6 className="mb-1">Instant Activation</h6>
-                <p className="small text-secondary mb-0">Once you click buy, the amount is deducted from your wallet and the service is activated instantly.</p>
-              </div>
-            </div>
-          </div>
-        </CardBody>
-      </Card>
+          </CardBody>
+        </Card>
+      )}
     </UserLayout>
   );
 };

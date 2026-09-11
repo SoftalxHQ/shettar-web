@@ -16,8 +16,7 @@
  */
 
 import { withBrowseCredentials } from '@/app/helpers/browse-gate';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000';
+import { getApiBaseUrl } from '@/app/helpers/api-base-url';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -71,7 +70,7 @@ export interface AuthResult {
 
 /** Marker stored in Redux only — never send this as a Bearer token. */
 export const COOKIE_SESSION_MARKER = '__shettar_cookie__';
-const SESSION_JWT_KEY = 'shettar_jwt_mem';
+const LEGACY_SESSION_JWT_KEY = 'shettar_jwt_mem';
 
 export function isUsableJwt(token?: string | null): boolean {
   return !!token && token !== COOKIE_SESSION_MARKER && token.includes('.');
@@ -86,16 +85,6 @@ export function hasAuthSession(): boolean {
   }
 }
 
-export function getSessionJwt(): string | null {
-  if (typeof window === 'undefined') return null;
-  try {
-    const stored = sessionStorage.getItem(SESSION_JWT_KEY);
-    return isUsableJwt(stored) ? stored : null;
-  } catch {
-    return null;
-  }
-}
-
 export function authorizationHeaders(token?: string | null): Record<string, string> {
   const value = token === undefined ? getStoredToken() : token;
   if (!isUsableJwt(value)) return {};
@@ -107,25 +96,43 @@ function jwtFromAuthHeader(res: Response): string {
   return authHeader?.replace(/^Bearer\s+/i, '').trim() ?? '';
 }
 
+/** Tab-memory JWT only — never written to sessionStorage/localStorage. */
+let memoryJwt: string | null = null;
+
+function rememberMemoryJwt(token?: string | null) {
+  memoryJwt = isUsableJwt(token) ? token! : null;
+}
+
+/** Copy a Redux JWT into tab memory. Does not clear when the token is omitted. */
+export function syncTabJwt(token?: string | null) {
+  if (isUsableJwt(token)) rememberMemoryJwt(token);
+}
+
 export function sessionTokenFromResponse(res: Response, body?: { token?: string }): string {
-  return jwtFromAuthHeader(res) || body?.token?.trim() || COOKIE_SESSION_MARKER;
+  const jwt = jwtFromAuthHeader(res) || body?.token?.trim() || '';
+  if (isUsableJwt(jwt)) {
+    rememberMemoryJwt(jwt);
+    return jwt;
+  }
+  return COOKIE_SESSION_MARKER;
 }
 
 export const saveAuthSession = (user: StoredUser, token?: string) => {
   localStorage.setItem('user', JSON.stringify(user));
   localStorage.setItem('shettar_session', '1');
   localStorage.removeItem('token');
+  // Omit token when refreshing the stored user — do not wipe the tab JWT.
+  if (isUsableJwt(token)) rememberMemoryJwt(token);
   try {
-    if (isUsableJwt(token)) {
-      sessionStorage.setItem(SESSION_JWT_KEY, token!);
-    }
+    sessionStorage.removeItem(LEGACY_SESSION_JWT_KEY);
   } catch {
     /* ignore private mode / quota */
   }
 
-  if (typeof window !== 'undefined' && isUsableJwt(token)) {
+  if (typeof window !== 'undefined') {
     void import('@/app/helpers/push-notifications').then(async ({ syncPushRegistrationAfterAuth }) => {
-      const ok = await syncPushRegistrationAfterAuth(token!);
+      const authToken = isUsableJwt(token) ? token! : (isUsableJwt(memoryJwt) ? memoryJwt! : COOKIE_SESSION_MARKER);
+      const ok = await syncPushRegistrationAfterAuth(authToken);
       if (ok) {
         const { clearGuestNotifications } = await import('@/app/helpers/guest-notifications');
         clearGuestNotifications();
@@ -135,11 +142,12 @@ export const saveAuthSession = (user: StoredUser, token?: string) => {
 };
 
 export const clearAuthSession = () => {
+  rememberMemoryJwt(null);
   localStorage.removeItem('token');
   localStorage.removeItem('user');
   localStorage.removeItem('shettar_session');
   try {
-    sessionStorage.removeItem(SESSION_JWT_KEY);
+    sessionStorage.removeItem(LEGACY_SESSION_JWT_KEY);
   } catch {
     /* ignore */
   }
@@ -165,7 +173,7 @@ export function wipeAllClientAuthStorage() {
  */
 export async function signOut(): Promise<void> {
   try {
-    await fetch(`${API_URL}/accounts/sign_out`, {
+    await fetch(`${getApiBaseUrl()}/accounts/sign_out`, {
       method: 'DELETE',
       credentials: 'include',
       headers: {
@@ -190,13 +198,17 @@ export const getStoredUser = (): StoredUser | null => {
   }
 };
 
-/** Tab-scoped JWT (sessionStorage) if present; otherwise a cookie-session marker. Never localStorage. */
+/** In-memory JWT for this tab, else a cookie-session marker. Never localStorage. */
 export const getStoredToken = (): string | null => {
   if (typeof window === 'undefined') return null;
   try {
     localStorage.removeItem('token');
-    const sessionJwt = getSessionJwt();
-    if (sessionJwt) return sessionJwt;
+    try {
+      sessionStorage.removeItem(LEGACY_SESSION_JWT_KEY);
+    } catch {
+      /* ignore */
+    }
+    if (isUsableJwt(memoryJwt)) return memoryJwt;
     if (localStorage.getItem('user') || localStorage.getItem('shettar_session')) {
       return COOKIE_SESSION_MARKER;
     }
@@ -216,7 +228,7 @@ export async function signIn(payload: SignInPayload): Promise<AuthResult> {
   try {
     const { turnstileToken, ...account } = payload;
     const res = await fetch(
-      `${API_URL}/accounts/sign_in`,
+      `${getApiBaseUrl()}/accounts/sign_in`,
       withBrowseCredentials({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -282,7 +294,7 @@ export async function signUp(payload: SignUpPayload): Promise<AuthResult> {
   try {
     const { turnstileToken, ...account } = payload;
     const res = await fetch(
-      `${API_URL}/accounts/sign_up`,
+      `${getApiBaseUrl()}/accounts/sign_up`,
       withBrowseCredentials({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -340,7 +352,7 @@ export async function signUp(payload: SignUpPayload): Promise<AuthResult> {
 export async function requestPasswordReset(email: string, turnstileToken?: string | null): Promise<AuthResult> {
   try {
     const res = await fetch(
-      `${API_URL}/accounts/reset_password`,
+      `${getApiBaseUrl()}/accounts/reset_password`,
       withBrowseCredentials({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -376,7 +388,7 @@ export async function resetPassword(
   passwordConfirmation: string,
 ): Promise<AuthResult> {
   try {
-    const res = await fetch(`${API_URL}/accounts/update_password`, {
+    const res = await fetch(`${getApiBaseUrl()}/accounts/update_password`, {
       method: 'PUT',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
@@ -410,7 +422,7 @@ export async function resetPassword(
  */
 export async function verifyEmail(email: string, code: string): Promise<AuthResult> {
   try {
-    const res = await fetch(`${API_URL}/accounts/verify_email`, {
+    const res = await fetch(`${getApiBaseUrl()}/accounts/verify_email`, {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
@@ -438,7 +450,7 @@ export async function verifyEmail(email: string, code: string): Promise<AuthResu
  */
 export async function resendVerification(email: string): Promise<AuthResult> {
   try {
-    const res = await fetch(`${API_URL}/accounts/resend_verification`, {
+    const res = await fetch(`${getApiBaseUrl()}/accounts/resend_verification`, {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
@@ -467,7 +479,7 @@ export async function resendVerification(email: string): Promise<AuthResult> {
 export async function verifyPhone(code: string): Promise<AuthResult> {
   const token = getStoredToken();
   try {
-    const res = await fetch(`${API_URL}/accounts/verify_phone`, {
+    const res = await fetch(`${getApiBaseUrl()}/accounts/verify_phone`, {
       method: 'POST',
       credentials: 'include',
       headers: {
@@ -499,7 +511,7 @@ export async function verifyPhone(code: string): Promise<AuthResult> {
 export async function resendPhoneVerification(): Promise<AuthResult> {
   const token = getStoredToken();
   try {
-    const res = await fetch(`${API_URL}/accounts/resend_phone_verification`, {
+    const res = await fetch(`${getApiBaseUrl()}/accounts/resend_phone_verification`, {
       method: 'POST',
       credentials: 'include',
       headers: {

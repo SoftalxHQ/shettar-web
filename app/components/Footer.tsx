@@ -122,9 +122,6 @@ export default function FooterWithLinks() {
             <h5 className="text-white mb-3">Payment & Security</h5>
             <ul className="list-inline mb-4 mt-3">
               <li className="list-inline-item me-2">
-                <Image src="/images/element/paypal.svg" className="h-30px" alt="paypal" width={45} height={30} />
-              </li>
-              <li className="list-inline-item me-2">
                 <Image src="/images/element/visa.svg" className="h-30px" alt="visa" width={45} height={30} />
               </li>
               <li className="list-inline-item me-2">

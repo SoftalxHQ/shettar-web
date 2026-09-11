@@ -17,8 +17,7 @@ import {
 } from '@simplewebauthn/browser';
 import { parseApiError } from '@/app/helpers/review-thread';
 import { authorizationHeaders, saveAuthSession, sessionTokenFromResponse, type AuthResult, type StoredUser } from '@/app/helpers/auth';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000';
+import { getApiBaseUrl } from '@/app/helpers/api-base-url';
 
 export { browserSupportsWebAuthn };
 
@@ -77,7 +76,7 @@ function storedUserFromPayload(raw: Record<string, unknown>): StoredUser {
  */
 export async function startPasskeySignIn(email?: string): Promise<AuthResult> {
   try {
-    const challengeRes = await fetch(`${API_URL}/accounts/passkey_auth/challenge`, {
+    const challengeRes = await fetch(`${getApiBaseUrl()}/accounts/passkey_auth/challenge`, {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
@@ -99,7 +98,7 @@ export async function startPasskeySignIn(email?: string): Promise<AuthResult> {
 
     const credential = await startAuthentication({ optionsJSON: options });
 
-    const verifyRes = await fetch(`${API_URL}/accounts/passkey_auth/verify`, {
+    const verifyRes = await fetch(`${getApiBaseUrl()}/accounts/passkey_auth/verify`, {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
@@ -129,7 +128,7 @@ export async function startPasskeySignIn(email?: string): Promise<AuthResult> {
 
 export async function registerPasskey(token: string, nickname?: string): Promise<PasskeyResult> {
   try {
-    const optionsRes = await fetch(`${API_URL}/accounts/passkeys/options`, {
+    const optionsRes = await fetch(`${getApiBaseUrl()}/accounts/passkeys/options`, {
       method: 'POST',
       credentials: 'include',
       headers: authHeaders(token),
@@ -151,7 +150,7 @@ export async function registerPasskey(token: string, nickname?: string): Promise
 
     const credential = await startRegistration({ optionsJSON: options });
 
-    const createRes = await fetch(`${API_URL}/accounts/passkeys`, {
+    const createRes = await fetch(`${getApiBaseUrl()}/accounts/passkeys`, {
       method: 'POST',
       credentials: 'include',
       headers: authHeaders(token),
@@ -180,7 +179,7 @@ export async function registerPasskey(token: string, nickname?: string): Promise
 }
 
 export async function listPasskeys(token: string): Promise<PasskeySummary[]> {
-  const res = await fetch(`${API_URL}/accounts/passkeys`, {
+  const res = await fetch(`${getApiBaseUrl()}/accounts/passkeys`, {
     credentials: 'include',
     headers: authHeaders(token),
   });
@@ -191,7 +190,7 @@ export async function listPasskeys(token: string): Promise<PasskeySummary[]> {
 
 export async function revokePasskey(token: string, passkeyId: number): Promise<PasskeyResult> {
   try {
-    const res = await fetch(`${API_URL}/accounts/passkeys/${passkeyId}`, {
+    const res = await fetch(`${getApiBaseUrl()}/accounts/passkeys/${passkeyId}`, {
       method: 'DELETE',
       credentials: 'include',
       headers: authHeaders(token),

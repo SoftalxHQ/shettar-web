@@ -7,11 +7,10 @@ import { updateHotelStats as updateHotelStatsAction } from '@/lib/store/slices/h
 import { clearCredentials, setCredentials, setUser } from '@/lib/store/slices/authSlice';
 import {
   apiService,
-  useSignOutMutation,
   useGetAccountDetailsQuery,
 } from '@/lib/store/services/apiService';
 import { useRouter, usePathname } from 'next/navigation';
-import { getStoredUser, getStoredToken, getSessionJwt, isUsableJwt, signOut, wipeAllClientAuthStorage } from '@/app/helpers/auth';
+import { COOKIE_SESSION_MARKER, getStoredUser, getStoredToken, hasAuthSession, isUsableJwt, signOut, syncTabJwt } from '@/app/helpers/auth';
 
 export type LayoutState = {
   theme: 'light' | 'dark' | 'auto';
@@ -37,7 +36,6 @@ export function useLayoutContext(): LayoutType {
   const router = useRouter();
   const pathname = usePathname();
   const onAuthRoute = pathname?.startsWith('/auth') ?? false;
-  const [signOutMutation] = useSignOutMutation();
 
   const theme = useAppSelector((s) => s.theme.theme);
   const dir = useAppSelector((s) => s.theme.dir);
@@ -51,30 +49,30 @@ export function useLayoutContext(): LayoutType {
   // Use the full profile from RTK Query cache — it has all fields (email_verified,
   // avatar_url, emer_*, etc.) that the slim StoredUser in auth slice lacks.
   const canAuthorizeAccount =
-    isUsableJwt(authToken) || (typeof window !== 'undefined' && isUsableJwt(getSessionJwt()));
+    isAuthenticated || (typeof window !== 'undefined' && hasAuthSession());
 
   const { data: fullProfile, isLoading: profileLoading } = useGetAccountDetailsQuery(undefined, {
-    // Wait for a real JWT. Persist blacklists `token`, so a rehydrated session
-    // is authenticated with token=null until sessionStorage is restored.
     skip: !isAuthenticated || onAuthRoute || !canAuthorizeAccount,
   });
 
   // Merge: prefer full profile when available, fall back to auth slice user
   const account = fullProfile ?? authUser;
 
-  // Restore tab JWT after persist rehydrate (token is blacklisted) or on first load.
+  // Restore tab JWT (not persisted) or cookie session after persist rehydrate.
   useEffect(() => {
+    if (isUsableJwt(authToken)) syncTabJwt(authToken);
     const user = getStoredUser() ?? authUser;
-    const storedJwt = getSessionJwt();
-    if (user && isUsableJwt(storedJwt) && storedJwt !== authToken) {
-      dispatch(setCredentials({ user, token: storedJwt }));
+    if (!user) return;
+    const stored = getStoredToken();
+    if (isUsableJwt(stored) && stored !== authToken) {
+      dispatch(setCredentials({ user, token: stored }));
       return;
     }
-    if (!isAuthenticated) {
-      const token = getStoredToken();
-      if (user && token) {
-        dispatch(setCredentials({ user, token }));
-      }
+    if (!isAuthenticated && stored) {
+      dispatch(setCredentials({
+        user,
+        token: isUsableJwt(stored) ? stored : COOKIE_SESSION_MARKER,
+      }));
     }
   }, [isAuthenticated, authToken, authUser, dispatch]);
 
@@ -99,20 +97,23 @@ export function useLayoutContext(): LayoutType {
     const user = getStoredUser();
     if (!user) return;
     const token = getStoredToken();
-    if (isUsableJwt(authToken) || isUsableJwt(token)) {
-      dispatch(setCredentials({ user, token: (isUsableJwt(authToken) ? authToken : token)! }));
+    if (isUsableJwt(token)) {
+      dispatch(setCredentials({ user, token }));
+      return;
+    }
+    if (token || hasAuthSession()) {
+      dispatch(setCredentials({ user, token: COOKIE_SESSION_MARKER }));
       return;
     }
     dispatch(setUser(user));
-  }, [authToken, dispatch]);
+  }, [dispatch]);
 
   const logout = useCallback(async () => {
     await signOut();
-    await signOutMutation();
     dispatch(clearCredentials());
-    wipeAllClientAuthStorage();
+    dispatch(apiService.util.resetApiState());
     router.push('/auth/sign-in');
-  }, [dispatch, signOutMutation, router]);
+  }, [dispatch, router]);
 
   const refreshAccount = useCallback(async () => {
     await dispatch(apiService.endpoints.getAccountDetails.initiate(undefined, { forceRefetch: true }));

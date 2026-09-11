@@ -1,7 +1,6 @@
 import { authorizationHeaders, getStoredToken } from '@/app/helpers/auth';
+import { getApiBaseUrl } from '@/app/helpers/api-base-url';
 import type { WalletTransactionForReceipt } from '@/app/helpers/utility-receipt';
-
-const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
 
 export type UtilityNetwork = {
   name: string;
@@ -190,7 +189,7 @@ function authHeaders(): Record<string, string> {
 }
 
 export async function fetchUtilityNetworks(): Promise<UtilityNetwork[]> {
-  const response = await fetch(`${API_URL}/api/v1/utility/networks`, {
+  const response = await fetch(`${getApiBaseUrl()}/api/v1/utility/networks`, {
     credentials: 'include',
     headers: authHeaders(),
   });
@@ -200,7 +199,7 @@ export async function fetchUtilityNetworks(): Promise<UtilityNetwork[]> {
 }
 
 export async function fetchTvProviders(): Promise<UtilityProvider[]> {
-  const response = await fetch(`${API_URL}/api/v1/utility/tv_providers`, {
+  const response = await fetch(`${getApiBaseUrl()}/api/v1/utility/tv_providers`, {
     credentials: 'include',
     headers: authHeaders(),
   });
@@ -213,7 +212,7 @@ export async function fetchTvProviders(): Promise<UtilityProvider[]> {
 }
 
 export async function fetchElectricityProviders(): Promise<UtilityProvider[]> {
-  const response = await fetch(`${API_URL}/api/v1/utility/electricity_providers`, {
+  const response = await fetch(`${getApiBaseUrl()}/api/v1/utility/electricity_providers`, {
     credentials: 'include',
     headers: authHeaders(),
   });
@@ -236,7 +235,7 @@ export function dedupeVariations(variations: DataVariation[]): DataVariation[] {
 
 export async function fetchDataVariations(network: string): Promise<DataVariation[]> {
   const response = await fetch(
-    `${API_URL}/api/v1/utility/variations?network=${encodeURIComponent(network)}&type=data`,
+    `${getApiBaseUrl()}/api/v1/utility/variations?network=${encodeURIComponent(network)}&type=data`,
     { credentials: 'include', headers: authHeaders() }
   );
   if (!response.ok) return [];
@@ -246,7 +245,7 @@ export async function fetchDataVariations(network: string): Promise<DataVariatio
 
 export async function fetchTvVariations(provider: string): Promise<DataVariation[]> {
   const response = await fetch(
-    `${API_URL}/api/v1/utility/variations?provider=${encodeURIComponent(provider)}&type=tv`,
+    `${getApiBaseUrl()}/api/v1/utility/variations?provider=${encodeURIComponent(provider)}&type=tv`,
     { credentials: 'include', headers: authHeaders() }
   );
   if (!response.ok) return [];
@@ -260,7 +259,7 @@ export async function verifyUtilityBill(payload: {
   billers_code: string;
   meter_type?: 'prepaid' | 'postpaid';
 }): Promise<{ verification: VerifyResult; billers_code: string; provider: string; meter_type?: string }> {
-  const response = await fetch(`${API_URL}/api/v1/utility/verify`, {
+  const response = await fetch(`${getApiBaseUrl()}/api/v1/utility/verify`, {
     method: 'POST',
     credentials: 'include',
     headers: authHeaders(),
@@ -350,7 +349,7 @@ export async function lookupUtilityPurchase(options: {
 
   if (options.transactionId != null && String(options.transactionId).trim()) {
     const response = await fetch(
-      `${API_URL}/api/v1/wallet_transactions/${encodeURIComponent(String(options.transactionId))}`,
+      `${getApiBaseUrl()}/api/v1/wallet_transactions/${encodeURIComponent(String(options.transactionId))}`,
       { credentials: 'include', headers }
     );
     if (response.ok) {
@@ -361,7 +360,7 @@ export async function lookupUtilityPurchase(options: {
 
   if (options.requestId?.trim()) {
     const response = await fetch(
-      `${API_URL}/api/v1/wallet_transactions?request_id=${encodeURIComponent(options.requestId.trim())}&limit=5`,
+      `${getApiBaseUrl()}/api/v1/wallet_transactions?request_id=${encodeURIComponent(options.requestId.trim())}&limit=5`,
       { credentials: 'include', headers }
     );
     if (response.ok) {
@@ -371,7 +370,7 @@ export async function lookupUtilityPurchase(options: {
     }
   }
 
-  const response = await fetch(`${API_URL}/api/v1/wallet_transactions?flow=debit&limit=10`, { credentials: 'include', headers });
+  const response = await fetch(`${getApiBaseUrl()}/api/v1/wallet_transactions?flow=debit&limit=10`, { credentials: 'include', headers });
   if (!response.ok) return null;
   const data = (await parseJsonResponse(response)) as { transactions?: WalletTransactionLookup[] } | null;
   return data?.transactions?.find((transaction) => isRecentUtilityDebit(transaction, options.productType)) ?? null;
@@ -399,7 +398,7 @@ export async function buyAirtime(payload: {
   transaction_pin?: string;
 }): Promise<PurchaseResult> {
   return postPurchase(
-    `${API_URL}/api/v1/wallet/buy_airtime`,
+    `${getApiBaseUrl()}/api/v1/wallet/buy_airtime`,
     { ...payload, option: 'other' },
     'Airtime purchase failed.'
   );
@@ -412,7 +411,7 @@ export async function buyData(payload: {
   amount: number;
   transaction_pin?: string;
 }): Promise<PurchaseResult> {
-  return postPurchase(`${API_URL}/api/v1/wallet/buy_data`, payload, 'Data purchase failed.');
+  return postPurchase(`${getApiBaseUrl()}/api/v1/wallet/buy_data`, payload, 'Data purchase failed.');
 }
 
 export async function buyTv(payload: {
@@ -425,7 +424,7 @@ export async function buyTv(payload: {
   phone_number?: string;
   transaction_pin?: string;
 }): Promise<PurchaseResult> {
-  return postPurchase(`${API_URL}/api/v1/wallet/buy_tv`, payload, 'TV subscription failed.');
+  return postPurchase(`${getApiBaseUrl()}/api/v1/wallet/buy_tv`, payload, 'TV subscription failed.');
 }
 
 export async function buyElectricity(payload: {
@@ -437,7 +436,7 @@ export async function buyElectricity(payload: {
   customer_name?: string;
   transaction_pin?: string;
 }): Promise<PurchaseResult> {
-  return postPurchase(`${API_URL}/api/v1/wallet/buy_electricity`, payload, 'Electricity payment failed.');
+  return postPurchase(`${getApiBaseUrl()}/api/v1/wallet/buy_electricity`, payload, 'Electricity payment failed.');
 }
 
 function defaultNetworks(): UtilityNetwork[] {

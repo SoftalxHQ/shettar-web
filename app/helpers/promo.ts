@@ -1,9 +1,5 @@
 import { authorizationHeaders, getStoredToken } from "@/app/helpers/auth";
-
-const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:3000").replace(
-  /\/$/,
-  "",
-);
+import { getApiBaseUrl } from '@/app/helpers/api-base-url';
 
 export type AppliedPromo = {
   valid: true;
@@ -28,7 +24,7 @@ export async function validatePromoCode(params: {
   subtotal: number;
 }): Promise<PromoValidationResult> {
   const token = getStoredToken();
-  const res = await fetch(`${API_URL}/api/v1/promo_codes/validate`, {
+  const res = await fetch(`${getApiBaseUrl()}/api/v1/promo_codes/validate`, {
     method: "POST",
     credentials: "include",
     headers: {

@@ -220,6 +220,20 @@ function notificationToastIcon(input: {
   });
 }
 
+const toastedNotificationKeys = new Set<string>();
+const TOASTED_NOTIFICATION_CAP = 200;
+
+/** Shared cable/FCM toast dedupe. Returns true the first time a key is seen. */
+export function consumeNotificationToastKey(key: string): boolean {
+  if (!key || toastedNotificationKeys.has(key)) return false;
+  toastedNotificationKeys.add(key);
+  if (toastedNotificationKeys.size > TOASTED_NOTIFICATION_CAP) {
+    const oldest = toastedNotificationKeys.values().next().value;
+    if (oldest) toastedNotificationKeys.delete(oldest);
+  }
+  return true;
+}
+
 export function showNotificationToast(input: {
   title?: string;
   message?: string;

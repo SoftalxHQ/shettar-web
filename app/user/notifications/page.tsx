@@ -38,7 +38,7 @@ function getNotificationIcon(
 }
 
 const NotificationsPage = () => {
-  const { notifications, unreadCount, markAsRead, deleteNotification, loading } = useNotifications();
+  const { notifications, unreadCount, markAsRead, deleteNotification, loading, loadMore, loadingMore, hasMore } = useNotifications();
   const router = useRouter();
   const [deleteModal, setDeleteModal] = useState<{ show: boolean; id: number | 'all' | null; isAll: boolean }>({
     show: false,
@@ -99,6 +99,7 @@ const NotificationsPage = () => {
               </div>
             </div>
           ) : notifications.length > 0 ? (
+            <>
             <ListGroup className="list-group-flush list-unstyled">
               {notifications.map((notification) => (
                 <ListGroupItem
@@ -161,6 +162,14 @@ const NotificationsPage = () => {
                 </ListGroupItem>
               ))}
             </ListGroup>
+            {hasMore ? (
+              <div className="text-center p-4 border-top">
+                <Button variant="outline-primary" onClick={() => void loadMore()} disabled={loadingMore}>
+                  {loadingMore ? 'Loading…' : 'Load more'}
+                </Button>
+              </div>
+            ) : null}
+            </>
           ) : (
             <div className="text-center p-5">
               <div className="avatar avatar-lg bg-light rounded-circle mb-3 m-auto d-flex align-items-center justify-content-center">

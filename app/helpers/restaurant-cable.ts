@@ -1,4 +1,5 @@
 import { getStoredToken, hasAuthSession, isUsableJwt } from '@/app/helpers/auth';
+import { openCableWebSocket } from '@/app/helpers/cable';
 
 const MAX_RETRIES = 3;
 const RETRY_DELAY_MS = 5000;
@@ -49,9 +50,7 @@ export function subscribeRestaurantReservation(
 
   function connect() {
     if (closed || rejected) return;
-    const api = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
-    const wsUrl = api.replace(/^http/, 'ws') + '/cable';
-    const socket = new WebSocket(wsUrl);
+    const socket = openCableWebSocket(isUsableJwt(token) ? token : null);
     ws = socket;
     let confirmed = false;
     const openedAt = Date.now();

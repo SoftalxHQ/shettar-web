@@ -1,6 +1,5 @@
 import { authorizationHeaders, getStoredToken } from '@/app/helpers/auth';
-
-const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
+import { getApiBaseUrl } from '@/app/helpers/api-base-url';
 
 export type GuestReservation = {
   id: number;
@@ -58,7 +57,7 @@ export type GuestReservation = {
 
 export async function fetchGuestReservation(bookingId: string): Promise<GuestReservation> {
   const token = getStoredToken();
-  const res = await fetch(`${API_URL}/api/v1/reservations/${encodeURIComponent(bookingId)}`, {
+  const res = await fetch(`${getApiBaseUrl()}/api/v1/reservations/${encodeURIComponent(bookingId)}`, {
     credentials: 'include',
     headers: {
       ...authorizationHeaders(token),

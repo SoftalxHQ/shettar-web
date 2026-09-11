@@ -15,23 +15,19 @@
 import type { ReactNode } from 'react';
 import { useGetAccountDetailsQuery } from '@/lib/store/services/apiService';
 import { useAppSelector } from '@/lib/store/hooks';
-import { authorizationHeaders, getSessionJwt, getStoredToken, isUsableJwt, signOut } from '@/app/helpers/auth';
+import { authorizationHeaders, getStoredToken, signOut } from '@/app/helpers/auth';
+import { getApiBaseUrl } from '@/app/helpers/api-base-url';
 
 // Re-export AccountProfile so existing imports from this file continue to work
 export type { AccountProfile } from '@/lib/store/services/apiService';
-
-const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
 
 // ─── Hook ─────────────────────────────────────────────────────────────────────
 
 export function useAccountProfile() {
   const isAuthenticated = useAppSelector((s) => s.auth.isAuthenticated);
-  const authToken = useAppSelector((s) => s.auth.token);
-  const canAuthorize =
-    isUsableJwt(authToken) || (typeof window !== 'undefined' && isUsableJwt(getSessionJwt()));
   const { data: profile, isLoading, error, refetch } = useGetAccountDetailsQuery(
     undefined,
-    { skip: !isAuthenticated || !canAuthorize },
+    { skip: !isAuthenticated },
   );
 
   return {
@@ -85,14 +81,14 @@ export async function saveAccountProfile(
         if (v !== undefined && v !== null) formData.append(`account[${k}]`, v as string);
       });
       formData.append('account[avatar]', avatarFile);
-      res = await fetch(`${API_URL}/accounts/update`, {
+      res = await fetch(`${getApiBaseUrl()}/accounts/update`, {
         method: 'PUT',
         credentials: 'include',
         headers: { ...authorizationHeaders(token) },
         body: formData,
       });
     } else {
-      res = await fetch(`${API_URL}/accounts/update`, {
+      res = await fetch(`${getApiBaseUrl()}/accounts/update`, {
         method: 'PUT',
         credentials: 'include',
         headers: { ...authorizationHeaders(token), 'Content-Type': 'application/json' },
@@ -132,7 +128,7 @@ export async function changeAccountPassword(
   if (!token) return { ok: false, message: 'Not authenticated.' };
 
   try {
-    const res = await fetch(`${API_URL}/accounts/change_password`, {
+    const res = await fetch(`${getApiBaseUrl()}/accounts/change_password`, {
       method: 'PUT',
       credentials: 'include',
       headers: {

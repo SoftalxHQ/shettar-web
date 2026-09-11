@@ -27,8 +27,9 @@ import { useLayoutContext } from '@/app/states';
 import { useApi } from '@/app/hooks/useApi';
 import { toast } from 'react-hot-toast';
 import { authorizationHeaders, getStoredToken, hasAuthSession, isUsableJwt } from '@/app/helpers/auth';
+import { getApiBaseUrl } from '@/app/helpers/api-base-url';
+import { subscribeCableChannel } from '@/app/helpers/cable';
 import { getAttributionToken } from '@/app/hooks/useSponsoredListingTracking';
-import { createConsumer } from '@rails/actioncable';
 import { useTransactionPin } from '@/app/hooks/useTransactionPin';
 import type { AppliedPromo } from '@/app/helpers/promo';
 
@@ -190,27 +191,20 @@ const PaymentOptions = ({
     const token = getStoredToken();
     if (!hasAuthSession() && !isUsableJwt(token)) return;
 
-    const api = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
-    const wsUrl = api.replace(/^http/, 'ws') + '/cable';
-
-    const consumer = createConsumer(wsUrl);
-
-    const subscription = consumer.subscriptions.create(
+    return subscribeCableChannel(
       { channel: 'WalletChannel' },
       {
         received: (data: WalletChannelMessage) => {
           if (data.event === 'balance_updated') {
-            toast.success(`Success! Wallet credited with ${currency}${data.amount}`, { id: data.reference });
+            if (Number(data.amount) > 0) {
+              toast.success(`Success! Wallet credited with ${currency}${data.amount}`, { id: data.reference });
+            }
             refreshAccount?.();
           }
         },
-      }
+      },
+      token,
     );
-
-    return () => {
-      subscription.unsubscribe();
-      consumer.disconnect();
-    };
   }, [isAuthenticated, account, refreshAccount]);
 
   // Calculate adults/children from search params, but use props for stay details
@@ -246,7 +240,7 @@ const PaymentOptions = ({
       throw new Error('Hotel or room information is missing. Please refresh and try again.');
     }
 
-    const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
+    const API_URL = getApiBaseUrl();
     const token = getStoredToken();
 
     // Map form fields to correct database schema
@@ -317,14 +311,6 @@ const PaymentOptions = ({
     return result;
   };
 
-  const showBookingSuccessToast = (bookingId: string) => {
-    toast.success('Your booking has been confirmed!', {
-      id: `booking-confirmed-${bookingId}`,
-      duration: 5000,
-      icon: '🎉',
-    });
-  };
-
   const handleTopUp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!topUpAmount || Number(topUpAmount) < 100) {
@@ -335,7 +321,7 @@ const PaymentOptions = ({
     setIsTopUpProcessing(true);
     try {
       const token = getStoredToken();
-      const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
+      const API_URL = getApiBaseUrl();
 
       const response = await apiFetch(`${API_URL}/api/v1/wallet/initialize_topup`, {
         method: 'POST',
@@ -375,7 +361,7 @@ const PaymentOptions = ({
   const verifyTopUpPayment = async (reference: string) => {
     try {
       const token = getStoredToken();
-      const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
+      const API_URL = getApiBaseUrl();
 
       const response = await apiFetch(`${API_URL}/api/v1/wallet/verify_topup`, {
         method: 'POST',
@@ -414,7 +400,7 @@ const PaymentOptions = ({
         throw new Error('Hotel or room information is missing. Please refresh and try again.');
       }
 
-      const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
+      const API_URL = getApiBaseUrl();
       const token = getStoredToken();
 
       if (data.payment_method === 'card') {
@@ -486,7 +472,6 @@ const PaymentOptions = ({
             createReservation(data, transaction.reference)
               .then((result: ReservationCreateResult) => {
                 const confirmedBookingId = result.reservations[0].booking_id;
-                showBookingSuccessToast(confirmedBookingId);
                 router.push(`/hotel/${hotelSlug}/roomtype/${roomSlug}/booking-confirmed?booking_id=${confirmedBookingId}&rooms=${actualRoomsCount}`);
               })
               .catch((err: unknown) => {
@@ -507,7 +492,6 @@ const PaymentOptions = ({
         }
         const result = await createReservation(data, undefined, transactionPin);
         const confirmedBookingId = result.reservations[0].booking_id;
-        showBookingSuccessToast(confirmedBookingId);
         router.push(`/hotel/${hotelSlug}/roomtype/${roomSlug}/booking-confirmed?booking_id=${confirmedBookingId}&rooms=${actualRoomsCount}`);
       }
     } catch (err: unknown) {

@@ -1,7 +1,8 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, Spinner } from 'react-bootstrap';
+import Link from 'next/link';
+import { Alert, Button, Spinner } from 'react-bootstrap';
 import {
   BsCheckCircleFill,
   BsClockFill,
@@ -17,7 +18,8 @@ import confetti from 'canvas-confetti';
 import { useLayoutContext, currency } from '@/app/states';
 import { toast } from 'react-hot-toast';
 import { useTransactionPin } from '@/app/hooks/useTransactionPin';
-import UtilityReceiptCard, { type UtilityReceipt } from '@/app/components/Profile/Utility/UtilityReceiptCard';
+import { type UtilityReceipt } from '@/app/components/Profile/Utility/UtilityReceiptCard';
+import UtilityReceiptModal from '@/app/components/Profile/Utility/UtilityReceiptModal';
 import {
   buyAirtime,
   buyData,
@@ -47,7 +49,7 @@ import {
   type UtilityProvider,
   type VerifyResult,
 } from '@/app/helpers/utility-api';
-import { mapTransactionToReceipt } from '@/app/helpers/utility-receipt';
+import { mapTransactionToReceipt, resolveReceiptReference } from '@/app/helpers/utility-receipt';
 
 type TabType = 'airtime' | 'data' | 'tv' | 'electricity';
 type TvMode = 'renew' | 'change';
@@ -71,7 +73,11 @@ function fireConfetti() {
   }, 250);
 }
 
-const UtilityPurchase = () => {
+type UtilityPurchaseProps = {
+  onStatusChange?: (complete: boolean) => void;
+};
+
+const UtilityPurchase = ({ onStatusChange }: UtilityPurchaseProps) => {
   const { account: profile, refreshAccount } = useLayoutContext();
   const { requestTransactionPin, PinModal } = useTransactionPin();
   const [activeTab, setActiveTab] = useState<TabType>('airtime');
@@ -109,6 +115,12 @@ const UtilityPurchase = () => {
   const [loading, setLoading] = useState(false);
   const [purchaseError, setPurchaseError] = useState<string | null>(null);
   const [receipt, setReceipt] = useState<UtilityReceipt | null>(null);
+  const [showReceiptModal, setShowReceiptModal] = useState(false);
+
+  useEffect(() => {
+    onStatusChange?.(Boolean(receipt));
+    return () => onStatusChange?.(false);
+  }, [receipt, onStatusChange]);
 
   const balance = Number(profile?.wallet_balance || 0);
   const airtimeValue = Number(amount);
@@ -513,6 +525,7 @@ const UtilityPurchase = () => {
 
   const resetPurchase = () => {
     setReceipt(null);
+    setShowReceiptModal(false);
     setPurchaseError(null);
     setAmount('');
     setSelectedPlan(null);
@@ -540,7 +553,7 @@ const UtilityPurchase = () => {
         ? 'Purchase Failed'
         : isPending
           ? 'Purchase Processing'
-          : 'Purchase Successful!';
+          : 'Purchase Successful';
     const heroSub = isFailed
       ? receipt.failureReason ||
         (receipt.status === 'refunded'
@@ -549,20 +562,67 @@ const UtilityPurchase = () => {
       : isPending
         ? 'Your purchase is being processed. We will notify you when it completes.'
         : `Your ${receipt.type.toLowerCase()} purchase is complete.`;
+    const reference = resolveReceiptReference(receipt);
+    const destination = (() => {
+      const type = receipt.type.toLowerCase();
+      const meterOrDecoder = (receipt.billersCode || receipt.recipient || '').trim();
+      const phone = (receipt.recipient || '').trim();
+      if (type.includes('electric')) {
+        return meterOrDecoder ? { label: 'Meter number', value: meterOrDecoder } : null;
+      }
+      if (type.includes('tv')) {
+        return meterOrDecoder ? { label: 'Decoder number', value: meterOrDecoder } : null;
+      }
+      if (phone && receipt.receiptKind !== 'topup' && receipt.receiptKind !== 'booking' && receipt.receiptKind !== 'order') {
+        return { label: 'Phone number', value: phone };
+      }
+      return null;
+    })();
 
     return (
-      <div className="utility-purchase">
-        <div className="text-center mb-4">
-          <HeroIcon size={72} className={heroClass} />
-          <h4 className="fw-bold mb-2">{heroTitle}</h4>
-          <p className="text-secondary small mb-0">{heroSub}</p>
+      <div className="utility-purchase text-center">
+        <HeroIcon size={72} className={heroClass} />
+        <h4 className="fw-bold mb-2">{heroTitle}</h4>
+        <p className="text-secondary mb-1">{heroSub}</p>
+        {destination ? (
+          <div className="mb-3">
+            <div className="small text-uppercase fw-semibold text-secondary mb-1" style={{ letterSpacing: '0.12em' }}>
+              {destination.label}
+            </div>
+            <div className="font-monospace fw-bold text-body" style={{ fontSize: '1.15rem', letterSpacing: '0.04em' }}>
+              {destination.value}
+            </div>
+          </div>
+        ) : null}
+        <p className="small text-secondary mb-4">Share your receipt from the receipt view or Transactions.</p>
+        <div className="mb-4">
+          <div className="small text-uppercase fw-semibold text-secondary mb-1" style={{ letterSpacing: '0.12em' }}>
+            Reference
+          </div>
+          <div className="font-monospace fw-bold text-primary" style={{ fontSize: '1.15rem', letterSpacing: '0.06em' }}>
+            {reference}
+          </div>
         </div>
-
-        <UtilityReceiptCard receipt={receipt} />
-
-        <button type="button" className="btn btn-outline-primary w-100 py-3 rounded-4 fw-bold mt-4" onClick={resetPurchase}>
-          Make Another Purchase
-        </button>
+        {receipt.token ? (
+          <div className="bg-light rounded-4 p-3 mb-4 text-start">
+            <div className="small text-uppercase fw-semibold text-secondary mb-1">Meter token</div>
+            <div className="font-monospace fw-bold">{receipt.token}</div>
+            {receipt.units ? <div className="small text-secondary mt-1">{receipt.units} units</div> : null}
+          </div>
+        ) : null}
+        <div className="d-grid gap-2">
+          <Button variant="primary" className="w-100 py-3 rounded-3" onClick={() => setShowReceiptModal(true)}>
+            View receipt
+          </Button>
+          <Button variant="outline-primary" className="w-100 py-3 rounded-3" onClick={resetPurchase}>
+            Make another purchase
+          </Button>
+          <Link href="/user/transactions" className="small text-secondary text-decoration-none mt-1">
+            View transactions
+          </Link>
+        </div>
+        <UtilityReceiptModal receipt={showReceiptModal ? receipt : null} onClose={() => setShowReceiptModal(false)} />
+        <PinModal />
       </div>
     );
   }

@@ -9,12 +9,15 @@ import { toast } from 'react-hot-toast';
 import { useLayoutContext } from '@/app/states';
 import { parseUtilityApiError } from '@/app/helpers/utility-api';
 import { authorizationHeaders, getStoredToken, hasAuthSession, isUsableJwt } from '@/app/helpers/auth';
+import { getApiBaseUrl } from '@/app/helpers/api-base-url';
+import { subscribeCableChannel } from '@/app/helpers/cable';
 import { useApi } from '@/app/hooks/useApi';
-
-import { createConsumer } from '@rails/actioncable';
+import { useAppSelector } from '@/lib/store/hooks';
 
 const AccountWallet = () => {
   const { account: profile, isAccountLoading: isLoading, refreshAccount } = useLayoutContext();
+  const reduxToken = useAppSelector((s) => s.auth.token);
+  const sessionToken = () => (isUsableJwt(reduxToken) ? reduxToken : getStoredToken());
   const [showTopUp, setShowTopUp] = useState(false);
   const [amount, setAmount] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -31,9 +34,8 @@ const AccountWallet = () => {
     setIsDvaLoading(true);
     setDvaError(null);
     try {
-      const token = getStoredToken();
-      const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
-      const response = await apiFetch(`${API_URL}/api/v1/wallet/dva_details`, {
+      const token = sessionToken();
+      const response = await apiFetch(`${getApiBaseUrl()}/api/v1/wallet/dva_details`, {
         headers: { ...authorizationHeaders(token) }
       });
       const data = await response.json().catch(() => null);
@@ -63,33 +65,24 @@ const AccountWallet = () => {
   useEffect(() => {
     if (!profile) return;
 
-    const token = getStoredToken();
+    const token = sessionToken();
     if (!hasAuthSession() && !isUsableJwt(token)) return;
 
-    const api = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
-    const wsUrl = api.replace(/^http/, 'ws') + '/cable';
-
-    const consumer = createConsumer(wsUrl);
-
-    const subscription = consumer.subscriptions.create(
+    return subscribeCableChannel(
       { channel: 'WalletChannel' },
       {
-        received: (data: any) => {
+        received: (data: { event?: string; amount?: number; reference?: string }) => {
           if (data.event === 'balance_updated') {
-            toast.success(`Success! Wallet credited with ${currency}${data.amount}`, { id: data.reference });
+            if (Number(data.amount) > 0) {
+              toast.success(`Success! Wallet credited with ${currency}${data.amount}`, { id: data.reference });
+            }
             refreshAccount?.();
           }
         },
-        connected: () => console.log('Connected to WalletChannel'),
-        disconnected: () => console.log('Disconnected from WalletChannel')
-      }
+      },
+      token,
     );
-
-    return () => {
-      subscription.unsubscribe();
-      consumer.disconnect();
-    };
-  }, [profile, refreshAccount]);
+  }, [profile, refreshAccount, reduxToken]);
 
   const handleManualRefresh = async () => {
     setIsRefreshing(true);
@@ -150,8 +143,8 @@ const AccountWallet = () => {
 
     setIsProcessing(true);
     try {
-      const token = getStoredToken();
-      const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
+      const token = sessionToken();
+      const API_URL = getApiBaseUrl();
 
       // 1. Initialize topup on backend — pass payment method so backend calculates gross amount
       const response = await apiFetch(`${API_URL}/api/v1/wallet/initialize_topup`, {
@@ -194,8 +187,8 @@ const AccountWallet = () => {
 
   const verifyPayment = async (reference: string) => {
     try {
-      const token = getStoredToken();
-      const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000').replace(/\/$/, '');
+      const token = sessionToken();
+      const API_URL = getApiBaseUrl();
 
       const response = await apiFetch(`${API_URL}/api/v1/wallet/verify_topup`, {
         method: 'POST',

@@ -293,24 +293,27 @@ const BookingPass = forwardRef<HTMLDivElement, BookingPassProps>(function Bookin
           margin-bottom: 0.65rem;
         }
 
-        .booking-pass-meta-row {
+        .booking-pass :global(.booking-pass-meta-row) {
           display: flex;
           justify-content: space-between;
+          align-items: baseline;
           gap: 1rem;
           padding: 0.45rem 0;
         }
 
-        .booking-pass-meta-label {
+        .booking-pass :global(.booking-pass-meta-label) {
           color: var(--bs-secondary-color);
           font-size: 0.9rem;
           font-weight: 500;
+          flex-shrink: 0;
         }
 
-        .booking-pass-meta-value {
+        .booking-pass :global(.booking-pass-meta-value) {
           color: var(--bs-body-color);
           font-size: 0.95rem;
           font-weight: 600;
           text-align: right;
+          margin-left: auto;
         }
 
         .booking-pass-total {
