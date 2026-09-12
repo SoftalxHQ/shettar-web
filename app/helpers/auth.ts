@@ -72,7 +72,7 @@ export interface AuthResult {
 export const COOKIE_SESSION_MARKER = '__shettar_cookie__';
 const LEGACY_SESSION_JWT_KEY = 'shettar_jwt_mem';
 
-export function isUsableJwt(token?: string | null): boolean {
+export function isUsableJwt(token?: string | null): token is string {
   return !!token && token !== COOKIE_SESSION_MARKER && token.includes('.');
 }
 
