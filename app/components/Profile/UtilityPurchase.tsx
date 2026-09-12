@@ -49,7 +49,7 @@ import {
   type UtilityProvider,
   type VerifyResult,
 } from '@/app/helpers/utility-api';
-import { mapTransactionToReceipt, resolveReceiptReference } from '@/app/helpers/utility-receipt';
+import { mapTransactionToReceipt, normalizeElectricityToken, resolveReceiptReference } from '@/app/helpers/utility-receipt';
 
 type TabType = 'airtime' | 'data' | 'tv' | 'electricity';
 type TvMode = 'renew' | 'change';
@@ -466,7 +466,7 @@ const UtilityPurchase = ({ onStatusChange }: UtilityPurchaseProps) => {
           customerAddress: electricityVerification.customer_address,
           billersCode: meterNumber.trim(),
           meterType,
-          token: result.token,
+          token: normalizeElectricityToken(result.token) || undefined,
           units: result.units,
           status: (result.status as UtilityReceipt['status']) || 'delivered',
           requestId: result.request_id,

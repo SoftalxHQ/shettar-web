@@ -50,6 +50,27 @@ export type WalletTransactionForReceipt = {
   metadata?: WalletTransactionMetadata | null;
 };
 
+/** Strip VTPass-style "token:" / "Token :" prefixes from meter codes. */
+export function normalizeElectricityToken(value?: string | null | string[]): string | undefined {
+  if (value == null) return undefined;
+  // Route/query parsers sometimes split on ":" into ["token", "4713..."].
+  const raw = Array.isArray(value)
+    ? value.map((part) => String(part ?? '').trim()).filter(Boolean).join(' ')
+    : String(value);
+  let token = raw.trim();
+  if (!token) return undefined;
+
+  token = token.replace(/^token(?:\s*[:：]\s*|\s+)/i, '').trim();
+  if (!token) return undefined;
+
+  // Digit/dash tokens sometimes arrive split across whitespace/newlines.
+  if (/^[\d\s-]+$/.test(token)) {
+    token = token.replace(/\s+/g, '');
+  }
+  return token || undefined;
+}
+
+
 const UTILITY_PRODUCT_TYPES = new Set<UtilityProductType>(['airtime', 'data', 'tv', 'electricity']);
 
 const TYPE_LABELS: Record<UtilityProductType, string> = {
@@ -226,7 +247,7 @@ function mapUtilityTransactionToReceipt(txn: WalletTransactionForReceipt): Utili
     billersCode: meta?.billers_code,
     customerName: meta?.customer_name,
     customerAddress: meta?.customer_address,
-    token: meta?.electricity_token,
+    token: normalizeElectricityToken(meta?.electricity_token),
     units: meta?.units,
     meterType: meta?.meter_type,
   };
