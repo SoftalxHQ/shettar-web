@@ -16,11 +16,11 @@ const FEATURED_LIMIT = 12;
 
 function FeaturedHotelCardSkeleton() {
   return (
-    <Card className="card-img-scale overflow-hidden bg-transparent">
-      <div className="card-img-scale-wrapper rounded-3 position-relative overflow-hidden">
+    <Card className="card-img-scale overflow-hidden">
+      <div className="card-img-scale-wrapper position-relative overflow-hidden">
         <Skeleton height="100%" width="100%" text="Shettar" />
       </div>
-      <div className="card-body px-2">
+      <div className="card-body">
         <div className="placeholder col-8 rounded mb-2 bg-body-secondary opacity-50" style={{ height: 24 }} />
         <div className="placeholder col-10 rounded bg-body-secondary opacity-50" style={{ height: 20 }} />
       </div>
@@ -100,7 +100,15 @@ const FeaturedHotels = () => {
           limit: FEATURED_LIMIT,
         });
         if (cancelled) return;
-        setHotels(rows);
+        // One card per business (API may return the same hotel under multiple campaigns).
+        const seen = new Set<number | string>();
+        const unique = rows.filter((hotel) => {
+          const id = hotel.id;
+          if (id == null || seen.has(id)) return false;
+          seen.add(id);
+          return true;
+        });
+        setHotels(unique);
       } catch (e) {
         if (!cancelled) {
           console.error('Error fetching featured hotels:', e);
@@ -182,7 +190,10 @@ const FeaturedHotels = () => {
             <div className="featured-hotels__viewport" ref={emblaRef}>
               <div className="featured-hotels__track">
                 {hotels.map((hotel) => (
-                  <div key={hotel.id} className="featured-hotels__slide">
+                  <div
+                    key={hotel.impression_key || `${hotel.id}-${hotel.ad_campaign_id ?? "organic"}`}
+                    className="featured-hotels__slide"
+                  >
                     <FeaturedHotelCard
                       id={hotel.id}
                       slug={hotel.slug}
@@ -206,7 +217,11 @@ const FeaturedHotels = () => {
         ) : (
           <Row className="g-4">
             {hotels.map((hotel) => (
-              <Col key={hotel.id} sm={6} xl={3}>
+              <Col
+                key={hotel.impression_key || `${hotel.id}-${hotel.ad_campaign_id ?? "organic"}`}
+                sm={6}
+                xl={3}
+              >
                 <FeaturedHotelCard
                   id={hotel.id}
                   slug={hotel.slug}

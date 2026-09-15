@@ -121,8 +121,8 @@ const FeaturedHotelCard = ({
 
   return (
     <div ref={ref}>
-      <Card className="card-img-scale overflow-hidden bg-transparent">
-        <div className="card-img-scale-wrapper rounded-3 position-relative">
+      <Card className="card-img-scale overflow-hidden">
+        <div className="card-img-scale-wrapper position-relative">
         {sponsored && adCampaignId && (
           <span className="badge bg-secondary position-absolute top-0 end-0 m-2 z-1">Sponsored</span>
         )}
@@ -141,11 +141,12 @@ const FeaturedHotelCard = ({
         </div>
       </div>
 
-      <div className="card-body px-2">
+      <div className="card-body">
         <h5 className="card-title">
           <Link
             href={hotelDetailLink}
             className="stretched-link"
+            title={name}
             onClick={() => {
               if (sponsored && adCampaignId) trackClick();
             }}

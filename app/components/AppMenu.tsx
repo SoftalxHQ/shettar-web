@@ -1,10 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import { Collapse, Dropdown, DropdownMenu, DropdownToggle, DropdownItem } from 'react-bootstrap';
-import { BsCloudDownloadFill, BsLifePreserver, BsChevronDown } from 'react-icons/bs';
-import { FaEllipsis } from 'react-icons/fa6';
+import { Collapse, Dropdown, DropdownMenu, DropdownToggle } from 'react-bootstrap';
+import { BsChevronDown } from 'react-icons/bs';
 import clsx from 'clsx';
+import { businessPortalUrl } from '@/app/helpers/business-portal-url';
 
 type AppMenuProps = {
   showExtraPages?: boolean;
@@ -17,6 +17,8 @@ const menuItems = [
 ];
 
 export default function AppMenu({ showExtraPages, mobileMenuOpen, menuClassName }: AppMenuProps) {
+  const listPropertyUrl = businessPortalUrl();
+
   return (
     <Collapse in={mobileMenuOpen} className="navbar-collapse">
       <div id="navbarCollapse">
@@ -51,6 +53,17 @@ export default function AppMenu({ showExtraPages, mobileMenuOpen, menuClassName 
               </li>
             </DropdownMenu>
           </Dropdown>
+
+           <li className="nav-item">
+            <a
+              href={listPropertyUrl}
+              className="nav-link"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              List Property
+            </a>
+          </li>
 
           <li className="nav-item">
             <Link className="nav-link" href="/contact">Contact Us</Link>
