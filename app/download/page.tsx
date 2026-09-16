@@ -8,6 +8,7 @@ import Footer from '@/app/components/Footer';
 import { Container, Row, Col, Spinner } from 'react-bootstrap';
 import { BsApple, BsWindows, BsUbuntu, BsDownload } from 'react-icons/bs';
 import { desktopReleaseChannel } from '@/app/helpers/app-env';
+import ReleaseNotes from '@/app/components/ReleaseNotes';
 
 type Installers = {
   windows?: string | null;
@@ -288,14 +289,7 @@ export default function DownloadPage() {
                         </Link>
                       </div>
                       {release.notes ? (
-                        <pre
-                          className="mb-0 small text-secondary"
-                          style={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit' }}
-                        >
-                          {release.notes.length > 280
-                            ? `${release.notes.slice(0, 280).trimEnd()}…`
-                            : release.notes}
-                        </pre>
+                        <ReleaseNotes notes={release.notes} className="release-notes--preview" />
                       ) : (
                         <p className="mb-0 small text-secondary">
                           See the{' '}

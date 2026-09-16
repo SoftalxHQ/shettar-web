@@ -7,6 +7,7 @@ import Header from '@/app/components/Header';
 import Footer from '@/app/components/Footer';
 import { Container, Row, Col, Spinner, Badge, Button, Collapse } from 'react-bootstrap';
 import { desktopReleaseChannel } from '@/app/helpers/app-env';
+import ReleaseNotes from '@/app/components/ReleaseNotes';
 
 type DesktopRelease = {
   version: string;
@@ -186,12 +187,7 @@ function ChangelogContent() {
                       <div>
                         <div className="px-3 pb-3 pt-2">
                           {release.notes ? (
-                            <pre
-                              className="mb-0 small text-secondary"
-                              style={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit' }}
-                            >
-                              {release.notes}
-                            </pre>
+                            <ReleaseNotes notes={release.notes} />
                           ) : (
                             <p className="mb-0 small text-secondary">No release notes for this version.</p>
                           )}
