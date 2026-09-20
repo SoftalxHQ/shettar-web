@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Button, Col, Container, Row, Spinner } from 'react-bootstrap';
 import {
-  BsArrowDown,
+  BsArrowRight,
   BsChatDots,
   BsHouse,
   BsLightningCharge,
@@ -12,28 +12,19 @@ import {
 } from 'react-icons/bs';
 import Header from '@/app/components/Header';
 import Footer from '@/app/components/Footer';
-import {
-  closeTidioChat,
-  loadTidioChat,
-  onTidioEvent,
-  openTidioChat,
-  setTidioVisible,
-} from '@/app/helpers/tidio';
+import { loadTawkChat, openTawkChat, setTawkVisible } from '@/app/helpers/tawk';
 
 export default function SupportChatPage() {
-  const [isChatActive, setIsChatActive] = useState(false);
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
     let mounted = true;
 
     const init = async () => {
-      await loadTidioChat();
+      await loadTawkChat();
       if (!mounted) return;
 
-      setTidioVisible(true);
-      onTidioEvent('chat:open', () => setIsChatActive(true));
-      onTidioEvent('chat:close', () => setIsChatActive(false));
+      setTawkVisible(true);
       setIsReady(true);
     };
 
@@ -41,14 +32,13 @@ export default function SupportChatPage() {
 
     return () => {
       mounted = false;
-      closeTidioChat();
-      setTidioVisible(false);
+      setTawkVisible(false);
     };
   }, []);
 
   return (
     <>
-      <Header />
+      <Header disableSticky />
       <main>
         <section className="pt-4 pt-lg-5 pb-0">
           <Container>
@@ -83,14 +73,7 @@ export default function SupportChatPage() {
           <Container>
             <Row className="justify-content-center">
               <Col lg={7} xl={6}>
-                <div
-                  className="text-center px-3 px-sm-4"
-                  style={{
-                    opacity: isChatActive ? 0 : 1,
-                    pointerEvents: isChatActive ? 'none' : 'auto',
-                    transition: 'opacity 0.25s ease',
-                  }}
-                >
+                <div className="text-center px-3 px-sm-4">
                   <div
                     className="rounded-circle d-inline-flex align-items-center justify-content-center mb-4"
                     style={{
@@ -118,7 +101,7 @@ export default function SupportChatPage() {
                       size="lg"
                       className="shadow-sm"
                       disabled={!isReady}
-                      onClick={() => openTidioChat()}
+                      onClick={() => openTawkChat()}
                     >
                       {!isReady ? (
                         <>
@@ -135,7 +118,7 @@ export default function SupportChatPage() {
                     <p className="small text-secondary mb-0">
                       Or tap the chat icon in the bottom-right corner to talk with our agents.
                     </p>
-                    <BsArrowDown size={22} className="text-primary mx-auto" />
+                    <BsArrowRight size={22} className="text-primary mx-auto" />
                   </div>
                 </div>
               </Col>

@@ -68,7 +68,8 @@ builder:
     NEXT_PUBLIC_FIREBASE_APP_ID: <%= ENV.fetch("NEXT_PUBLIC_FIREBASE_APP_ID", "") %>
     NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID: <%= ENV.fetch("NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID", "") %>
     NEXT_PUBLIC_FCM_VAPID_KEY: <%= ENV.fetch("NEXT_PUBLIC_FCM_VAPID_KEY", "") %>
-    NEXT_PUBLIC_TIDIO_KEY: <%= ENV.fetch("NEXT_PUBLIC_TIDIO_KEY", "") %>
+    NEXT_PUBLIC_TAWK_PROPERTY_ID: <%= ENV.fetch("NEXT_PUBLIC_TAWK_PROPERTY_ID", "") %>
+    NEXT_PUBLIC_TAWK_WIDGET_ID: <%= ENV.fetch("NEXT_PUBLIC_TAWK_WIDGET_ID", "") %>
     NEXT_PUBLIC_BROWSE_GATE_ENABLED: <%= ENV.fetch("NEXT_PUBLIC_BROWSE_GATE_ENABLED", "") %>
   # Looked up from .kamal/secrets after ERB. ENV.fetch in args runs too early and
   # bakes an empty key, so sign-in posts with no token and the API returns 422.

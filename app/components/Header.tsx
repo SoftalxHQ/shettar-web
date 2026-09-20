@@ -97,7 +97,7 @@ const themeModes: ThemeMode[] = [
   },
 ];
 
-export default function Header() {
+export default function Header({ disableSticky = false }: { disableSticky?: boolean } = {}) {
   const { theme, updateTheme, account, isAccountLoading, logout, isAuthenticated, refreshAccount } = useLayoutContext();
   const { notifications, unreadCount, markAsRead } = useNotifications();
   const { isOpen, toggle } = useToggle();
@@ -203,7 +203,7 @@ export default function Header() {
       <header
         ref={headerRef}
         className={clsx('navbar-light header-sticky bg-mode border-bottom mb-3', {
-          'header-sticky-on': !isUserDashboard && scrollY >= 400,
+          'header-sticky-on': !disableSticky && !isUserDashboard && scrollY >= 400,
         })}
       >
         <Navbar expand="lg">
