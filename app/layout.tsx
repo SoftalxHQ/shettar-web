@@ -8,7 +8,7 @@ import "./styles/bookinga.scss";
 const SITE_URL = "https://www.shettar.com";
 const SITE_NAME = "Shettar";
 const SITE_DESCRIPTION =
-  "Discover and book amazing hotels in Nigeria. Compare prices, read reviews, and find the best accommodation for your next trip. 0810 704 0050 hey@shettar.com";
+  "Discover and book amazing hotels in Nigeria. Compare prices, read reviews, and find the best accommodation for your next trip. +234 8169209680 hey@shettar.com";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -85,7 +85,7 @@ export default function RootLayout({
                   name: SITE_NAME,
                   url: SITE_URL,
                   email: "hey@shettar.com",
-                  telephone: "+2348107040050",
+                  telephone: "+2348169209680",
                 },
               ],
             }),

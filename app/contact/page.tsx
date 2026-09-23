@@ -48,8 +48,8 @@ const ContactPage = () => {
                   <h5>Call us</h5>
                   <p className="text-secondary small">Imprudence attachment him his for sympathize. Large above be to means.</p>
                   <div className="d-grid gap-2">
-                    <Button size="sm" variant="primary" className="mb-1" href="tel:+2348107040050">
-                      <BsPhone className="me-2" /> 0810 704 0050
+                    <Button size="sm" variant="primary" className="mb-1" href="tel:+2348169209680">
+                      <BsPhone className="me-2" /> +234 8169209680
                     </Button>
                   </div>
                 </Card>
