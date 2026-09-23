@@ -78,12 +78,12 @@ export default function RootLayout({
                 {
                   "@type": "WebSite",
                   name: SITE_NAME,
-                  url: SITE_URL,
+                  url: "https://www.shettar.com",
                 },
                 {
                   "@type": "Organization",
                   name: SITE_NAME,
-                  url: SITE_URL,
+                  url: "https://www.shettar.com",
                   email: "hey@shettar.com",
                   telephone: "+2348169209680",
                 },

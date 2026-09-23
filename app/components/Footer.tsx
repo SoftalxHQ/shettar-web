@@ -48,7 +48,7 @@ export default function FooterWithLinks() {
             <Link href="/">
               <Image
                 src="/images/logo/shettar-logo.png"
-                alt="logo"
+                alt="Shettar"
                 width={160}
                 height={40}
                 className="h-40px"

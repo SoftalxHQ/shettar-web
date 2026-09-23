@@ -20,7 +20,8 @@ const Hero = () => {
         >
           <Row className="row my-2 my-xl-5">
             <Col md={8} className="mx-auto">
-              <h2 className="text-center text-white">{title}</h2>
+              <p className="text-center text-white fw-semibold mb-2">Shettar</p>
+              <h1 className="h2 text-center text-white mb-0">{title}</h1>
             </Col>
           </Row>
 

@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  agentRules: false,
   images: {
     // Only bypass Next.js image optimization in local dev to prevent local active_storage timeouts. 
     // In production, Next.js will optimize and cache the images perfectly.
@@ -55,6 +56,22 @@ const nextConfig: NextConfig = {
   sassOptions: {
     quietDeps: true,
     silenceDeprecations: ['import', 'global-builtin', 'color-functions', 'if-function'],
+  },
+  async redirects() {
+    return [
+      {
+        source: '/',
+        has: [{ type: 'host', value: 'shettar.com' }],
+        destination: 'https://www.shettar.com/',
+        permanent: true,
+      },
+      {
+        source: '/:path+',
+        has: [{ type: 'host', value: 'shettar.com' }],
+        destination: 'https://www.shettar.com/:path+',
+        permanent: true,
+      },
+    ];
   },
   async headers() {
     return [
