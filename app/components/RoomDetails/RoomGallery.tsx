@@ -12,6 +12,7 @@ import RoomCard from './RoomCard';
 
 import 'tiny-slider/dist/tiny-slider.css';
 import { normalizeApiMediaUrls } from '@/app/helpers/businesses';
+import { guestNightlyPrice } from '@/app/helpers/booking-commission';
 
 const roomSlides = [
   '/images/gallery/16.jpg',
@@ -142,7 +143,7 @@ const RoomGallery = ({ room, hotel }: { room: any; hotel: any }) => {
                 id={room.id}
                 slug={room.slug}
                 name={room.name}
-                price={room.price}
+                price={guestNightlyPrice(room)}
                 images={normalized}
                 sqfeet={room.sqfeet || 250}
                 amenities={room.amenities}
@@ -160,7 +161,7 @@ const RoomGallery = ({ room, hotel }: { room: any; hotel: any }) => {
                         id={otherRoom.id}
                         slug={otherRoom.slug}
                         name={otherRoom.name}
-                        price={otherRoom.price}
+                        price={guestNightlyPrice(otherRoom)}
                         images={normalizeApiMediaUrls(otherRoom.images_url)}
                         sqfeet={otherRoom.sqfeet || 250}
                         amenities={otherRoom.amenities}

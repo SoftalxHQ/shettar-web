@@ -32,6 +32,7 @@ import { subscribeCableChannel } from '@/app/helpers/cable';
 import { getAttributionToken } from '@/app/hooks/useSponsoredListingTracking';
 import { useTransactionPin } from '@/app/hooks/useTransactionPin';
 import type { AppliedPromo } from '@/app/helpers/promo';
+import { guestCheckout, platformFeeForStay } from '@/app/helpers/booking-commission';
 
 const currency = '₦';
 
@@ -50,6 +51,8 @@ export type BookingFormValues = {
 type BookingRoom = {
   id: number | string;
   price?: number | string;
+  commission_rate?: number | string | null;
+  commission_collection_mode?: string | null;
 };
 
 type BookingHotel = {
@@ -224,12 +227,28 @@ const PaymentOptions = ({
   };
 
   const price = Number(room?.price || 0);
+  const commissionRate = Number(room?.commission_rate || 0);
   const nights = calculateNights();
-  const subtotal = price * nights * parseInt(actualRoomsCount); // Base price before discount
+  const roomCount = parseInt(actualRoomsCount, 10) || 1;
+  const subtotal = price * nights * roomCount; // Business room price before discount
   
   // Use appliedPromo passed from parent
   const discountAmount = appliedPromo?.discount_amount || 0;
-  const customerPayTotal = subtotal - discountAmount;
+  const checkout = guestCheckout({
+    roomPrice: price,
+    nights,
+    rooms: roomCount,
+    promoDiscount: discountAmount,
+    fundedBy: appliedPromo?.funded_by,
+    commissionRate,
+    commissionMode: room?.commission_collection_mode,
+  });
+  const customerPayTotal = checkout.payable;
+  const listWithFee = subtotal + platformFeeForStay(
+    subtotal,
+    commissionRate,
+    room?.commission_collection_mode
+  );
 
   const createReservation = async (
     data: BookingFormValues,
@@ -584,7 +603,7 @@ const PaymentOptions = ({
                         <span>
                           {appliedPromo ? (
                             <>
-                              <span className="text-decoration-line-through opacity-50 me-2">{currency}{subtotal.toLocaleString('en-NG', { minimumFractionDigits: 2 })}</span>
+                              <span className="text-decoration-line-through opacity-50 me-2">{currency}{listWithFee.toLocaleString('en-NG', { minimumFractionDigits: 2 })}</span>
                               <span>{currency}{customerPayTotal.toLocaleString('en-NG', { minimumFractionDigits: 2 })}</span>
                             </>
                           ) : (

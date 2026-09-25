@@ -5,6 +5,7 @@ import { Card, CardBody, CardHeader, Col, Container, Row } from 'react-bootstrap
 import { roomDetails } from '@/app/data/room-details';
 import RoomCard from './RoomCard';
 import { normalizeApiMediaUrls } from '@/app/helpers/businesses';
+import { guestNightlyPrice } from '@/app/helpers/booking-commission';
 
 const RoomSelection = ({ room, hotel }: { room: any, hotel: any }) => {
   return (
@@ -22,7 +23,7 @@ const RoomSelection = ({ room, hotel }: { room: any, hotel: any }) => {
                     id={room.id}
                     slug={room.slug}
                     name={room.name}
-                    price={room.price}
+                    price={guestNightlyPrice(room)}
                     images={normalizeApiMediaUrls(room.images_url)}
                     sqfeet={room.sqfeet || 250}
                     amenities={room.amenities}
@@ -40,7 +41,7 @@ const RoomSelection = ({ room, hotel }: { room: any, hotel: any }) => {
                             id={otherRoom.id}
                             slug={otherRoom.slug}
                             name={otherRoom.name}
-                            price={otherRoom.price}
+                            price={guestNightlyPrice(otherRoom)}
                             images={normalizeApiMediaUrls(otherRoom.images_url)}
                             sqfeet={otherRoom.sqfeet || 250}
                             amenities={otherRoom.amenities}

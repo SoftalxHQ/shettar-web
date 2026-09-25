@@ -5,6 +5,7 @@ import SelectFormInput from '../form/SelectFormInput';
 import RoomCard from './RoomCard';
 import { hotelRooms } from '@/app/data/hotel-details';
 import { normalizeApiMediaUrls } from '@/app/helpers/businesses';
+import { guestNightlyPrice, guestOldPrice } from '@/app/helpers/booking-commission';
 
 const RoomOptions = ({ availableRoomTypes, hotel }: { availableRoomTypes: any[], hotel: any }) => {
   if (!availableRoomTypes || availableRoomTypes.length === 0) {
@@ -41,8 +42,8 @@ const RoomOptions = ({ availableRoomTypes, hotel }: { availableRoomTypes: any[],
             // If no amenities are found, use a default fallback
             const finalFeatures = featuresToDisplay.length > 0 ? featuresToDisplay : ['Standard Amenities'];
 
-            const cur_p = parseFloat(room_type.price || 0);
-            const old_p = parseFloat(room_type.old_price || 0);
+            const cur_p = guestNightlyPrice(room_type);
+            const old_p = guestOldPrice(room_type);
             const sale = (old_p > cur_p && old_p > 0) ? `${Math.round(((old_p - cur_p) / old_p) * 100)}% Off` : undefined;
             const roomImages = normalizeApiMediaUrls(room_type.images_url);
 
@@ -56,7 +57,7 @@ const RoomOptions = ({ availableRoomTypes, hotel }: { availableRoomTypes: any[],
                 slug={room_type.slug}
                 hotelSlug={hotel?.slug}
                 name={room_type.name}
-                price={room_type.price}
+                price={cur_p}
                 available_rooms={room_type.available_rooms}
                 daily_availability={room_type.daily_availability}
                 sale={sale}

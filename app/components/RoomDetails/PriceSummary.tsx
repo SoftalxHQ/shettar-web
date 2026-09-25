@@ -3,6 +3,7 @@
 import { Button, Card, CardBody, CardHeader, Col, Row } from 'react-bootstrap';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
+import { guestCheckout } from '@/app/helpers/booking-commission';
 
 const currency = '₦';
 const currentYear = new Date().getFullYear();
@@ -33,9 +34,18 @@ const PriceSummary = ({ room, hotel }: { room: any, hotel: any }) => {
   const checkIn = start_date_str ? formatDate(start_date) : "Today";
   const checkOut = end_date_str ? formatDate(end_date) : "Tomorrow";
 
-  const price = room?.price || 0;
-  const subtotal = price * nights;
-  const total = subtotal * rooms;
+  const businessPrice = Number(room?.price || 0);
+  const checkout = guestCheckout({
+    roomPrice: businessPrice,
+    nights,
+    rooms,
+    commissionRate: room?.commission_rate,
+    commissionMode: room?.commission_collection_mode,
+  });
+  const roomWithFee = checkout.roomCharges + checkout.platformFee;
+  const stayUnits = nights * rooms;
+  const nightlyWithFee = stayUnits > 0 ? roomWithFee / stayUnits : roomWithFee;
+  const total = checkout.payable;
 
   const availableRoomsCount = room?.available_rooms ?? 0;
   const isAvailable = rooms <= availableRoomsCount;
@@ -64,15 +74,9 @@ const PriceSummary = ({ room, hotel }: { room: any, hotel: any }) => {
             </Row>
             <ul className="list-group list-group-borderless mb-3">
               <li className="list-group-item px-2 d-flex justify-content-between">
-                <span className="h6 fw-light mb-0">{currency}{price.toLocaleString()} x {nights} Night{nights > 1 ? 's' : ''}</span>
-                <span className="h6 fw-light mb-0">{currency}{subtotal.toLocaleString()}</span>
+                <span className="h6 fw-light mb-0">{currency}{nightlyWithFee.toLocaleString()} x {nights} Night{nights > 1 ? 's' : ''}{rooms > 1 ? ` x ${rooms} Rooms` : ''}</span>
+                <span className="h6 fw-light mb-0">{currency}{roomWithFee.toLocaleString()}</span>
               </li>
-              {rooms > 1 && (
-                <li className="list-group-item px-2 d-flex justify-content-between pt-0">
-                  <span className="h6 fw-light mb-0">Number of Rooms</span>
-                  <span className="h6 fw-light mb-0">x {rooms}</span>
-                </li>
-              )}
               <li className="list-group-item bg-light d-flex justify-content-between rounded-2 px-2 mt-2">
                 <span className="h5 fw-normal mb-0 ps-1">Total</span>
                 <span className="h5 fw-normal mb-0">{currency}{total.toLocaleString()}</span>

@@ -1,6 +1,7 @@
 "use client";
 
 import { Card, CardBody, CardFooter, CardHeader, CardTitle } from 'react-bootstrap';
+import { guestCheckout } from '@/app/helpers/booking-commission';
 
 const currency = '₦';
 
@@ -19,8 +20,8 @@ const PriceSummary = ({
   roomsCount: string | null,
   appliedPromo?: any
 }) => {
-  const price = room?.price || 0;
-  const actualRoomsCount = parseInt(roomsCount || '1');
+  const price = Number(room?.price || 0);
+  const actualRoomsCount = parseInt(roomsCount || '1', 10) || 1;
 
   const calculateNights = () => {
     if (!startDate || !endDate) return 1;
@@ -32,11 +33,21 @@ const PriceSummary = ({
   };
 
   const nights = calculateNights();
-  const baseCharges = price * nights;
-  const roomCharges = baseCharges * actualRoomsCount;
   const promoDiscount = appliedPromo?.discount_amount || 0;
   const taxes = 0; // No tax applied
-  const total = roomCharges - promoDiscount + taxes;
+  const checkout = guestCheckout({
+    roomPrice: price,
+    nights,
+    rooms: actualRoomsCount,
+    promoDiscount,
+    fundedBy: appliedPromo?.funded_by,
+    commissionRate: room?.commission_rate,
+    commissionMode: room?.commission_collection_mode,
+  });
+  const roomWithFee = checkout.roomCharges + checkout.platformFee;
+  const stayUnits = nights * actualRoomsCount;
+  const nightlyWithFee = stayUnits > 0 ? roomWithFee / stayUnits : roomWithFee;
+  const total = checkout.payable + taxes;
 
   return (
     <Card className="shadow rounded-2 border-0">
@@ -48,15 +59,11 @@ const PriceSummary = ({
       <CardBody className="p-4">
         <ul className="list-group list-group-borderless">
           <li className="list-group-item d-flex justify-content-between align-items-center px-0">
-            <span className="h6 fw-light mb-0">Room Charges ({nights} {nights > 1 ? 'nights' : 'night'})</span>
-            <span className="h6 mb-0">{currency}{baseCharges.toLocaleString()}</span>
+            <span className="h6 fw-light mb-0">
+              Room Charges ({currency}{nightlyWithFee.toLocaleString()} x {nights} {nights > 1 ? 'nights' : 'night'}{actualRoomsCount > 1 ? ` x ${actualRoomsCount} rooms` : ''})
+            </span>
+            <span className="h6 mb-0">{currency}{roomWithFee.toLocaleString()}</span>
           </li>
-          {actualRoomsCount > 1 && (
-            <li className="list-group-item d-flex justify-content-between align-items-center px-0">
-              <span className="h6 fw-light mb-0">Number of Rooms</span>
-              <span className="h6 mb-0">x {actualRoomsCount}</span>
-            </li>
-          )}
           {promoDiscount > 0 && (
             <li className="list-group-item d-flex justify-content-between align-items-center px-0">
               <div className="flex flex-col">
