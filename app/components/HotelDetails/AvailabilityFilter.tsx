@@ -2,11 +2,15 @@
 
 import Flatpicker from '../form/Flatpicker';
 import { useToggle } from '@/app/hooks';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useSyncExternalStore } from 'react';
 import { useSearchParams, type ReadonlyURLSearchParams } from 'next/navigation';
 import { Button, Col, Container, Dropdown, DropdownDivider, DropdownMenu, DropdownToggle, Offcanvas, OffcanvasHeader } from 'react-bootstrap';
 import { BsDashCircle, BsPencilSquare, BsPlusCircle, BsSearch } from 'react-icons/bs';
-import { stayForFromSearchParams } from '@/app/helpers/stay-dates';
+import {
+  getClientDefaultStayForSnapshot,
+  getServerDefaultStayForSnapshot,
+  stayForFromSearchParams,
+} from '@/app/helpers/stay-dates';
 
 type AvailabilityFormType = {
   location: string;
@@ -25,8 +29,23 @@ type AvailabilityFilterHotel = {
   state?: string;
 };
 
+const emptySubscribe = () => () => {};
+
+function useClientDefaultStayFor(): Date[] {
+  return useSyncExternalStore(
+    emptySubscribe,
+    getClientDefaultStayForSnapshot,
+    getServerDefaultStayForSnapshot,
+  );
+}
+
+function stayKey(stayFor: Date | Date[]): string {
+  return Array.isArray(stayFor) ? stayFor.map((date) => date.getTime()).join('-') : '';
+}
+
 function buildFormValue(
   searchParams: ReadonlyURLSearchParams,
+  defaultStayFor: Date[],
   hotel?: AvailabilityFilterHotel | null,
 ): AvailabilityFormType {
   const rooms_str = searchParams.get('rooms');
@@ -39,7 +58,7 @@ function buildFormValue(
 
   return {
     location: [hotel?.city, hotel?.state].filter(Boolean).join(', '),
-    stayFor,
+    stayFor: stayFor.length > 0 ? stayFor : defaultStayFor,
     guests: {
       adults: Math.max(1, adults_str ? parseInt(adults_str, 10) : 2),
       children: children_str ? parseInt(children_str, 10) : 0,
@@ -242,8 +261,9 @@ const AvailabilityFilter = ({
   isLoading?: boolean;
 }) => {
   const searchParams = useSearchParams();
-  const formKey = `${searchParams.toString()}|${hotel?.city ?? ''}|${hotel?.state ?? ''}`;
-  const initial = buildFormValue(searchParams, hotel);
+  const defaultStayFor = useClientDefaultStayFor();
+  const initial = buildFormValue(searchParams, defaultStayFor, hotel);
+  const formKey = `${searchParams.toString()}|${hotel?.city ?? ''}|${hotel?.state ?? ''}|${stayKey(initial.stayFor)}`;
 
   return (
     <AvailabilityFilterPanel
