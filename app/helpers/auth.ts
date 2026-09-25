@@ -71,18 +71,45 @@ export interface AuthResult {
 /** Marker stored in Redux only — never send this as a Bearer token. */
 export const COOKIE_SESSION_MARKER = '__shettar_cookie__';
 const LEGACY_SESSION_JWT_KEY = 'shettar_jwt_mem';
+/** Matches the API JWT and shettar_jwt cookie lifetime. */
+const SESSION_TTL_MS = 24 * 60 * 60 * 1000;
+const SESSION_EXPIRES_KEY = 'shettar_session_expires_at';
 
 export function isUsableJwt(token?: string | null): token is string {
   return !!token && token !== COOKIE_SESSION_MARKER && token.includes('.');
 }
 
-export function hasAuthSession(): boolean {
-  if (typeof window === 'undefined') return false;
+function readSessionExpiresAt(): number | null {
+  try {
+    const raw = localStorage.getItem(SESSION_EXPIRES_KEY);
+    const exp = raw ? Number(raw) : NaN;
+    return Number.isFinite(exp) ? exp : null;
+  } catch {
+    return null;
+  }
+}
+
+function hasStoredSessionFlag(): boolean {
   try {
     return Boolean(localStorage.getItem('user') || localStorage.getItem('shettar_session'));
   } catch {
     return false;
   }
+}
+
+/** True when a saved sign-in has no expiry or that expiry has passed. */
+export function isClientSessionExpired(): boolean {
+  if (typeof window === 'undefined') return false;
+  if (!hasStoredSessionFlag()) return false;
+  const exp = readSessionExpiresAt();
+  if (exp == null) return true;
+  return Date.now() >= exp;
+}
+
+export function hasAuthSession(): boolean {
+  if (typeof window === 'undefined') return false;
+  if (isClientSessionExpired()) return false;
+  return hasStoredSessionFlag();
 }
 
 export function authorizationHeaders(token?: string | null): Record<string, string> {
@@ -120,6 +147,7 @@ export function sessionTokenFromResponse(res: Response, body?: { token?: string 
 export const saveAuthSession = (user: StoredUser, token?: string) => {
   localStorage.setItem('user', JSON.stringify(user));
   localStorage.setItem('shettar_session', '1');
+  localStorage.setItem(SESSION_EXPIRES_KEY, String(Date.now() + SESSION_TTL_MS));
   localStorage.removeItem('token');
   // Omit token when refreshing the stored user — do not wipe the tab JWT.
   if (isUsableJwt(token)) rememberMemoryJwt(token);
@@ -146,6 +174,7 @@ export const clearAuthSession = () => {
   localStorage.removeItem('token');
   localStorage.removeItem('user');
   localStorage.removeItem('shettar_session');
+  localStorage.removeItem(SESSION_EXPIRES_KEY);
   try {
     sessionStorage.removeItem(LEGACY_SESSION_JWT_KEY);
   } catch {
@@ -208,8 +237,9 @@ export const getStoredToken = (): string | null => {
     } catch {
       /* ignore */
     }
+    if (isClientSessionExpired()) return null;
     if (isUsableJwt(memoryJwt)) return memoryJwt;
-    if (localStorage.getItem('user') || localStorage.getItem('shettar_session')) {
+    if (hasStoredSessionFlag()) {
       return COOKIE_SESSION_MARKER;
     }
     return null;

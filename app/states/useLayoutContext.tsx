@@ -10,7 +10,7 @@ import {
   useGetAccountDetailsQuery,
 } from '@/lib/store/services/apiService';
 import { useRouter, usePathname } from 'next/navigation';
-import { COOKIE_SESSION_MARKER, getStoredUser, getStoredToken, hasAuthSession, isUsableJwt, signOut, syncTabJwt } from '@/app/helpers/auth';
+import { COOKIE_SESSION_MARKER, getStoredUser, getStoredToken, hasAuthSession, isClientSessionExpired, isUsableJwt, signOut, syncTabJwt } from '@/app/helpers/auth';
 
 export type LayoutState = {
   theme: 'light' | 'dark' | 'auto';
@@ -58,8 +58,28 @@ export function useLayoutContext(): LayoutType {
   // Merge: prefer full profile when available, fall back to auth slice user
   const account = fullProfile ?? authUser;
 
+  // Drop a saved sign-in once its one-day lifetime has passed, including older
+  // sessions that were stored with no expiry.
+  useEffect(() => {
+    const expire = () => {
+      if (!isClientSessionExpired()) return;
+      void signOut().then(() => {
+        dispatch(clearCredentials());
+        dispatch(apiService.util.resetApiState());
+      });
+    };
+    expire();
+    const timer = window.setInterval(expire, 60_000);
+    window.addEventListener('focus', expire);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener('focus', expire);
+    };
+  }, [dispatch]);
+
   // Restore tab JWT (not persisted) or cookie session after persist rehydrate.
   useEffect(() => {
+    if (isClientSessionExpired()) return;
     if (isUsableJwt(authToken)) syncTabJwt(authToken);
     const user = getStoredUser() ?? authUser;
     if (!user) return;
