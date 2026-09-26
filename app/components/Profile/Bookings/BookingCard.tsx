@@ -84,6 +84,7 @@ const BookingCard = ({ booking, onSuccess }: BookingCardProps) => {
   const hotelPath = hotelDetailPath(business);
 
   const [showModal, setShowModal] = useState(false);
+  const [awaitingConfirm, setAwaitingConfirm] = useState(false);
   const [selectedReason, setSelectedReason] = useState(CANCELLATION_REASONS[0]);
   const [customReason, setCustomReason] = useState('');
   const [loading, setLoading] = useState(false);
@@ -91,7 +92,14 @@ const BookingCard = ({ booking, onSuccess }: BookingCardProps) => {
   const { apiFetch } = useApi();
 
   // Fetch platform config when modal opens to show refund preview
+  const closeModal = () => {
+    if (loading) return;
+    setShowModal(false);
+    setAwaitingConfirm(false);
+  };
+
   const openModal = async () => {
+    setAwaitingConfirm(false);
     setShowModal(true);
     if (config) return; // already fetched
     try {
@@ -149,6 +157,15 @@ const BookingCard = ({ booking, onSuccess }: BookingCardProps) => {
     return new Date() < end;
   };
 
+  const askToConfirm = () => {
+    const finalReason = selectedReason === 'Other' ? customReason : selectedReason;
+    if (!finalReason.trim()) {
+      toast.error('Please provide a reason for cancellation');
+      return;
+    }
+    setAwaitingConfirm(true);
+  };
+
   const handleCancel = async () => {
     const finalReason = selectedReason === 'Other' ? customReason : selectedReason;
     if (!finalReason.trim()) {
@@ -172,6 +189,7 @@ const BookingCard = ({ booking, onSuccess }: BookingCardProps) => {
       const data = await response.json();
       if (response.ok) {
         toast.success(data.message || 'Booking cancelled successfully');
+        setAwaitingConfirm(false);
         setShowModal(false);
         if (onSuccess) onSuccess();
       } else {
@@ -308,11 +326,24 @@ const BookingCard = ({ booking, onSuccess }: BookingCardProps) => {
       </CardBody>
 
       {/* Cancellation Modal */}
-      <Modal show={showModal} onHide={() => !loading && setShowModal(false)} centered>
+      <Modal show={showModal} onHide={closeModal} centered>
         <Modal.Header closeButton={!loading}>
-          <Modal.Title className="h5">Cancel Reservation</Modal.Title>
+          <Modal.Title className="h5">{awaitingConfirm ? 'Confirm cancellation' : 'Cancel Reservation'}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
+          {awaitingConfirm ? (
+            <div>
+              <p className="mb-2">
+                Cancel this stay at <strong>{business?.name || 'this hotel'}</strong>?
+              </p>
+              {refundBreakdown && (
+                <p className="small text-secondary mb-0">
+                  You will receive {currency}{refundBreakdown.customerRefund.toLocaleString()}.
+                </p>
+              )}
+            </div>
+          ) : (
+          <>
           <p className="small text-secondary mb-3">
             Please select a reason for cancelling your stay at <strong>{business?.name}</strong>.
           </p>
@@ -385,19 +416,34 @@ const BookingCard = ({ booking, onSuccess }: BookingCardProps) => {
               />
             </Form.Group>
           )}
+          </>
+          )}
         </Modal.Body>
         <Modal.Footer className="border-top-0 pt-0">
-          <Button variant="link" size="sm" className="text-secondary" onClick={() => setShowModal(false)} disabled={loading}>
-            Close
-          </Button>
-          <Button
-            variant="danger"
-            size="sm"
-            onClick={handleCancel}
-            disabled={loading || (selectedReason === 'Other' && !customReason.trim())}
-          >
-            {loading ? <Spinner as="span" animation="border" size="sm" role="status" aria-hidden="true" /> : 'Confirm Cancellation'}
-          </Button>
+          {awaitingConfirm ? (
+            <>
+              <Button variant="link" size="sm" className="text-secondary" onClick={() => setAwaitingConfirm(false)} disabled={loading}>
+                Go back
+              </Button>
+              <Button variant="danger" size="sm" onClick={handleCancel} disabled={loading}>
+                {loading ? <Spinner as="span" animation="border" size="sm" role="status" aria-hidden="true" /> : 'Yes, cancel booking'}
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button variant="link" size="sm" className="text-secondary" onClick={closeModal} disabled={loading}>
+                Close
+              </Button>
+              <Button
+                variant="danger"
+                size="sm"
+                onClick={askToConfirm}
+                disabled={loading || (selectedReason === 'Other' && !customReason.trim())}
+              >
+                Confirm Cancellation
+              </Button>
+            </>
+          )}
         </Modal.Footer>
       </Modal>
     </Card>
