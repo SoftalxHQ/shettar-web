@@ -7,6 +7,7 @@ export type GuestReservation = {
   start_date: string;
   end_date: string;
   total_amount: string | number;
+  customer_paid_amount?: string | number | null;
   cancelled: boolean;
   status?: string;
   checked_in_at?: string | null;
@@ -54,6 +55,15 @@ export type GuestReservation = {
     room_type?: { name: string; price?: number };
   };
 };
+
+export function guestPaidAmount(booking: {
+  total_amount?: string | number | null;
+  customer_paid_amount?: string | number | null;
+}): number {
+  const paid = Number(booking.customer_paid_amount);
+  if (Number.isFinite(paid) && paid > 0) return paid;
+  return Number(booking.total_amount) || 0;
+}
 
 export async function fetchGuestReservation(bookingId: string): Promise<GuestReservation> {
   const token = getStoredToken();

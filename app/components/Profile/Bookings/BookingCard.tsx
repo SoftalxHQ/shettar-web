@@ -9,7 +9,7 @@ import { authorizationHeaders, getStoredToken } from '@/app/helpers/auth';
 import { useApi } from '@/app/hooks/useApi';
 
 import Link from 'next/link';
-import { businessPublicId, hotelDetailPath, roomServicePath } from '@/app/helpers/bookings';
+import { businessPublicId, guestPaidAmount, hotelDetailPath, roomServicePath } from '@/app/helpers/bookings';
 
 interface Reservation {
   id: number;
@@ -17,6 +17,10 @@ interface Reservation {
   start_date: string;
   end_date: string;
   total_amount: string | number;
+  customer_paid_amount?: string | number | null;
+  platform_commission_amount?: string | number | null;
+  commission_collection_mode?: string | null;
+  payment_method?: string | null;
   cancelled: boolean;
   status?: string; // 'upcoming' | 'active' | 'past' | 'cancelled' — sent by the backend
   occupied?: boolean;
@@ -105,11 +109,16 @@ const BookingCard = ({ booking, onSuccess }: BookingCardProps) => {
   };
 
   // Calculate the customer refund amount
+  const guestAlreadyPaidCommission =
+    booking.commission_collection_mode === 'on_booking' &&
+    Number(booking.platform_commission_amount) > 0 &&
+    (booking.payment_method === 'wallet' || booking.payment_method === 'card');
+
   const refundBreakdown = (() => {
     if (!config) return null;
     const total = Number(total_amount) || 0;
     if (total <= 0) return null;
-    const feeRate = config.cancellation_fee_percentage / 100;
+    const feeRate = guestAlreadyPaidCommission ? 0 : config.cancellation_fee_percentage / 100;
     const remaining = 1 - feeRate;
     const businessCreditRate = config.business_cancellation_credit_percentage / 100;
     const platformFee = +(total * feeRate).toFixed(2);
@@ -117,7 +126,8 @@ const BookingCard = ({ booking, onSuccess }: BookingCardProps) => {
     const businessCredit = +(refundable * businessCreditRate).toFixed(2);
     const customerRefund = +(refundable - businessCredit).toFixed(2);
     const customerPct = +((1 - feeRate) * (1 - businessCreditRate) * 100).toFixed(1);
-    return { total, platformFee, businessCredit, customerRefund, customerPct };
+    const commissionKept = guestAlreadyPaidCommission ? Number(booking.platform_commission_amount) || 0 : 0;
+    return { total, platformFee, businessCredit, customerRefund, customerPct, commissionKept, guestAlreadyPaidCommission };
   })();
 
   const formatDate = (dateString: string) => {
@@ -205,19 +215,19 @@ const BookingCard = ({ booking, onSuccess }: BookingCardProps) => {
         <div className="mt-3 mt-md-0 text-md-end">
           <Badge
             bg={statusBadge.bg}
-            className={`bg-opacity-10 text-${statusBadge.bg} mb-2 d-block text-capitalize`}
+            className={`bg-opacity-10 text-${statusBadge.bg} mb-md-2 d-inline-block d-md-block text-capitalize`}
           >
             {statusBadge.text}
           </Badge>
-          <h5 className="mb-0 text-primary">{currency}{Number(total_amount).toLocaleString()}</h5>
+          <h5 className="mb-0 text-primary d-none d-md-block">{currency}{guestPaidAmount(booking).toLocaleString()}</h5>
         </div>
       </CardHeader>
 
       <CardBody>
         <Row className="g-3">
-          <Col sm={6} md={3}>
+          <Col xs={4} md={3}>
             <div className="d-flex align-items-center">
-              <BsCalendar2Check className="text-secondary me-2" />
+              <BsCalendar2Check className="text-secondary me-2 d-none d-md-inline" />
               <div>
                 <span className="small text-secondary d-block">Check-in</span>
                 <h6 className="mb-0">{formatDate(start_date)}</h6>
@@ -225,9 +235,9 @@ const BookingCard = ({ booking, onSuccess }: BookingCardProps) => {
               </div>
             </div>
           </Col>
-          <Col sm={6} md={3}>
+          <Col xs={4} md={3}>
             <div className="d-flex align-items-center">
-              <BsCalendar2Check className="text-secondary me-2" />
+              <BsCalendar2Check className="text-secondary me-2 d-none d-md-inline" />
               <div>
                 <span className="small text-secondary d-block">Check-out</span>
                 <h6 className="mb-0">{formatDate(end_date)}</h6>
@@ -235,12 +245,17 @@ const BookingCard = ({ booking, onSuccess }: BookingCardProps) => {
               </div>
             </div>
           </Col>
-          <Col sm={12} md={6} className="text-md-end align-self-center">
-            <div className="d-flex flex-wrap gap-1 justify-content-md-end mt-3 mt-md-0">
-              <Link href={`/user/bookings/${booking_id}`} passHref>
-                <Button variant="outline-primary" size="sm" className="mb-0 py-1 px-2">
-                  <BsInfoCircle className="me-1" /> Booking
-                </Button>
+          <Col xs={4} className="d-md-none text-end">
+            <span className="small text-secondary d-block">Total</span>
+            <h6 className="mb-0">{currency}{guestPaidAmount(booking).toLocaleString()}</h6>
+          </Col>
+          <Col xs={12} md={6} className="text-md-end align-self-center">
+            <div className="d-flex flex-wrap align-items-center gap-2 justify-content-md-end mt-3 mt-md-0">
+              <Link
+                href={`/user/bookings/${booking_id}`}
+                className="btn btn-outline-primary btn-sm mb-0 py-1 px-2 d-inline-flex align-items-center"
+              >
+                <BsInfoCircle className="me-1" /> Booking
               </Link>
 
               {booking.can_order_room_service && businessPublicId(business) && (
@@ -250,7 +265,7 @@ const BookingCard = ({ booking, onSuccess }: BookingCardProps) => {
                     reservationId: id,
                     roomNumber: booking.room_number || room?.number || '',
                   })}
-                  className="btn btn-primary btn-sm mb-0 py-1 px-2"
+                  className="btn btn-primary btn-sm mb-0 py-1 px-2 d-inline-flex align-items-center"
                 >
                   Room service
                 </Link>
@@ -266,27 +281,26 @@ const BookingCard = ({ booking, onSuccess }: BookingCardProps) => {
                     roomNumber: booking.room_number || room?.number || '',
                     historyOnly: true,
                   })}
-                  className="btn btn-outline-primary btn-sm mb-0 py-1 px-2"
+                  className="btn btn-outline-primary btn-sm mb-0 py-1 px-2 d-inline-flex align-items-center"
                 >
                   View orders
                 </Link>
               )}
 
               {hotelPath && (
-                <Link href={hotelPath} className="btn btn-outline-secondary btn-sm mb-0 py-1 px-2">
+                <Link href={hotelPath} className="btn btn-outline-secondary btn-sm mb-0 py-1 px-2 d-inline-flex align-items-center">
                   Hotel
                 </Link>
               )}
 
               {!cancelled && isEligible() && (
-                <Button
-                  variant="outline-danger"
-                  size="sm"
-                  className="mb-0 py-1 px-2"
+                <button
+                  type="button"
+                  className="btn btn-outline-danger btn-sm mb-0 py-1 px-2 d-inline-flex align-items-center w-auto"
                   onClick={openModal}
                 >
                   <BsXCircle className="me-1" /> Cancel
-                </Button>
+                </button>
               )}
             </div>
           </Col>
@@ -308,13 +322,20 @@ const BookingCard = ({ booking, onSuccess }: BookingCardProps) => {
             <div className="bg-warning bg-opacity-10 border border-warning border-opacity-25 rounded p-3 mb-3">
               <p className="small fw-bold mb-2">Refund Breakdown</p>
               <div className="d-flex justify-content-between small mb-1">
-                <span className="text-muted">Booking total</span>
+                <span className="text-muted">Room amount</span>
                 <span>{currency}{refundBreakdown.total.toLocaleString()}</span>
               </div>
-              <div className="d-flex justify-content-between small mb-1">
-                <span className="text-muted">Platform cancellation fee ({config?.cancellation_fee_percentage}%)</span>
-                <span className="text-danger">−{currency}{refundBreakdown.platformFee.toLocaleString()}</span>
-              </div>
+              {refundBreakdown.guestAlreadyPaidCommission ? (
+                <div className="d-flex justify-content-between small mb-1">
+                  <span className="text-muted">Fee</span>
+                  <span>{currency}{refundBreakdown.commissionKept.toLocaleString()}</span>
+                </div>
+              ) : (
+                <div className="d-flex justify-content-between small mb-1">
+                  <span className="text-muted">Platform cancellation fee ({config?.cancellation_fee_percentage}%)</span>
+                  <span className="text-danger">−{currency}{refundBreakdown.platformFee.toLocaleString()}</span>
+                </div>
+              )}
               <div className="d-flex justify-content-between small mb-1">
                 <span className="text-muted">Business retention</span>
                 <span className="text-secondary">−{currency}{refundBreakdown.businessCredit.toLocaleString()}</span>
@@ -323,9 +344,11 @@ const BookingCard = ({ booking, onSuccess }: BookingCardProps) => {
                 <span className="text-success">You will receive ({refundBreakdown.customerPct}%)</span>
                 <span className="text-success">{currency}{refundBreakdown.customerRefund.toLocaleString()}</span>
               </div>
-              <p className="text-muted mb-0 mt-2" style={{ fontSize: '0.7rem' }}>
-                Refund will be credited to your Shettar wallet.
-              </p>
+              {!refundBreakdown.guestAlreadyPaidCommission && (
+                <p className="text-muted mb-0 mt-2" style={{ fontSize: '0.7rem' }}>
+                  Refund will be credited to your Shettar wallet.
+                </p>
+              )}
             </div>
           ) : (
             <div className="bg-light rounded p-2 mb-3 text-center">

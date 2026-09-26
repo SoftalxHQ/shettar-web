@@ -12,6 +12,7 @@ import {
   reservationGuestPhone,
   reservationRoomNumber,
   reservationStatusLabel,
+  guestPaidAmount,
   type GuestReservation,
 } from '@/app/helpers/bookings';
 
@@ -129,7 +130,7 @@ const BookingPass = forwardRef<HTMLDivElement, BookingPassProps>(function Bookin
           <span>Total paid</span>
           <strong>
             {currency}
-            {Number(booking.total_amount).toLocaleString()}
+            {guestPaidAmount(booking).toLocaleString()}
           </strong>
         </div>
       </div>
