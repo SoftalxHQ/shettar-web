@@ -170,6 +170,7 @@ const AccountWallet = () => {
         amount: Math.round(chargeAmount * 100), // in kobo
         ref: data.reference,
         metadata: data.metadata,
+        channels: ['card', 'bank', 'ussd', 'qr', 'mobile_money', 'bank_transfer'],
         onClose: () => {
           setIsProcessing(false);
         },
@@ -385,8 +386,8 @@ const AccountWallet = () => {
                   <div className="d-flex align-items-center gap-2">
                     <BsPlusCircle size={18} className={paymentMethod === 'card' ? 'text-primary' : 'text-secondary'} />
                     <div>
-                      <div className="small fw-bold text-body">Card</div>
-                      <div className="text-secondary" style={{ fontSize: '0.7rem' }}>1.5% + ₦100 fee</div>
+                      <div className="small fw-bold text-body">Paystack</div>
+                      <div className="text-secondary" style={{ fontSize: '0.7rem' }}>Card, bank, USSD, transfer · 1.5% + ₦100</div>
                     </div>
                     {paymentMethod === 'card' && <span className="ms-auto badge bg-primary" style={{ fontSize: '0.65rem' }}>✓</span>}
                   </div>

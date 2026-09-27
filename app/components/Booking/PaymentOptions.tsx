@@ -123,6 +123,7 @@ type PaystackPopConstructor = {
     ref: string;
     metadata?: Record<string, unknown>;
     onClose: () => void;
+    channels?: string[];
     callback: (response: PaystackPopupTransaction) => void | Promise<void>;
   }) => PaystackSetupHandler;
 };
@@ -364,6 +365,7 @@ const PaymentOptions = ({
         amount: Math.round(chargeAmount * 100),
         ref: data.reference,
         metadata: data.metadata,
+        channels: ['card', 'bank', 'ussd', 'qr', 'mobile_money', 'bank_transfer'],
         onClose: () => { setIsTopUpProcessing(false); },
         callback: async (response: PaystackPopupTransaction) => {
           await verifyTopUpPayment(response.reference);
