@@ -368,7 +368,9 @@ const PaymentOptions = ({
         throw new Error(
           !email
             ? 'Add an email to your account before paying with Paystack.'
-            : 'Paystack is still loading. Please try again.'
+            : !paystackKey
+              ? 'Paystack is not configured for this site.'
+              : 'Paystack is still loading. Please try again.'
         );
       }
 

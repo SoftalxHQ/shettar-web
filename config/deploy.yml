@@ -57,7 +57,6 @@ builder:
     NEXT_PUBLIC_API_URL: https://api-v1.shettar.com
     NEXT_PUBLIC_APP_ENV: production
     NEXT_PUBLIC_ANDROID_APP_URL: https://play.google.com/store/apps/details?id=com.softalx.shettar
-    NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY: <%= ENV.fetch("NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY", "") %>
     NEXT_PUBLIC_GOOGLE_CLIENT_ID: <%= ENV.fetch("NEXT_PUBLIC_GOOGLE_CLIENT_ID", "") %>
     NEXT_PUBLIC_IOS_APP_URL: <%= ENV.fetch("NEXT_PUBLIC_IOS_APP_URL", "") %>
     NEXT_PUBLIC_FIREBASE_API_KEY: <%= ENV.fetch("NEXT_PUBLIC_FIREBASE_API_KEY", "") %>
@@ -72,6 +71,8 @@ builder:
     NEXT_PUBLIC_TAWK_WIDGET_ID: <%= ENV.fetch("NEXT_PUBLIC_TAWK_WIDGET_ID", "") %>
     NEXT_PUBLIC_BROWSE_GATE_ENABLED: <%= ENV.fetch("NEXT_PUBLIC_BROWSE_GATE_ENABLED", "") %>
   # Looked up from .kamal/secrets after ERB. ENV.fetch in args runs too early and
-  # bakes an empty key, so sign-in posts with no token and the API returns 422.
+  # bakes an empty value. Turnstile then posts with no token (API 422), and the
+  # Paystack public key is missing from the client bundle.
   secrets:
     - NEXT_PUBLIC_TURNSTILE_SITE_KEY
+    - NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY

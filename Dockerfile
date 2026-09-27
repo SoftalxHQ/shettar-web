@@ -66,9 +66,13 @@ ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL \
     NEXT_CPU_COUNT=1
 
 # Webpack uses less peak RAM than Turbopack on small builders; local Mac build preferred.
-# Kamal builder.secrets mounts NEXT_PUBLIC_TURNSTILE_SITE_KEY (ARG/ENV.fetch is empty at ERB time).
+# Kamal builder.secrets mounts these (ARG/ENV.fetch is empty at ERB time).
 RUN --mount=type=secret,id=NEXT_PUBLIC_TURNSTILE_SITE_KEY \
-    sh -c 'if [ -f /run/secrets/NEXT_PUBLIC_TURNSTILE_SITE_KEY ]; then export NEXT_PUBLIC_TURNSTILE_SITE_KEY="$(cat /run/secrets/NEXT_PUBLIC_TURNSTILE_SITE_KEY)"; fi; pnpm build'
+    --mount=type=secret,id=NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY \
+    sh -c 'if [ -f /run/secrets/NEXT_PUBLIC_TURNSTILE_SITE_KEY ]; then export NEXT_PUBLIC_TURNSTILE_SITE_KEY="$(cat /run/secrets/NEXT_PUBLIC_TURNSTILE_SITE_KEY)"; fi; \
+    if [ -f /run/secrets/NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY ]; then export NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY="$(cat /run/secrets/NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY)"; fi; \
+    if [ -z "$NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY" ]; then echo "NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY is empty" >&2; exit 1; fi; \
+    pnpm build'
 
 # ─── Runner ─────────────────────────────────────────────────────────────────
 FROM node:${NODE_VERSION}-alpine AS runner
