@@ -166,11 +166,11 @@ const AccountWallet = () => {
       const chargeAmount = data.charge_amount || Number(amount);
       const handler = (window as any).PaystackPop.setup({
         key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY,
-        email: profile?.email,
+        email: data.email || profile?.email,
         amount: Math.round(chargeAmount * 100), // in kobo
         ref: data.reference,
         metadata: data.metadata,
-        channels: ['card', 'bank', 'ussd', 'qr', 'mobile_money', 'bank_transfer'],
+        channels: ['card', 'bank', 'ussd', 'bank_transfer'],
         onClose: () => {
           setIsProcessing(false);
         },

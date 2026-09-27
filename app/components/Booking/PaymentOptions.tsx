@@ -361,11 +361,11 @@ const PaymentOptions = ({
       const chargeAmount = data.charge_amount || Number(topUpAmount);
       const handler = window.PaystackPop.setup({
         key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY,
-        email: account?.email,
+        email: data.email || account?.email,
         amount: Math.round(chargeAmount * 100),
         ref: data.reference,
         metadata: data.metadata,
-        channels: ['card', 'bank', 'ussd', 'qr', 'mobile_money', 'bank_transfer'],
+        channels: ['card', 'bank', 'ussd', 'bank_transfer'],
         onClose: () => { setIsTopUpProcessing(false); },
         callback: async (response: PaystackPopupTransaction) => {
           await verifyTopUpPayment(response.reference);
