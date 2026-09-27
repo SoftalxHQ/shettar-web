@@ -31,6 +31,7 @@ import {
   fetchTvProviders,
   fetchTvVariations,
   fetchUtilityNetworks,
+  detectUtilityNetwork,
   isInFlightPurchaseStatus,
   isValidMeterNumber,
   isValidTvBillers,
@@ -181,7 +182,6 @@ const UtilityPurchase = ({ onStatusChange }: UtilityPurchaseProps) => {
   useEffect(() => {
     fetchUtilityNetworks().then((list) => {
       setNetworks(list);
-      if (list[0]) setSelectedNetwork(list[0].name);
     });
     fetchTvProviders()
       .then((list) => {
@@ -202,7 +202,17 @@ const UtilityPurchase = ({ onStatusChange }: UtilityPurchaseProps) => {
   }, []);
 
   useEffect(() => {
-    if (activeTab !== 'data' || !selectedNetwork) return;
+    if (activeTab !== 'airtime' && activeTab !== 'data') return;
+    setSelectedNetwork(detectUtilityNetwork(phoneNumber, networks) || '');
+  }, [activeTab, phoneNumber, networks]);
+
+  useEffect(() => {
+    if (activeTab !== 'data') return;
+    if (!selectedNetwork) {
+      setDataPlans([]);
+      setSelectedPlan(null);
+      return;
+    }
     setLoadingPlans(true);
     fetchDataVariations(selectedNetwork)
       .then((plans) => {
@@ -663,26 +673,17 @@ const UtilityPurchase = ({ onStatusChange }: UtilityPurchaseProps) => {
       {(activeTab === 'airtime' || activeTab === 'data') && (
         <>
           <div className="mb-4">
-            <label className="small fw-semibold text-secondary mb-2 d-block">Network</label>
-            <div className="row g-2">
-              {networks.map((n) => (
-                <div key={n.name} className="col-3">
-                  <button
-                    type="button"
-                    onClick={() => setSelectedNetwork(n.name)}
-                    className={`w-100 border rounded-3 py-2 small fw-bold ${selectedNetwork === n.name ? 'border-primary bg-primary bg-opacity-10 text-primary' : 'bg-light'}`}
-                  >
-                    {n.label}
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="mb-4">
             <label className="small fw-semibold text-secondary mb-2 d-block">Phone Number</label>
             <div className="utility-input-box d-flex align-items-center px-3 rounded-4 bg-light">
-              <BsPerson className="text-secondary me-2" />
+              {networks.find((n) => n.name === selectedNetwork)?.image ? (
+                <img
+                  src={networks.find((n) => n.name === selectedNetwork)?.image || ''}
+                  alt=""
+                  className="utility-provider-logo me-2"
+                />
+              ) : (
+                <BsPerson className="text-secondary me-2" />
+              )}
               <input
                 type="tel"
                 inputMode="numeric"
@@ -725,9 +726,20 @@ const UtilityPurchase = ({ onStatusChange }: UtilityPurchaseProps) => {
             </div>
           ) : (
             <div className="mb-4">
-              <label className="small fw-semibold text-secondary mb-2 d-block">Select Plan</label>
+              <div className="d-flex align-items-baseline justify-content-between gap-2 mb-2">
+                <label className="small fw-semibold text-secondary mb-0">Select Plan</label>
+                {selectedPlan ? (
+                  <span className="small fw-bold text-primary text-end">
+                    {selectedPlan.name} · {currency}{selectedPlan.amount.toLocaleString()}
+                  </span>
+                ) : null}
+              </div>
               {loadingPlans ? (
                 <div className="text-center py-4"><Spinner animation="border" size="sm" /></div>
+              ) : dataPlans.length === 0 ? (
+                <p className="small text-muted mb-0">
+                  {selectedNetwork ? 'No data plans are available for this network.' : 'Enter a phone number to load plans.'}
+                </p>
               ) : (
                 <div className="row g-3">
                   {dataPlans.map((plan, index) => (
@@ -759,8 +771,11 @@ const UtilityPurchase = ({ onStatusChange }: UtilityPurchaseProps) => {
                   <button
                     type="button"
                     onClick={() => setSelectedTvProvider(p.name)}
-                    className={`w-100 border rounded-3 py-2 small fw-bold ${selectedTvProvider === p.name ? 'border-primary bg-primary bg-opacity-10 text-primary' : 'bg-light'}`}
+                    className={`w-100 border rounded-3 py-2 small fw-bold d-flex flex-column align-items-center gap-1 ${selectedTvProvider === p.name ? 'border-primary bg-primary bg-opacity-10 text-primary' : 'bg-light'}`}
                   >
+                    {p.image ? (
+                      <img src={p.image} alt="" className="utility-provider-logo" />
+                    ) : null}
                     {p.label}
                   </button>
                 </div>
@@ -907,15 +922,21 @@ const UtilityPurchase = ({ onStatusChange }: UtilityPurchaseProps) => {
         <>
           <div className="mb-4">
             <label className="small fw-semibold text-secondary mb-2 d-block">Electricity Provider</label>
-            <select
-              className="form-select rounded-4 py-3"
-              value={selectedElectricityProvider}
-              onChange={(e) => setSelectedElectricityProvider(e.target.value)}
-            >
+            <div className="d-flex flex-column gap-2">
               {electricityProviders.map((p) => (
-                <option key={p.name} value={p.name}>{p.label}</option>
+                <button
+                  key={p.name}
+                  type="button"
+                  onClick={() => setSelectedElectricityProvider(p.name)}
+                  className={`w-100 border rounded-4 py-2 px-3 small fw-bold d-flex align-items-center gap-2 text-start ${selectedElectricityProvider === p.name ? 'border-primary bg-primary bg-opacity-10 text-primary' : 'bg-light'}`}
+                >
+                  {p.image ? (
+                    <img src={p.image} alt="" className="utility-provider-logo" />
+                  ) : null}
+                  <span>{p.label}</span>
+                </button>
               ))}
-            </select>
+            </div>
           </div>
 
           <div className="utility-toggle mb-3 p-1 rounded-4 d-flex" style={{ background: 'rgba(81, 67, 217, 0.08)' }}>
@@ -1032,6 +1053,7 @@ const UtilityPurchase = ({ onStatusChange }: UtilityPurchaseProps) => {
 
       <style jsx>{`
         .utility-wallet-icon { width: 48px; height: 48px; }
+        .utility-provider-logo { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
         .utility-input-box { min-height: 56px; }
         .utility-plan-card { transition: border-color 0.15s ease, background 0.15s ease; }
         .utility-purchase-scroll {

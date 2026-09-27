@@ -6,6 +6,8 @@ export type UtilityNetwork = {
   name: string;
   label: string;
   color: string;
+  image?: string | null;
+  prefixes?: string[];
 };
 
 export type UtilityProvider = {
@@ -13,6 +15,7 @@ export type UtilityProvider = {
   label: string;
   color?: string;
   service_id?: string;
+  image?: string | null;
 };
 
 export type DataVariation = {
@@ -195,7 +198,7 @@ export async function fetchUtilityNetworks(): Promise<UtilityNetwork[]> {
   });
   if (!response.ok) return defaultNetworks();
   const data = await response.json();
-  return data.networks?.length ? data.networks : defaultNetworks();
+  return data.networks?.length ? data.networks.map(withWorkingProviderLogo) : defaultNetworks();
 }
 
 export async function fetchTvProviders(): Promise<UtilityProvider[]> {
@@ -208,7 +211,7 @@ export async function fetchTvProviders(): Promise<UtilityProvider[]> {
     throw new Error(parseUtilityApiError(data, `Could not load TV providers (${response.status})`));
   }
   const data = await response.json();
-  return data.providers ?? [];
+  return (data.providers ?? []).map(withWorkingProviderLogo);
 }
 
 export async function fetchElectricityProviders(): Promise<UtilityProvider[]> {
@@ -221,7 +224,7 @@ export async function fetchElectricityProviders(): Promise<UtilityProvider[]> {
     throw new Error(parseUtilityApiError(data, `Could not load electricity providers (${response.status})`));
   }
   const data = await response.json();
-  return data.providers ?? [];
+  return (data.providers ?? []).map(withWorkingProviderLogo);
 }
 
 export function dedupeVariations(variations: DataVariation[]): DataVariation[] {
@@ -439,12 +442,43 @@ export async function buyElectricity(payload: {
   return postPurchase(`${getApiBaseUrl()}/api/v1/wallet/buy_electricity`, payload, 'Electricity payment failed.');
 }
 
+export function detectUtilityNetwork(phone: string, networks: UtilityNetwork[]): string | null {
+  const digits = phone.replace(/\D/g, '');
+  let local = digits;
+  if (local.startsWith('234') && local.length >= 6) local = `0${local.slice(3)}`;
+  else if (!local.startsWith('0') && local.length >= 3) local = `0${local}`;
+  if (local.length < 4) return null;
+  const prefix = local.slice(0, 4);
+  return networks.find((network) => network.prefixes?.includes(prefix))?.name ?? null;
+}
+
+const BROKEN_SANDBOX_IMAGE_FILES = new Set([
+  'MTN-Airtime-VTU.jpg',
+  'Airtel-Airtime-VTU.jpg',
+  'ShowMax.jpg',
+  'IBEDC-Ibadan-Electricity-Distribution-Company.jpg',
+  'Benin-Electricity-BEDC.jpg',
+  'Aba-Electric-Payment-ABEDC.jpg',
+  'Yola-Electric-Payment-IKEDC.jpg',
+]);
+
+const SANDBOX_IMAGE_PREFIX = 'https://sandbox.vtpass.com/resources/products/200X200/';
+const PRODUCTION_IMAGE_PREFIX = 'https://vtpass.com/resources/products/200X200/';
+
+function withWorkingProviderLogo<T extends { image?: string | null }>(provider: T): T {
+  const image = provider.image;
+  if (!image?.startsWith(SANDBOX_IMAGE_PREFIX)) return provider;
+  const filename = image.slice(SANDBOX_IMAGE_PREFIX.length);
+  if (!BROKEN_SANDBOX_IMAGE_FILES.has(filename)) return provider;
+  return { ...provider, image: `${PRODUCTION_IMAGE_PREFIX}${filename}` };
+}
+
 function defaultNetworks(): UtilityNetwork[] {
   return [
-    { name: 'MTN', label: 'MTN', color: '#FFCC00' },
-    { name: 'Glo', label: 'Glo', color: '#00FF00' },
-    { name: 'Airtel', label: 'Airtel', color: '#FF0000' },
-    { name: '9mobile', label: '9mobile', color: '#006633' },
+    { name: 'MTN', label: 'MTN', color: '#FFCC00', prefixes: ['0803', '0806', '0703', '0706', '0810', '0813', '0814', '0816', '0903', '0906', '0913', '0916', '0704'], image: 'https://vtpass.com/resources/products/200X200/MTN-Airtime-VTU.jpg' },
+    { name: 'Glo', label: 'Glo', color: '#00FF00', prefixes: ['0805', '0807', '0705', '0811', '0815', '0905', '0915'], image: 'https://vtpass.com/resources/products/200X200/GLO-Airtime.jpg' },
+    { name: 'Airtel', label: 'Airtel', color: '#FF0000', prefixes: ['0802', '0808', '0708', '0812', '0701', '0901', '0902', '0904', '0907', '0912'], image: 'https://vtpass.com/resources/products/200X200/Airtel-Airtime-VTU.jpg' },
+    { name: '9mobile', label: '9mobile', color: '#006633', prefixes: ['0809', '0817', '0818', '0908', '0909'], image: 'https://vtpass.com/resources/products/200X200/T2-(9mobile)-Airtime-VTU.jpg' },
   ];
 }
 
