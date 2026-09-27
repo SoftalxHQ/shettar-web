@@ -109,8 +109,11 @@ type PaystackPopInstance = {
     ref?: string;
     reference?: string;
     metadata?: Record<string, unknown>;
+    currency?: string;
+    channels?: string[];
     onSuccess: (transaction: PaystackPopupTransaction) => void;
     onCancel?: () => void;
+    onError?: (error: { message?: string }) => void;
   }) => void;
 };
 
@@ -359,19 +362,35 @@ const PaymentOptions = ({
       }
 
       const chargeAmount = data.charge_amount || Number(topUpAmount);
-      const handler = window.PaystackPop.setup({
-        key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY,
-        email: data.email || account?.email,
-        amount: Math.round(chargeAmount * 100),
+      const paystackKey = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY;
+      const email = data.email || account?.email;
+      if (!paystackKey || !email || !window.PaystackPop) {
+        throw new Error(
+          !email
+            ? 'Add an email to your account before paying with Paystack.'
+            : 'Paystack is still loading. Please try again.'
+        );
+      }
+
+      const paystack = new window.PaystackPop();
+      paystack.newTransaction({
+        key: paystackKey,
+        email,
+        amount: Math.round(Number(chargeAmount) * 100),
+        currency: 'NGN',
         ref: data.reference,
-        metadata: data.metadata,
+        reference: data.reference,
+        ...(data.metadata && typeof data.metadata === 'object' ? { metadata: data.metadata } : {}),
         channels: ['card', 'bank', 'ussd', 'bank_transfer'],
-        onClose: () => { setIsTopUpProcessing(false); },
-        callback: async (response: PaystackPopupTransaction) => {
-          await verifyTopUpPayment(response.reference);
+        onSuccess: (transaction: PaystackPopupTransaction) => {
+          void verifyTopUpPayment(transaction.reference || data.reference);
+        },
+        onCancel: () => { setIsTopUpProcessing(false); },
+        onError: (error: { message?: string }) => {
+          toast.error(error?.message || 'Payment could not start');
+          setIsTopUpProcessing(false);
         }
       });
-      handler.openIframe();
 
     } catch (error: unknown) {
       toast.error(errorMessage(error, 'Failed to initialize payment'));
@@ -647,12 +666,12 @@ const PaymentOptions = ({
           By processing, You accept Shettar <Link href="#" className="text-primary text-decoration-none border-bottom">Terms of Services</Link> and <Link href="#" className="text-primary text-decoration-none border-bottom">Policy</Link>
         </p>
       </div>
-      <Modal show={showTopUp} onHide={() => !isTopUpProcessing && setShowTopUp(false)} centered>
+      <Modal show={showTopUp} onHide={() => !isTopUpProcessing && setShowTopUp(false)} centered scrollable fullscreen="sm-down">
         <Modal.Header closeButton={!isTopUpProcessing}>
           <Modal.Title>Fund Your Wallet</Modal.Title>
         </Modal.Header>
-        <Form onSubmit={handleTopUp}>
-          <Modal.Body className="p-4">
+        <Form onSubmit={handleTopUp} className="d-flex flex-column flex-grow-1 min-h-0">
+          <Modal.Body className="p-3 p-sm-4">
             <p className="text-secondary small mb-4">Enter an amount to add to your wallet. You will be redirected to Paystack for secure payment.</p>
             <Form.Group className="mb-3">
               <Form.Label className="small fw-bold">Amount to Fund</Form.Label>
@@ -671,13 +690,14 @@ const PaymentOptions = ({
               <Form.Text className="text-muted">Minimum funding amount is {currency}100.00</Form.Text>
             </Form.Group>
 
-            <div className="d-flex gap-2 mt-4">
+            <div className="d-flex flex-wrap gap-2 mt-4">
               {[500, 1000, 2000, 5000].map(amt => (
                 <Button
                   key={amt}
                   variant="outline-secondary"
                   size="sm"
                   className="flex-grow-1"
+                  style={{ flexBasis: '4.5rem' }}
                   onClick={() => setTopUpAmount(amt.toString())}
                   disabled={isTopUpProcessing}
                 >
@@ -686,11 +706,11 @@ const PaymentOptions = ({
               ))}
             </div>
           </Modal.Body>
-          <Modal.Footer className="border-0 p-4 pt-0">
-            <Button variant="white" onClick={() => setShowTopUp(false)} disabled={isTopUpProcessing}>
+          <Modal.Footer className="border-0 p-3 p-sm-4 pt-0 d-flex flex-column-reverse flex-sm-row gap-2">
+            <Button variant="white" className="w-100 w-sm-auto" onClick={() => setShowTopUp(false)} disabled={isTopUpProcessing}>
               Cancel
             </Button>
-            <Button variant="primary" type="submit" disabled={isTopUpProcessing || !topUpAmount}>
+            <Button variant="primary" className="w-100 w-sm-auto" type="submit" disabled={isTopUpProcessing || !topUpAmount}>
               {isTopUpProcessing ? 'Processing...' : 'Proceed to Pay'}
             </Button>
           </Modal.Footer>

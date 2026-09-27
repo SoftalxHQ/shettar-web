@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Card, CardBody, Col, Row, Button, Modal, Form, InputGroup, OverlayTrigger, Tooltip } from 'react-bootstrap';
-import { BsWallet2, BsBank, BsCopy, BsPlusCircle, BsLightningCharge, BsArrowClockwise } from 'react-icons/bs';
+import { Card, CardBody, Col, Row, Button, Modal, Form, OverlayTrigger, Tooltip } from 'react-bootstrap';
+import { BsWallet2, BsBank, BsCopy, BsPlusCircle, BsLightningCharge, BsArrowClockwise, BsChevronLeft, BsCreditCard, BsInfoCircle, BsArrowRight } from 'react-icons/bs';
 import { currency } from '@/app/states';
 import Link from 'next/link';
 import { toast } from 'react-hot-toast';
@@ -164,21 +164,38 @@ const AccountWallet = () => {
 
       // Open Paystack with the GROSS amount (includes fee passed to customer)
       const chargeAmount = data.charge_amount || Number(amount);
-      const handler = (window as any).PaystackPop.setup({
-        key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY,
-        email: data.email || profile?.email,
-        amount: Math.round(chargeAmount * 100), // in kobo
+      const paystackKey = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY;
+      const email = data.email || profile?.email;
+      const PaystackPop = (window as any).PaystackPop;
+      if (!paystackKey || !email || !PaystackPop) {
+        throw new Error(
+          !email
+            ? 'Add an email to your account before paying with Paystack.'
+            : 'Paystack is still loading. Please try again.'
+        );
+      }
+
+      const paystack = new PaystackPop();
+      paystack.newTransaction({
+        key: paystackKey,
+        email,
+        amount: Math.round(Number(chargeAmount) * 100),
+        currency: 'NGN',
         ref: data.reference,
-        metadata: data.metadata,
+        reference: data.reference,
+        ...(data.metadata && typeof data.metadata === 'object' ? { metadata: data.metadata } : {}),
         channels: ['card', 'bank', 'ussd', 'bank_transfer'],
-        onClose: () => {
+        onSuccess: (transaction: { reference?: string }) => {
+          void verifyPayment(transaction?.reference || data.reference);
+        },
+        onCancel: () => {
           setIsProcessing(false);
         },
-        callback: async (response: any) => {
-          await verifyPayment(response.reference);
+        onError: (error: { message?: string }) => {
+          toast.error(error?.message || 'Payment could not start');
+          setIsProcessing(false);
         }
       });
-      handler.openIframe();
 
     } catch (error: any) {
       toast.error(error.message);
@@ -349,166 +366,196 @@ const AccountWallet = () => {
         </Col>
       </Row>
 
-      <Modal show={showTopUp} onHide={() => !isProcessing && setShowTopUp(false)} centered>
-        <Modal.Header closeButton={!isProcessing}>
-          <Modal.Title>Fund Your Wallet</Modal.Title>
+      <Modal show={showTopUp} onHide={() => !isProcessing && setShowTopUp(false)} centered scrollable fullscreen="sm-down" contentClassName="border-0">
+        <Modal.Header className="border-0 px-3 pt-3 pb-0">
+          <button
+            type="button"
+            className="btn btn-link text-body p-0 d-flex align-items-center justify-content-center"
+            style={{ width: 40, height: 40 }}
+            onClick={() => { if (!isProcessing) { setShowTopUp(false); setAmount(''); setFeeBreakdown(null); } }}
+            disabled={isProcessing}
+            aria-label="Close"
+          >
+            <BsChevronLeft size={22} />
+          </button>
+          <Modal.Title className="fs-6 fw-bold mb-0 flex-grow-1 text-center">Fund Wallet</Modal.Title>
+          <span style={{ width: 40 }} aria-hidden="true" />
         </Modal.Header>
-        <Form onSubmit={handleTopUp}>
-          <Modal.Body className="p-4">
-            {/* Payment method selector */}
-            <div className="mb-4">
-              <Form.Label className="small fw-bold mb-2">Payment Method</Form.Label>
-              <div className="d-flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => setPaymentMethod('dva')}
-                  className={`flex-grow-1 p-3 rounded border text-start ${paymentMethod === 'dva' ? 'border-primary bg-primary bg-opacity-10' : 'border-secondary-subtle bg-mode'}`}
-                  style={{ cursor: 'pointer' }}
-                >
-                  <div className="d-flex align-items-center gap-2">
-                    <BsBank size={18} className={paymentMethod === 'dva' ? 'text-primary' : 'text-secondary'} />
-                    <div>
-                      <div className="small fw-bold text-body">Bank Transfer (DVA)</div>
-                      <div className="text-secondary" style={{ fontSize: '0.7rem' }}>1% fee (max ₦300) — Recommended</div>
-                    </div>
-                    <span className="ms-auto d-flex align-items-center gap-1">
-                      <span className="badge bg-success" style={{ fontSize: '0.65rem' }}>Recommended</span>
-                      {paymentMethod === 'dva' && <span className="badge bg-primary" style={{ fontSize: '0.65rem' }}>✓</span>}
-                    </span>
-                  </div>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPaymentMethod('card')}
-                  className={`flex-grow-1 p-3 rounded border text-start ${paymentMethod === 'card' ? 'border-primary bg-primary bg-opacity-10' : 'border-secondary-subtle bg-mode'}`}
-                  style={{ cursor: 'pointer' }}
-                >
-                  <div className="d-flex align-items-center gap-2">
-                    <BsPlusCircle size={18} className={paymentMethod === 'card' ? 'text-primary' : 'text-secondary'} />
-                    <div>
-                      <div className="small fw-bold text-body">Paystack</div>
-                      <div className="text-secondary" style={{ fontSize: '0.7rem' }}>Card, bank, USSD, transfer · 1.5% + ₦100</div>
-                    </div>
-                    {paymentMethod === 'card' && <span className="ms-auto badge bg-primary" style={{ fontSize: '0.65rem' }}>✓</span>}
-                  </div>
-                </button>
-              </div>
+        <Form onSubmit={handleTopUp} className="d-flex flex-column flex-grow-1 min-h-0">
+          <Modal.Body className="px-4 pt-3 pb-4">
+            <p className="text-secondary fw-bold text-uppercase mb-3" style={{ fontSize: 12, letterSpacing: 0.8 }}>Payment Method</p>
+            <div className="d-flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={() => setPaymentMethod('dva')}
+                className="text-start bg-mode p-3"
+                style={{
+                  flex: '1 1 8.5rem',
+                  borderRadius: 16,
+                  cursor: 'pointer',
+                  border: paymentMethod === 'dva' ? '2px solid var(--bs-primary)' : '1px solid var(--bs-border-color)',
+                }}
+              >
+                <div className="d-flex align-items-center justify-content-between mb-2">
+                  <BsBank size={20} className={paymentMethod === 'dva' ? 'text-primary' : 'text-secondary'} />
+                  <span className="badge bg-success" style={{ fontSize: 9, fontWeight: 800 }}>Recommended</span>
+                </div>
+                <div className={`fw-bold ${paymentMethod === 'dva' ? 'text-primary' : 'text-body'}`} style={{ fontSize: 14 }}>Bank Transfer</div>
+                <div className="text-secondary" style={{ fontSize: 11 }}>1% fee, max ₦300</div>
+              </button>
+              <button
+                type="button"
+                onClick={() => setPaymentMethod('card')}
+                className="text-start bg-mode p-3"
+                style={{
+                  flex: '1 1 8.5rem',
+                  borderRadius: 16,
+                  cursor: 'pointer',
+                  border: paymentMethod === 'card' ? '2px solid var(--bs-primary)' : '1px solid var(--bs-border-color)',
+                }}
+              >
+                <div className="d-flex align-items-center mb-2">
+                  <BsCreditCard size={20} className={paymentMethod === 'card' ? 'text-primary' : 'text-secondary'} />
+                </div>
+                <div className={`fw-bold ${paymentMethod === 'card' ? 'text-primary' : 'text-body'}`} style={{ fontSize: 14 }}>Paystack</div>
+                <div className="text-secondary" style={{ fontSize: 11 }}>Card, bank, USSD, transfer</div>
+              </button>
             </div>
 
-            <Form.Group className="mb-3">
-              <Form.Label className="small fw-bold">Amount to Fund</Form.Label>
-              <InputGroup size="lg">
-                <InputGroup.Text className="bg-mode">{currency}</InputGroup.Text>
-                <Form.Control
-                  type="number"
-                  placeholder="0.00"
-                  className="bg-mode"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  min="100"
-                  required
-                  disabled={isProcessing}
-                />
-              </InputGroup>
-              <Form.Text className="text-secondary">Minimum funding amount is {currency}100.00</Form.Text>
-            </Form.Group>
-
-            <div className="d-flex gap-2 mt-3 mb-3">
-              {[500, 1000, 2000, 5000].map(amt => (
-                <Button
-                  key={amt}
-                  variant="outline-secondary"
-                  size="sm"
-                  className="flex-grow-1"
-                  onClick={() => setAmount(amt.toString())}
-                  disabled={isProcessing}
-                >
-                  +{amt}
-                </Button>
-              ))}
+            <p className="text-secondary fw-bold text-uppercase mb-3 mt-4" style={{ fontSize: 12, letterSpacing: 0.8 }}>Amount to Fund</p>
+            <div className="d-flex align-items-center border-bottom border-primary border-2 pb-2">
+              <span className="fw-bold text-body me-1" style={{ fontSize: 32 }}>{currency}</span>
+              <Form.Control
+                type="text"
+                inputMode="decimal"
+                placeholder="0.00"
+                className="border-0 shadow-none bg-transparent fw-bold px-0"
+                style={{ fontSize: 32 }}
+                value={amount}
+                onChange={(e) => setAmount(e.target.value.replace(/[^\d.]/g, ''))}
+                disabled={isProcessing}
+                aria-label="Amount to fund"
+              />
             </div>
 
-            {/* Fee breakdown for card */}
-            {paymentMethod === 'card' && feeBreakdown && Number(amount) >= 100 && (
-              <div className="p-3 rounded border border-warning-subtle bg-warning bg-opacity-10 mt-3">
-                <p className="small fw-bold mb-2 text-body">Transaction Breakdown</p>
-                <div className="d-flex justify-content-between small mb-1">
-                  <span className="text-secondary">Wallet credit</span>
-                  <span className="fw-semibold text-body">{currency}{feeBreakdown.target_amount.toLocaleString('en-NG', { minimumFractionDigits: 2 })}</span>
+            <div className="d-flex gap-2 mt-4">
+              {[1000, 2000, 5000, 10000].map(amt => {
+                const selected = amount === amt.toString();
+                return (
+                  <button
+                    key={amt}
+                    type="button"
+                    className={`btn flex-grow-1 fw-bold ${selected ? 'btn-primary text-white' : 'btn-outline-primary'}`}
+                    style={{ borderRadius: 12, fontSize: 12, padding: '10px 4px' }}
+                    onClick={() => setAmount(amt.toString())}
+                    disabled={isProcessing}
+                  >
+                    +{currency}{amt.toLocaleString('en-NG')}
+                  </button>
+                );
+              })}
+            </div>
+
+            {feeBreakdown && Number(amount) >= 100 && (
+              <div className="mt-4 p-3 border border-primary border-opacity-25 bg-primary bg-opacity-10" style={{ borderRadius: 14 }}>
+                <p className="fw-bold text-uppercase text-body mb-2" style={{ fontSize: 12, letterSpacing: 0.5 }}>Breakdown</p>
+                <div className="d-flex justify-content-between align-items-center mb-2">
+                  <span className="text-secondary" style={{ fontSize: 13 }}>Wallet credit</span>
+                  <span className="fw-bold text-body" style={{ fontSize: 13 }}>{currency}{feeBreakdown.target_amount.toLocaleString('en-NG', { minimumFractionDigits: 2 })}</span>
                 </div>
-                <div className="d-flex justify-content-between small mb-1">
-                  <span className="text-secondary">Paystack processing fee</span>
-                  <span className="fw-semibold text-danger">+{currency}{feeBreakdown.paystack_fee.toLocaleString('en-NG', { minimumFractionDigits: 2 })}</span>
+                <div className="d-flex justify-content-between align-items-center gap-2 mb-2">
+                  <span className="text-secondary" style={{ fontSize: 13 }}>
+                    {paymentMethod === 'card' ? 'Paystack fee (1.5% + ₦100)' : 'DVA fee (1%, max ₦300)'}
+                  </span>
+                  <span className="fw-bold text-danger text-nowrap" style={{ fontSize: 13 }}>+{currency}{feeBreakdown.paystack_fee.toLocaleString('en-NG', { minimumFractionDigits: 2 })}</span>
                 </div>
-                <div className="d-flex justify-content-between small border-top pt-2 mt-1">
-                  <span className="fw-bold text-body">You will be charged</span>
-                  <span className="fw-bold text-primary">{currency}{feeBreakdown.charge_amount.toLocaleString('en-NG', { minimumFractionDigits: 2 })}</span>
+                <div className="d-flex justify-content-between align-items-center gap-2 border-top pt-2 mt-1">
+                  <span className="fw-bold text-body" style={{ fontSize: 13 }}>
+                    {paymentMethod === 'dva' ? 'Transfer exactly' : 'You will be charged'}
+                  </span>
+                  <span className="fw-bold text-primary text-nowrap" style={{ fontSize: 13 }}>{currency}{feeBreakdown.charge_amount.toLocaleString('en-NG', { minimumFractionDigits: 2 })}</span>
                 </div>
               </div>
             )}
 
-            {paymentMethod === 'dva' && !dvaDetails && dvaError && (
-              <div className="p-3 rounded border border-danger-subtle bg-danger bg-opacity-10 mt-3">
-                <p className="small text-danger mb-2">{dvaError}</p>
-                {dvaError.toLowerCase().includes('phone') ? (
-                  <Link href="/user/profile" className="small">Add a phone number to your profile</Link>
+            {paymentMethod === 'dva' && (
+              <div className="mt-4 p-3 border bg-mode" style={{ borderRadius: 16 }}>
+                <div className="d-flex align-items-center gap-2 mb-3">
+                  <BsBank size={16} className="text-success" />
+                  <span className="fw-bold text-body" style={{ fontSize: 14 }}>Transfer to your Virtual Account</span>
+                </div>
+
+                {isDvaLoading && !dvaDetails ? (
+                  <div className="spinner-border spinner-border-sm text-primary my-3" role="status" aria-label="Loading virtual account" />
+                ) : dvaDetails ? (
+                  <>
+                    <div className="d-flex align-items-center justify-content-between gap-2 pb-3 mb-3 border-bottom">
+                      <div className="min-w-0">
+                        <p className="text-secondary text-uppercase fw-semibold mb-1" style={{ fontSize: 11, letterSpacing: 0.5 }}>Account Number</p>
+                        <p className="fw-bold text-body mb-1" style={{ fontSize: 20, letterSpacing: 1.5 }}>{dvaDetails.account_number}</p>
+                        <p className="mb-0 text-danger fw-bold" style={{ fontSize: 10, lineHeight: 1.3 }}>
+                          1% Paystack fee on transfers (max ₦300)
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        className="btn border-0 text-primary d-flex align-items-center gap-1 fw-bold flex-shrink-0"
+                        style={{ borderRadius: 10, fontSize: 13, backgroundColor: 'rgba(var(--bs-primary-rgb), 0.08)' }}
+                        onClick={() => copyToClipboard(dvaDetails.account_number)}
+                      >
+                        <BsCopy size={16} />
+                        Copy
+                      </button>
+                    </div>
+                    <div className="row g-3">
+                      <div className="col-6">
+                        <p className="text-secondary text-uppercase fw-semibold mb-1" style={{ fontSize: 11, letterSpacing: 0.5 }}>Bank</p>
+                        <p className="fw-semibold text-body mb-0" style={{ fontSize: 14 }}>{dvaDetails.bank_name}</p>
+                      </div>
+                      <div className="col-6">
+                        <p className="text-secondary text-uppercase fw-semibold mb-1" style={{ fontSize: 11, letterSpacing: 0.5 }}>Account Name</p>
+                        <p className="fw-semibold text-body mb-0 text-truncate" style={{ fontSize: 14 }} title={dvaDetails.account_name}>{dvaDetails.account_name}</p>
+                      </div>
+                    </div>
+                  </>
                 ) : (
-                  <Button variant="outline-danger" size="sm" onClick={fetchDvaDetails} disabled={isDvaLoading}>
-                    Try again
-                  </Button>
-                )}
-              </div>
-            )}
-
-            {/* DVA info */}
-            {paymentMethod === 'dva' && dvaDetails && (
-              <div className="p-3 rounded border border-success-subtle bg-success bg-opacity-10 mt-3">
-                <p className="small fw-bold mb-2 text-body">Transfer to your virtual account</p>
-                <div className="d-flex justify-content-between align-items-center">
-                  <div>
-                    <p className="small text-secondary mb-0">Account Number</p>
-                    <p className="fw-bold mb-0 font-monospace text-body">{dvaDetails.account_number}</p>
-                    <p className="small text-secondary mb-0">{dvaDetails.bank_name} — {dvaDetails.account_name}</p>
-                    <p className="mb-0 mt-1 text-danger fw-semibold" style={{ fontSize: '0.65rem', lineHeight: 1.3 }}>
-                      1% Paystack fee on transfers (max ₦300)
+                  <>
+                    <p className={`mb-2 ${dvaError ? 'text-danger' : 'text-secondary'}`} style={{ fontSize: 13 }}>
+                      {dvaError || 'Virtual account not available. Please try again.'}
                     </p>
-                  </div>
-                  <Button variant="link" className="p-0 text-success" onClick={() => copyToClipboard(dvaDetails.account_number)}>
-                    <BsCopy size={16} />
-                  </Button>
-                </div>
-                {feeBreakdown && Number(amount) >= 100 && (
-                  <div className="mt-2 pt-2 border-top border-success-subtle">
-                    <div className="d-flex justify-content-between small mb-1">
-                      <span className="text-secondary">Wallet credit</span>
-                      <span className="fw-semibold text-body">{currency}{feeBreakdown.target_amount.toLocaleString('en-NG', { minimumFractionDigits: 2 })}</span>
-                    </div>
-                    <div className="d-flex justify-content-between small mb-1">
-                      <span className="text-secondary">Paystack DVA fee (1%, max ₦300)</span>
-                      <span className="fw-semibold text-danger">+{currency}{feeBreakdown.paystack_fee.toLocaleString('en-NG', { minimumFractionDigits: 2 })}</span>
-                    </div>
-                    <div className="d-flex justify-content-between small fw-bold">
-                      <span className="text-body">Transfer exactly</span>
-                      <span className="text-success">{currency}{feeBreakdown.charge_amount.toLocaleString('en-NG', { minimumFractionDigits: 2 })}</span>
-                    </div>
-                  </div>
+                    {dvaError?.toLowerCase().includes('phone') ? (
+                      <Link href="/user/profile" className="fw-bold text-decoration-none">Add phone number</Link>
+                    ) : (
+                      <Button variant="link" className="p-0 fw-bold" onClick={fetchDvaDetails} disabled={isDvaLoading}>
+                        Try again
+                      </Button>
+                    )}
+                  </>
                 )}
-                {!feeBreakdown && <p className="small text-secondary mt-2 mb-0">Enter an amount above to see the exact transfer amount.</p>}
+
+                <div className="d-flex align-items-start gap-2 mt-3 p-3 border border-success border-opacity-25 bg-success bg-opacity-10" style={{ borderRadius: 12 }}>
+                  <BsInfoCircle size={16} className="text-success flex-shrink-0 mt-1" />
+                  <p className="text-secondary mb-0" style={{ fontSize: 12, lineHeight: 1.5 }}>
+                    Transfer the exact amount shown in the breakdown above. Your wallet will be credited automatically.
+                  </p>
+                </div>
               </div>
             )}
           </Modal.Body>
-          <Modal.Footer className="border-0 p-4 pt-0">
-            <Button variant="light" onClick={() => { setShowTopUp(false); setAmount(''); setFeeBreakdown(null); }} disabled={isProcessing}>
-              Cancel
-            </Button>
+          <Modal.Footer className="border-0 px-4 pt-2 pb-4">
             {paymentMethod === 'dva' ? (
-              <Button variant="secondary" disabled style={{ opacity: 0.5 }}>
+              <Button variant="secondary" className="w-100 d-flex align-items-center justify-content-center fw-bold" disabled style={{ height: 56, borderRadius: 16, opacity: 0.4, fontSize: 16 }}>
                 <BsBank className="me-2" />
                 Transfer to Virtual Account
               </Button>
             ) : (
-              <Button variant="primary" type="submit" disabled={isProcessing || !amount}>
-                {isProcessing ? 'Processing...' : `Pay ${feeBreakdown ? `${currency}${feeBreakdown.charge_amount.toLocaleString('en-NG', { minimumFractionDigits: 2 })}` : ''}`}
+              <Button variant="primary" className="w-100 d-flex align-items-center justify-content-center fw-bold" type="submit" disabled={isProcessing || !amount} style={{ height: 56, borderRadius: 16, fontSize: 16 }}>
+                {isProcessing ? 'Processing...' : (
+                  <>
+                    Pay {feeBreakdown ? `${currency}${feeBreakdown.charge_amount.toLocaleString('en-NG', { minimumFractionDigits: 2 })}` : '...'}
+                    <BsArrowRight className="ms-2" />
+                  </>
+                )}
               </Button>
             )}
           </Modal.Footer>
