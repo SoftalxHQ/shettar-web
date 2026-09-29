@@ -448,8 +448,15 @@ export function detectUtilityNetwork(phone: string, networks: UtilityNetwork[]):
   if (local.startsWith('234') && local.length >= 6) local = `0${local.slice(3)}`;
   else if (!local.startsWith('0') && local.length >= 3) local = `0${local}`;
   if (local.length < 4) return null;
-  const prefix = local.slice(0, 4);
-  return networks.find((network) => network.prefixes?.includes(prefix))?.name ?? null;
+
+  let best: { name: string; length: number } | null = null;
+  for (const network of networks) {
+    for (const prefix of network.prefixes ?? []) {
+      if (!local.startsWith(prefix)) continue;
+      if (!best || prefix.length > best.length) best = { name: network.name, length: prefix.length };
+    }
+  }
+  return best?.name ?? null;
 }
 
 const BROKEN_SANDBOX_IMAGE_FILES = new Set([
@@ -475,9 +482,9 @@ function withWorkingProviderLogo<T extends { image?: string | null }>(provider: 
 
 function defaultNetworks(): UtilityNetwork[] {
   return [
-    { name: 'MTN', label: 'MTN', color: '#FFCC00', prefixes: ['0803', '0806', '0703', '0706', '0810', '0813', '0814', '0816', '0903', '0906', '0913', '0916', '0704'], image: 'https://vtpass.com/resources/products/200X200/MTN-Airtime-VTU.jpg' },
+    { name: 'MTN', label: 'MTN', color: '#FFCC00', prefixes: ['0803', '0806', '0703', '0706', '0707', '0810', '0813', '0814', '0816', '0903', '0906', '0913', '0916', '0704', '07025', '07026'], image: 'https://vtpass.com/resources/products/200X200/MTN-Airtime-VTU.jpg' },
     { name: 'Glo', label: 'Glo', color: '#00FF00', prefixes: ['0805', '0807', '0705', '0811', '0815', '0905', '0915'], image: 'https://vtpass.com/resources/products/200X200/GLO-Airtime.jpg' },
-    { name: 'Airtel', label: 'Airtel', color: '#FF0000', prefixes: ['0802', '0808', '0708', '0812', '0701', '0901', '0902', '0904', '0907', '0912'], image: 'https://vtpass.com/resources/products/200X200/Airtel-Airtime-VTU.jpg' },
+    { name: 'Airtel', label: 'Airtel', color: '#FF0000', prefixes: ['0802', '0808', '0708', '0812', '0701', '0901', '0902', '0904', '0907', '0911', '0912'], image: 'https://vtpass.com/resources/products/200X200/Airtel-Airtime-VTU.jpg' },
     { name: '9mobile', label: '9mobile', color: '#006633', prefixes: ['0809', '0817', '0818', '0908', '0909'], image: 'https://vtpass.com/resources/products/200X200/T2-(9mobile)-Airtime-VTU.jpg' },
   ];
 }
