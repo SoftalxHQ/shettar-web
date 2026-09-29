@@ -37,7 +37,7 @@ const RoomSelection = ({ room, hotel }: { room: any, hotel: any }) => {
                       <div className="vstack gap-4">
                         {room.other_room_types.map((otherRoom: any, idx: number) => (
                           <RoomCard
-                            key={idx}
+                            key={otherRoom.id ?? otherRoom.slug ?? idx}
                             id={otherRoom.id}
                             slug={otherRoom.slug}
                             name={otherRoom.name}

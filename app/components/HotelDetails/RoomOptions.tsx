@@ -49,7 +49,7 @@ const RoomOptions = ({ availableRoomTypes, hotel }: { availableRoomTypes: any[],
 
             return (
               <RoomCard
-                key={idx}
+                key={room_type.id ?? room_type.slug ?? idx}
                 features={finalFeatures}
                 allAmenities={activeAmenities}
                 images={roomImages.length ? roomImages : ['/images/category/hotel/4by3/04.jpg']}
