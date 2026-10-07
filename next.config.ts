@@ -89,6 +89,17 @@ const nextConfig: NextConfig = {
         source: '/.well-known/assetlinks.json',
         headers: [{ key: 'Content-Type', value: 'application/json' }],
       },
+      // BIMI logo: https://www.shettar.com/.well-known/bimi/shettar.svg
+      // Cloudflare TXT name default._bimi
+      // value: v=BIMI1; l=https://www.shettar.com/.well-known/bimi/shettar.svg
+      // Leave a= off until a VMC exists.
+      // Keep _dmarc.shettar.com at p=none until both senders pass aligned DMARC:
+      // Mailgun (From noreply@shettar.com) must DKIM-sign with d=shettar.com, and
+      // Zoho staff mail must keep its shettar.com DKIM. SPF must authorize both.
+      {
+        source: '/.well-known/bimi/shettar.svg',
+        headers: [{ key: 'Content-Type', value: 'image/svg+xml' }],
+      },
     ];
   },
 };
