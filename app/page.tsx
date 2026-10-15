@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Header, Footer } from '@/app/components';
 import HomePageMain from '@/app/components/HomePageMain';
+import MobileDownloadPromoHost from '@/app/components/MobileDownloadPromoHost';
 
 const SITE_HOME = 'https://www.shettar.com';
 
@@ -22,6 +23,7 @@ export default function Home() {
       </main>
 
       <Footer />
+      <MobileDownloadPromoHost />
     </>
   );
 }
