@@ -60,12 +60,19 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    // Card bg is always #fff — pin title color so dark mode headings don't go white-on-white
+    color: #0f172a;
 
     a {
       display: block;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+      color: inherit;
+
+      &:hover {
+        color: var(--bs-primary);
+      }
     }
   }
 
