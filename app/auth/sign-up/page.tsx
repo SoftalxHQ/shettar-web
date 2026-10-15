@@ -8,6 +8,7 @@ import { Button, Card, CardBody, Col, Container, Row } from 'react-bootstrap';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { PasswordFormInput, TextFormInput } from '@/app/components';
+import MobileDownloadPromoHost from '@/app/components/MobileDownloadPromoHost';
 import { BsArrowLeft, BsArrowRight, BsCheckCircleFill } from 'react-icons/bs';
 import Image from 'next/image';
 import toast from 'react-hot-toast';
@@ -111,6 +112,7 @@ const SignUp = () => {
   };
 
   return (
+    <>
     <section className="vh-xxl-100 p-0 m-0 d-flex align-items-center bg-light">
       <Container>
         <Row className="justify-content-center align-items-center g-0">
@@ -279,6 +281,8 @@ const SignUp = () => {
         </Row>
       </Container>
     </section>
+    <MobileDownloadPromoHost />
+    </>
   );
 };
 
